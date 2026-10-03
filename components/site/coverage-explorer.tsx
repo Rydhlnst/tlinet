@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import type { CircleMarker, Map as LeafletMap } from "leaflet";
-import { ArrowRight, CircleAlert, CircleCheck, Hourglass, LoaderCircle, LocateFixed, MapPin, MousePointerClick, Search } from "lucide-react";
+import { ArrowRight, Cable, CircleAlert, CircleCheck, CircleSlash, Hourglass, LoaderCircle, LocateFixed, MapPin, MousePointerClick, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -25,24 +25,40 @@ function distanceKm(a: Point, b: Point) {
 
 const kmFormat = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 });
 
-type Check = { point: Point; areaId: string; distance: number; status: "covered" | "expansion" | "outside" };
+/** Status jaringan satu titik; urutannya menentukan mana yang menang bila beberapa radius bertumpuk. */
+const statusMeta = {
+  active: { marker: "", pill: "bg-brand-soft text-brand-ink", swatch: "bg-brand" },
+  installing: { marker: " is-installing", pill: "bg-warning/15 text-amber-800", swatch: "bg-warning" },
+  expansion: { marker: " is-expansion", pill: "bg-violet-100 text-violet-800", swatch: "bg-violet-500" },
+  inactive: { marker: " is-inactive", pill: "bg-muted text-muted-foreground", swatch: "bg-slate-400" },
+};
+type AreaStatus = keyof typeof statusMeta;
+const statusOrder = Object.keys(statusMeta) as AreaStatus[];
+const statusOf = (area: CoverageArea): AreaStatus => (area.status in statusMeta ? (area.status as AreaStatus) : "active");
+
+type Check = { point: Point; areaId: string; distance: number; status: "covered" | Exclude<AreaStatus, "active"> | "outside" };
 
 /**
  * Menilai satu titik terhadap semua area. Titik di dalam radius area aktif dinyatakan terjangkau; di dalam
- * radius area ekspansi saja berarti ekspansi; di luar semua radius, area terdekat dipakai sebagai acuan.
+ * radius area lain, hasilnya mengikuti status area itu; di luar semua radius, area terdekat dipakai sebagai acuan.
  */
 function evaluate(point: Point, areas: CoverageArea[]): Check | null {
   const ranked = areas.map((area) => ({ area, distance: distanceKm(point, area) })).sort((a, b) => a.distance - b.distance);
   if (!ranked.length) return null;
-  const inside = ranked.filter((item) => item.distance <= item.area.radiusKm);
-  const best = inside.find((item) => item.area.status !== "expansion") ?? inside[0] ?? ranked[0];
-  const status = best.distance > best.area.radiusKm ? "outside" : best.area.status === "expansion" ? "expansion" : "covered";
+  const inside = ranked
+    .filter((item) => item.distance <= item.area.radiusKm)
+    .sort((a, b) => statusOrder.indexOf(statusOf(a.area)) - statusOrder.indexOf(statusOf(b.area)) || a.distance - b.distance);
+  const best = inside[0] ?? ranked[0];
+  const areaStatus = statusOf(best.area);
+  const status = !inside.length ? "outside" : areaStatus === "active" ? "covered" : areaStatus;
   return { point, areaId: best.area.id, distance: best.distance, status };
 }
 
 const verdictStyles = {
   covered: { icon: CircleCheck, className: "bg-brand-soft text-brand-ink" },
-  expansion: { icon: Hourglass, className: "bg-warning/15 text-amber-800" },
+  installing: { icon: Cable, className: "bg-warning/15 text-amber-800" },
+  expansion: { icon: Hourglass, className: "bg-violet-100 text-violet-800" },
+  inactive: { icon: CircleSlash, className: "bg-muted text-foreground/80" },
   outside: { icon: CircleAlert, className: "bg-muted text-foreground/80" },
 };
 
@@ -87,13 +103,13 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
       }).addTo(map);
 
       for (const area of areas) {
-        const variant = area.status === "expansion" ? " is-expansion" : "";
+        const variant = statusMeta[statusOf(area)].marker;
         L.circle([area.lat, area.lng], {
           radius: area.radiusKm * 1000,
           weight: 1,
           opacity: 0.5,
           fillOpacity: 0.12,
-          dashArray: area.status === "expansion" ? "4 5" : undefined,
+          dashArray: statusOf(area) === "active" ? undefined : "4 5",
           interactive: false,
           className: `area-ring${variant}`,
         }).addTo(map);
@@ -177,7 +193,18 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
   // Hasil cek hanya ditampilkan selama kartu masih menunjukkan area yang dinilai.
   const verdict = check && selected && check.areaId === selected.id ? check : null;
   const verdictStyle = verdict ? verdictStyles[verdict.status] : null;
-  const verdictText = verdict ? { covered: content.coveredText, expansion: content.expansionText, outside: content.outsideText }[verdict.status] : "";
+  const verdictText = verdict
+    ? {
+        covered: content.coveredText,
+        installing: content.installingText,
+        expansion: content.expansionText,
+        inactive: content.inactiveText,
+        outside: content.outsideText,
+      }[verdict.status]
+    : "";
+  const statusLabels = { active: content.activeLabel, installing: content.installingLabel, expansion: content.expansionLabel, inactive: content.inactiveLabel };
+  // Legenda hanya memuat status yang benar-benar ada di peta.
+  const legend = statusOrder.filter((status) => areas.some((area) => statusOf(area) === status));
 
   return (
     <div className="flex flex-col gap-5">
@@ -255,14 +282,12 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
             {!ready && <Skeleton className="absolute inset-0 rounded-none" role="status" aria-label="Memuat peta" />}
           </div>
           <ul className="flex flex-wrap gap-x-6 gap-y-2 border-t px-5 py-4 text-xs text-muted-foreground">
-            <li className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-brand" aria-hidden="true" />
-              {content.activeLabel}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-warning" aria-hidden="true" />
-              {content.expansionLabel}
-            </li>
+            {legend.map((status) => (
+              <li key={status} className="flex items-center gap-2">
+                <span className={cn("size-2.5 rounded-full", statusMeta[status].swatch)} aria-hidden="true" />
+                {statusLabels[status]}
+              </li>
+            ))}
             <li className="flex items-center gap-2">
               <span className="size-2.5 rounded-full bg-ink" aria-hidden="true" />
               {content.myLocationLabel}
@@ -287,10 +312,10 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
               <span
                 className={cn(
                   "rounded-full px-3 py-1 text-[11px] font-semibold tracking-wider uppercase",
-                  selected.status === "expansion" ? "bg-warning/15 text-amber-700" : "bg-brand-soft text-brand-ink",
+                  statusMeta[statusOf(selected)].pill,
                 )}
               >
-                {selected.status === "expansion" ? content.expansionLabel : content.activeLabel}
+                {statusLabels[statusOf(selected)]}
               </span>
               {selected.odpCount > 0 && (
                 <span className="rounded-full border px-3 py-1 text-[11px] font-medium text-muted-foreground">{selected.odpCount} ODP Cluster</span>

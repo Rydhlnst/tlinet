@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import type { HomeContent } from "@/lib/content/types";
 import { Icon } from "@/lib/icons";
+import { HeroArcs } from "./hero-arcs";
 import { NodeField } from "./node-field";
 import { CmsImage, LinkButton, SmartLink } from "./ui";
 
@@ -11,19 +12,41 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
 
   return (
     <section className="hero-under-header relative isolate overflow-hidden bg-ink text-white">
-      {imageUrl &&
-        // Gambar lokal (public/ atau /media) dioptimalkan Next; URL luar ditampilkan apa adanya.
-        (imageUrl.startsWith("/") ? (
-          <Image src={imageUrl} alt="" fill preload fetchPriority="high" sizes="100vw" className="-z-20 object-cover object-[85%_50%]" />
-        ) : (
-          <CmsImage src={imageUrl} alt="" loading="eager" fetchPriority="high" className="absolute inset-0 -z-20 size-full object-cover object-[85%_50%]" />
-        ))}
+      {/*
+        Di layar lebar foto dipasang selebar hero dengan tinggi aslinya (tidak diperbesar), mulai di bawah header,
+        dan memudar di tepi atas dan bawah; di layar kecil foto menutupi seluruh hero.
+      */}
+      <div
+        className="absolute inset-x-0 top-0 grid h-full lg:top-14 lg:h-auto lg:min-h-[60%] -z-20 [mask-image:linear-gradient(to_bottom,black_55%,transparent)] lg:[mask-image:linear-gradient(to_bottom,transparent,black_12%,black_58%,transparent)]"
+        aria-hidden="true"
+      >
+        {imageUrl &&
+          // Gambar lokal (public/ atau /media) dioptimalkan Next; URL luar ditampilkan apa adanya.
+          (imageUrl.startsWith("/") ? (
+            <Image
+              src={imageUrl}
+              alt=""
+              width={1600}
+              height={668}
+              preload
+              fetchPriority="high"
+              sizes="100vw"
+              className="h-full w-full object-cover object-right"
+            />
+          ) : (
+            <CmsImage src={imageUrl} alt="" loading="eager" fetchPriority="high" className="h-full w-full object-cover object-right" />
+          ))}
+      </div>
       {/* Di layar lebar hanya sisi kiri yang digelapkan; di layar kecil teks menutupi seluruh foto. */}
       <div
-        className="absolute inset-0 -z-10 bg-ink/80 lg:bg-transparent lg:bg-[linear-gradient(90deg,var(--ink)_10%,color-mix(in_oklch,var(--ink)_90%,transparent)_46%,color-mix(in_oklch,var(--ink)_45%,transparent)_74%,color-mix(in_oklch,var(--ink)_22%,transparent)_100%)]"
+        className="absolute inset-0 -z-10 bg-ink/80 lg:bg-transparent lg:bg-[linear-gradient(90deg,var(--ink)_8%,color-mix(in_oklch,var(--ink)_90%,transparent)_42%,color-mix(in_oklch,var(--ink)_64%,transparent)_58%,color-mix(in_oklch,var(--ink)_30%,transparent)_78%,color-mix(in_oklch,var(--ink)_16%,transparent)_100%)]"
         aria-hidden="true"
       />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-64 bg-gradient-to-t from-ink to-transparent" aria-hidden="true" />
+      {/* Garis jaringan memakai kotak yang sama dengan foto agar berimpit dengan petanya, tetapi di atas lapisan gelap supaya tetap terlihat. */}
+      <div className="absolute inset-x-0 top-0 grid h-full lg:top-14 lg:h-auto lg:min-h-[60%] -z-10 opacity-90 [mask-image:linear-gradient(to_bottom,black_45%,transparent_80%)]" aria-hidden="true">
+        <HeroArcs className="h-full w-full" />
+      </div>
       <NodeField tone="dark" className="-z-10 opacity-70 [mask-image:linear-gradient(to_right,black,transparent_65%)]" />
 
       <div className="container-page flex flex-col gap-12 pt-14 pb-10 sm:pt-20 lg:pt-24 lg:pb-12">

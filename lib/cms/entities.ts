@@ -93,7 +93,7 @@ export const entityDefs: EntityDef[] = [
     columns: [
       { key: "name", label: "Area" },
       { key: "city", label: "Kota / Kabupaten" },
-      { key: "status", label: "Status", type: "badge", labels: { active: "Aktif", expansion: "Ekspansi" } },
+      { key: "status", label: "Status", type: "badge", labels: { active: "Aktif", inactive: "Belum aktif", installing: "Instalasi FO", expansion: "Ekspansi" } },
       { key: "radiusKm", label: "Radius (km)" },
       activeColumn,
     ],
@@ -107,6 +107,8 @@ export const entityDefs: EntityDef[] = [
         type: "select",
         options: [
           { value: "active", label: "Jaringan aktif" },
+          { value: "inactive", label: "Jaringan belum aktif" },
+          { value: "installing", label: "Proses instalasi kabel FO" },
           { value: "expansion", label: "Area ekspansi" },
         ],
       },

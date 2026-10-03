@@ -113,6 +113,41 @@
   }
 }
 
+/* Kilatan cahaya yang berjalan di sepanjang garis jaringan hero. */
+@keyframes arc-flow {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes node-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.7);
+  }
+}
+
+.hero-arc {
+  stroke-dashoffset: 1;
+  animation: arc-flow 5s linear infinite;
+  filter: drop-shadow(0 0 4px rgb(56 189 248 / 0.9));
+}
+
+.hero-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pulse 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 5px rgb(125 211 252 / 0.9));
+}
+
 @keyframes marquee {
   to {
     transform: translateX(-50%);
@@ -176,17 +211,31 @@
   stroke: var(--brand);
   fill: var(--brand);
 }
-.area-ring.is-expansion {
+.area-ring.is-installing {
   stroke: var(--warning);
   fill: var(--warning);
+}
+.area-ring.is-expansion {
+  stroke: oklch(0.6 0.2 295);
+  fill: oklch(0.6 0.2 295);
+}
+.area-ring.is-inactive {
+  stroke: oklch(0.62 0.03 260);
+  fill: oklch(0.62 0.03 260);
 }
 .area-dot {
   stroke: white;
   fill: var(--brand);
   cursor: pointer;
 }
-.area-dot.is-expansion {
+.area-dot.is-installing {
   fill: var(--warning);
+}
+.area-dot.is-expansion {
+  fill: oklch(0.6 0.2 295);
+}
+.area-dot.is-inactive {
+  fill: oklch(0.62 0.03 260);
 }
 .area-dot.is-user {
   fill: var(--ink);

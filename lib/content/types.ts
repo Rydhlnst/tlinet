@@ -55,12 +55,16 @@ export type CoverageContent = {
     locateLabel: string;
     regionsLabel: string;
     activeLabel: string;
+    inactiveLabel: string;
+    installingLabel: string;
     expansionLabel: string;
     myLocationLabel: string;
     signupLabel: string;
     clickHint: string;
     coveredText: string;
+    installingText: string;
     expansionText: string;
+    inactiveText: string;
     outsideText: string;
     centerLat: number;
     centerLng: number;
