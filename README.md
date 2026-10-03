@@ -8,7 +8,7 @@ Neon Postgres (Drizzle) + Cloudflare R2 untuk gambar.
 1. Salin `.env.example` menjadi `.env.local` dan isi nilainya.
 2. `npm install`
 3. `npm run db:push` — membuat tabel di database.
-4. `npm run db:seed` — mengisi konten awal dan akun admin (tabel yang sudah berisi dilewati).
+4. `npm run db:seed` — mengisi konten awal (tabel yang sudah berisi dilewati).
 5. `npm run dev`, lalu buka `http://localhost:3000`. Dashboard ada di `/admin`.
 
 ## Environment variable
@@ -18,7 +18,7 @@ Neon Postgres (Drizzle) + Cloudflare R2 untuk gambar.
 | `NEXT_PUBLIC_SITE_URL` | Alamat publik situs, mis. `https://domain-anda.com`. Dipakai untuk URL kanonis, sitemap, robots.txt, dan Open Graph |
 | `DATABASE_URL` | Koneksi Neon Postgres (juga dibaca saat build) |
 | `SESSION_SECRET` | Menandatangani cookie sesi admin (wajib di produksi) |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Hanya dibaca `npm run db:seed` untuk membuat akun admin pertama |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Akun admin dashboard. Kata sandi minimal 8 karakter; menggantinya mengakhiri semua sesi login |
 | `R2_*` | Cloudflare R2 untuk gambar unggahan (opsional, lihat di bawah) |
 
 ## Struktur
@@ -53,8 +53,9 @@ setelah berpindah penyimpanan, karena konten menyimpan URL lengkapnya.
 ## Deploy ke Vercel
 
 1. Impor repo di Vercel.
-2. Di Project Settings → Environment Variables, tambahkan `NEXT_PUBLIC_SITE_URL`, `DATABASE_URL`, dan `SESSION_SECRET`
-   (serta `R2_*` bila dipakai). `ADMIN_EMAIL` dan `ADMIN_PASSWORD` tidak diperlukan di Vercel; keduanya hanya dibaca `npm run db:seed`.
+2. Di Project Settings → Environment Variables, tambahkan `NEXT_PUBLIC_SITE_URL`, `DATABASE_URL`, `SESSION_SECRET`,
+   `ADMIN_EMAIL`, dan `ADMIN_PASSWORD` (serta `R2_*` bila dipakai). Untuk mengganti kata sandi admin, ubah
+   `ADMIN_PASSWORD` lalu redeploy.
 3. Deploy. Database harus sudah di-push dan di-seed sebelum build pertama, karena halaman publik dibuat saat build.
 
 Fungsi server dijalankan di region `sin1` (lihat `vercel.json`) agar dekat dengan database Neon di Singapura.

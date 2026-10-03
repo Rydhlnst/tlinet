@@ -20,7 +20,6 @@ import {
   Search,
   Settings,
   Tags,
-  UserRound,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -95,7 +94,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/media", label: "Media", icon: FolderOpen, keywords: "gambar unggah foto r2" },
       { href: "/admin/pages/settings", label: "Pengaturan Situs", icon: Settings, keywords: "merek kontak whatsapp footer navigasi seo logo" },
-      { href: "/admin/account", label: "Akun", icon: UserRound, keywords: "kata sandi password" },
     ],
   },
 ];
@@ -247,12 +245,6 @@ export function AdminShell({ admin, brandName, newLeads, children }: ShellProps)
                     <span className="truncate text-xs font-normal text-muted-foreground">{admin.email}</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/account">
-                      <UserRound />
-                      Akun
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem
                     variant="destructive"
                     onSelect={() => {

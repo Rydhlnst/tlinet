@@ -3,16 +3,15 @@
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createSession, destroySession, getAdmin } from "@/lib/auth";
+import { createSession, credentialsConfigured, credentialsMatch, destroySession, getAdmin } from "@/lib/auth";
 import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
 import { deleteRecord, saveContent, saveRecord, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
-import { adminUsers, mediaAssets } from "@/lib/db/schema";
-import { hashPassword, verifyPassword } from "@/lib/password";
+import { mediaAssets } from "@/lib/db/schema";
 import { deleteR2Object } from "@/lib/storage";
 
-export type FormState = { error?: string; success?: string };
+export type FormState = { error?: string };
 
 const expired: SaveResult = { ok: false, message: "Sesi berakhir. Silakan masuk kembali." };
 
@@ -23,18 +22,16 @@ function refreshSite() {
 }
 
 export async function loginAction(_previous: FormState, formData: FormData): Promise<FormState> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  if (!db) return { error: "Database belum diatur. Isi DATABASE_URL lalu jalankan npm run db:seed." };
-  if (!email || !password) return { error: "Email dan kata sandi wajib diisi." };
-
-  const [user] = await db.select().from(adminUsers).where(eq(adminUsers.email, email)).limit(1);
-  const valid = user ? await verifyPassword(password, user.passwordHash) : false;
-  if (!user || !valid) {
+  if (!credentialsConfigured()) {
+    return { error: "Akun admin belum diatur. Isi ADMIN_EMAIL dan ADMIN_PASSWORD (minimal 8 karakter) di environment." };
+  }
+  if (!credentialsMatch(email, password)) {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return { error: "Email atau kata sandi salah." };
   }
-  await createSession(user.id);
+  await createSession();
   redirect("/admin");
 }
 
@@ -92,19 +89,4 @@ export async function deleteMediaAction(id: string): Promise<SaveResult> {
   }
   await db.delete(mediaAssets).where(eq(mediaAssets.id, id));
   return { ok: true, message: "Media dihapus." };
-}
-
-export async function changePasswordAction(_previous: FormState, formData: FormData): Promise<FormState> {
-  const admin = await getAdmin();
-  if (!admin || !db) return { error: expired.message };
-  const current = String(formData.get("current") ?? "");
-  const next = String(formData.get("next") ?? "");
-  const confirm = String(formData.get("confirm") ?? "");
-  if (next.length < 8) return { error: "Kata sandi baru minimal 8 karakter." };
-  if (next !== confirm) return { error: "Konfirmasi kata sandi tidak sama." };
-
-  const [user] = await db.select().from(adminUsers).where(eq(adminUsers.id, admin.id)).limit(1);
-  if (!user || !(await verifyPassword(current, user.passwordHash))) return { error: "Kata sandi saat ini salah." };
-  await db.update(adminUsers).set({ passwordHash: await hashPassword(next), updatedAt: new Date() }).where(eq(adminUsers.id, admin.id));
-  return { success: "Kata sandi diperbarui." };
 }

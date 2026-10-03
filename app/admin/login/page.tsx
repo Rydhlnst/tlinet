@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/admin/auth-forms";
+import { LoginForm } from "@/components/admin/login-form";
 import { Brand } from "@/components/site/brand";
 import { getAdmin } from "@/lib/auth";
 import { getContent } from "@/lib/data";

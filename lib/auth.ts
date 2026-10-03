@@ -1,13 +1,17 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { db } from "./db";
-import { adminUsers } from "./db/schema";
 
 export const sessionCookie = "tl_admin";
 const maxAgeSeconds = 60 * 60 * 12;
+const minPasswordLength = 8;
+
+/** Akun admin diatur lewat environment: ADMIN_EMAIL dan ADMIN_PASSWORD. */
+const adminEmail = () => process.env.ADMIN_EMAIL?.trim().toLowerCase() ?? "";
+const adminPassword = () => process.env.ADMIN_PASSWORD ?? "";
+
+export const credentialsConfigured = () => Boolean(adminEmail()) && adminPassword().length >= minPasswordLength;
 
 function secret() {
   const value = process.env.SESSION_SECRET;
@@ -16,7 +20,18 @@ function secret() {
   return "development-only-session-secret";
 }
 
-const sign = (payload: string) => createHmac("sha256", secret()).update(payload).digest("base64url");
+const digest = (value: string) => createHash("sha256").update(value).digest();
+
+/** Perbandingan waktu-konstan; kedua nilai di-hash dulu agar panjangnya sama. */
+export function credentialsMatch(email: string, password: string) {
+  if (!credentialsConfigured()) return false;
+  const emailOk = timingSafeEqual(digest(email.trim().toLowerCase()), digest(adminEmail()));
+  const passwordOk = timingSafeEqual(digest(password), digest(adminPassword()));
+  return emailOk && passwordOk;
+}
+
+// Kata sandi ikut menjadi kunci tanda tangan, sehingga menggantinya di env mengakhiri semua sesi lama.
+const sign = (payload: string) => createHmac("sha256", `${secret()}:${adminPassword()}`).update(payload).digest("base64url");
 
 function readSession(value: string | undefined) {
   if (!value) return null;
@@ -25,15 +40,15 @@ function readSession(value: string | undefined) {
   const expected = sign(payload);
   if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   try {
-    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { uid?: string; exp?: number };
-    return typeof parsed.uid === "string" && typeof parsed.exp === "number" && parsed.exp > Date.now() ? parsed.uid : null;
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { email?: string; exp?: number };
+    return typeof parsed.email === "string" && typeof parsed.exp === "number" && parsed.exp > Date.now() ? parsed.email : null;
   } catch {
     return null;
   }
 }
 
-export async function createSession(userId: string) {
-  const payload = Buffer.from(JSON.stringify({ uid: userId, exp: Date.now() + maxAgeSeconds * 1000 })).toString("base64url");
+export async function createSession() {
+  const payload = Buffer.from(JSON.stringify({ email: adminEmail(), exp: Date.now() + maxAgeSeconds * 1000 })).toString("base64url");
   (await cookies()).set(sessionCookie, `${payload}.${sign(payload)}`, {
     httpOnly: true,
     sameSite: "lax",
@@ -47,18 +62,13 @@ export async function destroySession() {
   (await cookies()).delete(sessionCookie);
 }
 
-export type AdminUser = { id: string; email: string; name: string };
+export type AdminUser = { email: string; name: string };
 
-/** Admin yang sedang masuk, atau `null`. Akun yang sudah dihapus dari database tidak lagi dianggap masuk. */
+/** Admin yang sedang masuk, atau `null`. Sesi gugur bila ADMIN_EMAIL atau ADMIN_PASSWORD diganti. */
 export const getAdmin = cache(async (): Promise<AdminUser | null> => {
-  const userId = readSession((await cookies()).get(sessionCookie)?.value);
-  if (!userId || !db) return null;
-  const [user] = await db
-    .select({ id: adminUsers.id, email: adminUsers.email, name: adminUsers.name })
-    .from(adminUsers)
-    .where(eq(adminUsers.id, userId))
-    .limit(1);
-  return user ?? null;
+  if (!credentialsConfigured()) return null;
+  const email = readSession((await cookies()).get(sessionCookie)?.value);
+  return email && email === adminEmail() ? { email, name: "Administrator" } : null;
 });
 
 export async function requireAdmin() {

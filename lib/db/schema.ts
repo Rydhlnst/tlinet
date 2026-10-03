@@ -122,11 +122,3 @@ export const mediaAssets = pgTable("media_assets", {
   data: text("data"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
-
-export const adminUsers = pgTable("admin_users", {
-  id: text("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull().default("Administrator"),
-  passwordHash: text("password_hash").notNull(),
-  ...timestamps,
-});
