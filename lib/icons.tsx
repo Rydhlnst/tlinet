@@ -1,0 +1,57 @@
+import {
+  Activity,
+  Building2,
+  CircleHelp,
+  Clock,
+  Gauge,
+  Globe,
+  Headset,
+  House,
+  Infinity as InfinityIcon,
+  MapPin,
+  MessageCircle,
+  Rocket,
+  Router,
+  Server,
+  ShieldCheck,
+  Signal,
+  Sparkles,
+  Users,
+  Wallet,
+  Wifi,
+  Wrench,
+  Zap,
+  type LucideIcon,
+  type LucideProps,
+} from "lucide-react";
+
+/** Ikon yang bisa dipilih dari dashboard. Kuncinya tersimpan di konten. */
+export const icons: Record<string, { label: string; icon: LucideIcon }> = {
+  zap: { label: "Petir (kecepatan)", icon: Zap },
+  shield: { label: "Perisai (andal)", icon: ShieldCheck },
+  infinity: { label: "Tak terbatas", icon: InfinityIcon },
+  headset: { label: "Headset (dukungan)", icon: Headset },
+  home: { label: "Rumah", icon: House },
+  building: { label: "Gedung (bisnis)", icon: Building2 },
+  server: { label: "Server (dedicated)", icon: Server },
+  wifi: { label: "Wi-Fi", icon: Wifi },
+  router: { label: "Router", icon: Router },
+  signal: { label: "Sinyal", icon: Signal },
+  gauge: { label: "Speedometer", icon: Gauge },
+  globe: { label: "Globe", icon: Globe },
+  "map-pin": { label: "Pin lokasi", icon: MapPin },
+  activity: { label: "Aktivitas (status)", icon: Activity },
+  message: { label: "Pesan (chat)", icon: MessageCircle },
+  help: { label: "Tanda tanya", icon: CircleHelp },
+  wallet: { label: "Dompet (pembayaran)", icon: Wallet },
+  wrench: { label: "Kunci pas (instalasi)", icon: Wrench },
+  clock: { label: "Jam", icon: Clock },
+  users: { label: "Orang", icon: Users },
+  rocket: { label: "Roket", icon: Rocket },
+  sparkles: { label: "Kilau (inovasi)", icon: Sparkles },
+};
+
+export function Icon({ name, ...props }: { name: string } & LucideProps) {
+  const Component = (icons[name] ?? icons.zap).icon;
+  return <Component {...props} />;
+}

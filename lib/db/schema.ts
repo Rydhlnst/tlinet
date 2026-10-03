@@ -1,0 +1,132 @@
+import { boolean, date, doublePrecision, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+
+const timestamps = {
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+};
+
+const ordering = {
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+};
+
+/** Dokumen konten per halaman (settings, home, coverage, help, about, news, register). */
+export const siteContent = pgTable("site_content", {
+  key: text("key").primaryKey(),
+  data: jsonb("data").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const packageCategories = pgTable("package_categories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  icon: text("icon").notNull().default("home"),
+  ...ordering,
+  ...timestamps,
+});
+
+export const packages = pgTable("packages", {
+  id: text("id").primaryKey(),
+  categoryId: text("category_id").notNull(),
+  name: text("name").notNull(),
+  badge: text("badge").notNull().default(""),
+  description: text("description").notNull().default(""),
+  speed: text("speed").notNull(),
+  speedLabel: text("speed_label").notNull().default("Fiber Optic"),
+  price: text("price").notNull(),
+  priceUnit: text("price_unit").notNull().default("/ bulan"),
+  features: jsonb("features").$type<string[]>().notNull().default([]),
+  featured: boolean("featured").notNull().default(false),
+  ctaLabel: text("cta_label").notNull().default("Pilih Paket Ini"),
+  ...ordering,
+  ...timestamps,
+});
+
+export const faqs = pgTable("faqs", {
+  id: text("id").primaryKey(),
+  category: text("category").notNull().default(""),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  showOnHome: boolean("show_on_home").notNull().default(false),
+  ...ordering,
+  ...timestamps,
+});
+
+export const coverageAreas = pgTable("coverage_areas", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  district: text("district").notNull().default(""),
+  city: text("city").notNull(),
+  status: text("status").notNull().default("active"),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
+  radiusKm: doublePrecision("radius_km").notNull().default(3),
+  odpCount: integer("odp_count").notNull().default(0),
+  maxSpeed: text("max_speed").notNull().default(""),
+  fiberAvailability: text("fiber_availability").notNull().default(""),
+  note: text("note").notNull().default(""),
+  ...ordering,
+  ...timestamps,
+});
+
+export const articles = pgTable("articles", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  category: text("category").notNull().default(""),
+  excerpt: text("excerpt").notNull().default(""),
+  body: text("body").notNull().default(""),
+  coverUrl: text("cover_url").notNull().default(""),
+  tags: jsonb("tags").$type<string[]>().notNull().default([]),
+  readMinutes: integer("read_minutes").notNull().default(3),
+  publishDate: date("publish_date").notNull(),
+  status: text("status").notNull().default("draft"),
+  ...timestamps,
+});
+
+export const clients = pgTable("clients", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  logoUrl: text("logo_url").notNull().default(""),
+  ...ordering,
+  ...timestamps,
+});
+
+export const leads = pgTable(
+  "leads",
+  {
+    id: text("id").primaryKey(),
+    type: text("type").notNull(),
+    name: text("name").notNull(),
+    phone: text("phone").notNull(),
+    city: text("city").notNull().default(""),
+    address: text("address").notNull().default(""),
+    need: text("need").notNull().default(""),
+    source: text("source").notNull().default(""),
+    packageName: text("package_name").notNull().default(""),
+    status: text("status").notNull().default("new"),
+    note: text("note").notNull().default(""),
+    ...timestamps,
+  },
+  (table) => [index("leads_status_created_idx").on(table.status, table.createdAt)],
+);
+
+/** `data` hanya terisi (base64) bila R2 belum diatur; saat itu `url` menunjuk ke /media/<id>. */
+export const mediaAssets = pgTable("media_assets", {
+  id: text("id").primaryKey(),
+  url: text("url").notNull(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull().default(0),
+  data: text("data"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const adminUsers = pgTable("admin_users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull().default("Administrator"),
+  passwordHash: text("password_hash").notNull(),
+  ...timestamps,
+});

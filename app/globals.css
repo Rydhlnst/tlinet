@@ -1,26 +1,175 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Situs hanya punya tema terang; varian dark: baru aktif bila ada kelas .dark. */
+@custom-variant dark (&:is(.dark *));
+
 
 @theme inline {
   --color-background: var(--background);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-ink: var(--ink);
+  --color-warning: var(--warning);
+  --animate-marquee: marquee 40s linear infinite;
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0.045 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.045 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.045 265);
+  /* Biru TLINET: warna dasar tombol dan aksen. */
+  --primary: oklch(0.53 0.225 262);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.965 0.012 262);
+  --secondary-foreground: oklch(0.3 0.09 265);
+  --muted: oklch(0.975 0.007 262);
+  --muted-foreground: oklch(0.5 0.035 265);
+  --accent: oklch(0.962 0.016 262);
+  --accent-foreground: oklch(0.3 0.09 265);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0.012 262);
+  --input: oklch(0.905 0.014 262);
+  --ring: oklch(0.68 0.14 262);
+  --brand: oklch(0.6 0.21 258);
+  --brand-ink: oklch(0.48 0.22 263);
+  --brand-soft: oklch(0.96 0.026 258);
+  --brand-foreground: oklch(1 0 0);
+  /* Biru malam untuk permukaan gelap: footer, ajakan, kartu unggulan. */
+  --ink: oklch(0.19 0.065 266);
+  --warning: oklch(0.75 0.15 75);
+  --chart-1: oklch(0.6 0.21 258);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.982 0.006 262);
+  --sidebar-foreground: oklch(0.2 0.045 265);
+  --sidebar-primary: oklch(0.53 0.225 262);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.955 0.014 262);
+  --sidebar-accent-foreground: oklch(0.3 0.09 265);
+  --sidebar-border: oklch(0.922 0.012 262);
+  --sidebar-ring: oklch(0.68 0.14 262);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight text-balance;
+  }
+}
+
+@layer components {
+  /* Kisi halus di belakang hero. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 75%);
+  }
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+}
+
+/* Leaflet menumpuk di atas header lengket tanpa ini. */
+.leaflet-container {
+  z-index: 0;
+  font-family: inherit;
+}
+
+/* Peta dibuat nyaris monokrom agar titik jaringan menonjol. */
+.leaflet-tile-pane {
+  filter: grayscale(0.9) contrast(0.95) brightness(1.04);
+}
+.area-ring {
+  stroke: var(--brand);
+  fill: var(--brand);
+}
+.area-ring.is-expansion {
+  stroke: var(--warning);
+  fill: var(--warning);
+}
+.area-dot {
+  stroke: white;
+  fill: var(--brand);
+  cursor: pointer;
+}
+.area-dot.is-expansion {
+  fill: var(--warning);
+}
+.area-dot.is-user {
+  fill: var(--ink);
 }
