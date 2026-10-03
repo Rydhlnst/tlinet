@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { Faq } from "@/lib/data";
+import { Icon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
+
+/** Ikon pertanyaan bergilir menurut urutan, sehingga pertanyaan yang berdekatan tidak berikon sama. */
+const rotation = ["file", "wifi", "map-pin", "wrench", "gift", "wallet", "activity"];
 
 /** Daftar FAQ. Bila `categories` diberikan, tampil pil filter kategori di atasnya. */
 export function FaqList({ faqs, categories, allLabel }: { faqs: Faq[]; categories?: string[]; allLabel?: string }) {
@@ -32,11 +36,20 @@ export function FaqList({ faqs, categories, allLabel }: { faqs: Faq[]; categorie
       )}
 
       {visible.length ? (
-        <Accordion type="single" collapsible defaultValue={visible[0].id} className="flex flex-col gap-3">
-          {visible.map((faq) => (
-            <AccordionItem key={faq.id} value={faq.id} className="rounded-2xl border bg-card px-5 last:border-b data-[state=open]:shadow-sm sm:px-6">
-              <AccordionTrigger className="py-5 text-left text-base font-medium hover:no-underline">{faq.question}</AccordionTrigger>
-              <AccordionContent className="pb-5 text-[15px] leading-relaxed text-muted-foreground">{faq.answer}</AccordionContent>
+        <Accordion type="single" collapsible defaultValue={visible[0].id} className="flex flex-col gap-3.5">
+          {visible.map((faq, index) => (
+            <AccordionItem
+              key={faq.id}
+              value={faq.id}
+              className="rounded-2xl border bg-card px-4 shadow-sm shadow-primary/5 transition-colors last:border-b data-[state=open]:border-primary/40 data-[state=open]:bg-brand-soft/50 sm:px-5"
+            >
+              <AccordionTrigger className="items-center gap-4 py-4 text-left text-base font-semibold hover:no-underline **:data-[slot=accordion-trigger-icon]:size-9 **:data-[slot=accordion-trigger-icon]:rounded-full **:data-[slot=accordion-trigger-icon]:bg-muted **:data-[slot=accordion-trigger-icon]:p-2.5 **:data-[slot=accordion-trigger-icon]:text-foreground">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-soft text-primary ring-1 ring-primary/10">
+                  <Icon name={rotation[index % rotation.length]} className="size-5" />
+                </span>
+                <span className="flex-1">{faq.question}</span>
+              </AccordionTrigger>
+              <AccordionContent className="pr-12 pb-5 pl-15 text-[15px] leading-relaxed text-muted-foreground">{faq.answer}</AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>

@@ -48,6 +48,13 @@ const iconCards = (name: string, label: string, itemLabel: string, extra: Field[
   ],
 });
 
+const accent: Field = {
+  name: "titleAccent",
+  label: "Bagian judul yang diberi gradasi biru",
+  type: "text",
+  help: "Harus persis sama dengan sebagian teks judul. Kosongkan bila tidak perlu.",
+};
+
 const cta: Field[] = [
   { name: "ctaLabel", label: "Teks tombol", type: "text", half: true },
   { name: "ctaHref", label: "Tautan tombol", type: "url", half: true },
@@ -110,6 +117,7 @@ export const pageDefs: PageDef[] = [
         title: "Kualitas jaringan",
         fields: [
           ...head,
+          accent,
           ...cta,
           {
             name: "items",
@@ -118,6 +126,8 @@ export const pageDefs: PageDef[] = [
             itemLabel: "Angka",
             titleField: "title",
             fields: [
+              { name: "icon", label: "Ikon", type: "icon" },
+              { name: "imageUrl", label: "Ilustrasi", type: "image", help: "Opsional. Gambar berlatar putih/terang di sudut kanan atas kartu; kosongkan untuk memakai ilustrasi bawaan." },
               { name: "value", label: "Angka", type: "text", required: true, half: true },
               { name: "title", label: "Judul", type: "text", required: true, half: true },
               { name: "description", label: "Deskripsi", type: "textarea", rows: 2 },
@@ -128,8 +138,10 @@ export const pageDefs: PageDef[] = [
       {
         path: "steps",
         title: "Cara berlangganan",
+        description: "Ilustrasi kartu mengikuti urutan langkah: lokasi, paket, lalu router.",
         fields: [
           ...head,
+          { name: "titleAccent", label: "Kata dalam judul yang diberi gradasi biru", type: "text", help: "Harus persis sama dengan bagian judul, mis. Berlangganan." },
           ...cta,
           {
             name: "items",
@@ -140,15 +152,29 @@ export const pageDefs: PageDef[] = [
             fields: [
               { name: "title", label: "Judul", type: "text", required: true },
               { name: "description", label: "Deskripsi", type: "textarea", rows: 2 },
+              { name: "ctaLabel", label: "Teks tombol", type: "text", half: true },
+              { name: "ctaHref", label: "Tautan tombol", type: "url", half: true },
             ],
           },
         ],
       },
       {
+        path: "news",
+        title: "Bagian berita",
+        description: "Menampilkan tiga artikel terbit terbaru. Artikelnya diatur di menu Artikel Berita.",
+        fields: [...head, accent, ...cta],
+      },
+      {
         path: "faq",
         title: "Bagian FAQ",
         description: "Pertanyaan yang tampil diatur di menu FAQ (opsi “Tampil di beranda”).",
-        fields: [...head, ...cta],
+        fields: [
+          ...head,
+          accent,
+          ...cta,
+          { name: "helpTitle", label: "Judul kartu bantuan", type: "text", half: true, help: "Kartu ini membuka chat WhatsApp." },
+          { name: "helpDescription", label: "Keterangan kartu bantuan", type: "text", half: true },
+        ],
       },
       {
         path: "clients",
@@ -253,7 +279,9 @@ export const pageDefs: PageDef[] = [
         fields: [
           { name: "eyebrow", label: "Label kecil", type: "text", half: true },
           { name: "title", label: "Judul", type: "text", required: true },
+          accent,
           { name: "body", label: "Isi", type: "textarea", rows: 7, help: "Pisahkan paragraf dengan satu baris kosong." },
+          iconCards("features", "Keunggulan singkat", "Keunggulan"),
           {
             name: "highlights",
             label: "Sorotan",
@@ -261,13 +289,17 @@ export const pageDefs: PageDef[] = [
             itemLabel: "Sorotan",
             titleField: "title",
             fields: [
+              { name: "icon", label: "Ikon", type: "icon" },
               { name: "title", label: "Judul", type: "text", required: true, half: true },
               { name: "description", label: "Keterangan", type: "text", half: true },
             ],
           },
-          { name: "imageUrl", label: "Gambar", type: "image", help: "Opsional. Jika kosong, ditampilkan ilustrasi jaringan." },
-          { name: "cardTitle", label: "Judul kartu gambar", type: "text" },
-          { name: "cardDescription", label: "Deskripsi kartu gambar", type: "textarea", rows: 2 },
+          { name: "imageUrl", label: "Gambar", type: "image", help: "Opsional. Jika kosong, ditampilkan peta jaringan Sulawesi." },
+          { name: "cardTitle", label: "Judul panel pada kartu peta", type: "text" },
+          { name: "cardDescription", label: "Deskripsi panel pada kartu peta", type: "textarea", rows: 2 },
+          { name: "bannerTitle", label: "Judul kartu bawah", type: "text", half: true },
+          { name: "bannerDescription", label: "Keterangan kartu bawah", type: "text", half: true },
+          { name: "bannerHref", label: "Tautan kartu bawah", type: "url" },
         ],
       },
       {

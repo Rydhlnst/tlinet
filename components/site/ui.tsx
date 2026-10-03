@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { AccentText, LinedEyebrow } from "./decor";
 import { NodeField } from "./node-field";
 
 const linkButtonVariants = {
   primary: "bg-primary text-primary-foreground shadow-[0_10px_28px_-10px] shadow-primary/80 hover:brightness-110",
   brand: "bg-primary text-primary-foreground shadow-[0_10px_28px_-10px] shadow-primary/80 hover:brightness-110",
   ink: "bg-ink text-white shadow-[0_10px_28px_-14px] shadow-ink/80 hover:bg-ink/90",
+  soft: "bg-brand-soft text-brand-ink hover:bg-primary hover:text-primary-foreground",
   outline: "border border-border bg-background text-foreground hover:border-primary/50 hover:text-primary",
   white: "bg-white text-ink shadow-[0_10px_28px_-12px] shadow-black/40 hover:bg-white/90",
   glass: "border border-white/20 bg-white/5 text-white backdrop-blur hover:border-white/35 hover:bg-white/10",
@@ -71,21 +73,26 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
 export function SectionHeading({
   eyebrow,
   title,
+  titleAccent,
   description,
   align = "center",
   className,
 }: {
   eyebrow?: string;
   title: string;
+  /** Bagian judul yang diberi gradasi biru. */
+  titleAccent?: string;
   description?: string;
   align?: "center" | "left";
   className?: string;
 }) {
   return (
-    <div className={cn("flex max-w-2xl flex-col gap-4", align === "center" && "mx-auto items-center text-center", className)}>
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="text-3xl leading-[1.15] font-semibold sm:text-4xl">{title}</h2>
-      {description && <p className="text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">{description}</p>}
+    <div className={cn("flex max-w-3xl flex-col gap-4", align === "center" ? "mx-auto items-center text-center" : "items-start", className)}>
+      <LinedEyebrow align={align}>{eyebrow}</LinedEyebrow>
+      <h2 className="text-3xl leading-[1.12] font-bold sm:text-4xl lg:text-[2.75rem]">
+        <AccentText text={title} accent={titleAccent} />
+      </h2>
+      {description && <p className="max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">{description}</p>}
     </div>
   );
 }

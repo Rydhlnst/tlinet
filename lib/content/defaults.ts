@@ -119,27 +119,32 @@ export const defaultContent: ContentMap = {
     why: {
       eyebrow: "Kualitas Tanpa Kompromi",
       title: "Semua yang Anda Butuhkan untuk Koneksi Lebih Baik",
+      titleAccent: "Koneksi Lebih Baik",
       description:
         "Didukung oleh teknologi jaringan tercanggih, kami hadir untuk menjamin setiap detik aktivitas digital Anda berjalan tanpa hambatan.",
       ctaLabel: "Pelajari Infrastruktur Kami",
       ctaHref: "/tentang-kami",
       items: [
         {
+          icon: "zap",
           value: "100%",
           title: "Fiber Optic Murni",
           description: "Koneksi kabel FTTH murni hingga ke lokasi Anda tanpa tembaga.",
         },
         {
+          icon: "shield",
           value: "99.9%",
           title: "Network Uptime",
           description: "Jaminan keandalan koneksi jaringan berkat redundant backbone.",
         },
         {
+          icon: "headset",
           value: "24/7",
           title: "Dukungan Support",
           description: "Tim teknis siaga 24 jam nonstop siap membantu masalah Anda.",
         },
         {
+          icon: "map-pin",
           value: "6 Prov",
           title: "Cakupan Sulawesi",
           description: "Jangkauan jaringan meluas di Sulawesi Selatan, Utara, Tengah, dll.",
@@ -149,6 +154,7 @@ export const defaultContent: ContentMap = {
     steps: {
       eyebrow: "Proses Mudah & Cepat",
       title: "Cara Berlangganan",
+      titleAccent: "Berlangganan",
       description: "Terhubung dengan jaringan internet berkecepatan tinggi hanya dalam 3 langkah sederhana.",
       ctaLabel: "Cek Area Ketersediaan Sekarang",
       ctaHref: "/area-jangkauan",
@@ -156,21 +162,38 @@ export const defaultContent: ContentMap = {
         {
           title: "Cek Area",
           description: "Pastikan alamat rumah atau bisnis Anda sudah terjangkau jaringan fiber optic TLINET.",
+          ctaLabel: "Cek Ketersediaan",
+          ctaHref: "/area-jangkauan",
         },
         {
           title: "Pilih Paket",
           description:
             "Pilih paket internet rumah, bisnis, atau dedicated yang paling pas dengan anggaran & kebutuhan Anda.",
+          ctaLabel: "Lihat Paket",
+          ctaHref: "/#produk-layanan",
         },
         {
           title: "Nikmati Internet",
           description: "Tim teknisi kami datang membantu proses instalasi hingga jaringan siap digunakan sepenuhnya.",
+          ctaLabel: "Mulai Sekarang",
+          ctaHref: "/formulir-registrasi",
         },
       ],
     },
+    news: {
+      eyebrow: "Berita & Informasi",
+      title: "Informasi Terbaru Seputar TLINET",
+      titleAccent: "Seputar TLINET",
+      description: "Informasi terkini mengenai teknologi fiber optic, perkembangan jaringan di Sulawesi, dan tips digital.",
+      ctaLabel: "Lihat Semua Berita",
+      ctaHref: "/berita",
+    },
     faq: {
-      eyebrow: "Pusat Informasi",
+      eyebrow: "FAQ",
       title: "Pertanyaan yang Sering Ditanyakan",
+      titleAccent: "Sering Ditanyakan",
+      helpTitle: "Butuh Bantuan?",
+      helpDescription: "Tim kami siap membantu Anda 24/7",
       description: "Jawaban lengkap untuk pertanyaan paling populer mengenai layanan kami.",
       ctaLabel: "Lihat Semua Pertanyaan di Bantuan",
       ctaHref: "/bantuan",
@@ -288,15 +311,25 @@ export const defaultContent: ContentMap = {
     who: {
       eyebrow: "Siapa Kami",
       title: "Penyedia Internet Fiber Terpercaya Berpusat di Sulawesi",
+      titleAccent: "Fiber Terpercaya",
+      features: [
+        { icon: "zap", title: "Koneksi Cepat", description: "Stabil & Handal" },
+        { icon: "shield", title: "Jaringan Aman", description: "Kualitas Terjaga" },
+        { icon: "users", title: "Tim Lokal", description: "Siap Membantu" },
+        { icon: "settings", title: "Solusi Lengkap", description: "Rumah, Bisnis & Industri" },
+      ],
       body: "TLINET merupakan penyedia jasa layanan internet (ISP) berbasis fiber optic yang beroperasi penuh di wilayah Sulawesi, Indonesia. Kami berfokus menghadirkan koneksi cepat, stabil, dan terjangkau untuk hunian rumah tangga, tempat usaha, perkantoran, dan kawasan industri.\n\nDidukung oleh tim engineer berpengalaman dan infrastruktur backbone modern, kami berdedikasi membangun jaringan digital Sulawesi yang dapat diandalkan setiap saat.",
       highlights: [
-        { title: "100% FTTH", description: "Fiber to the Home" },
-        { title: "24/7 Helpdesk", description: "Dukungan Lokal" },
+        { icon: "signal", title: "100% FTTH", description: "Fiber to the Home" },
+        { icon: "headset", title: "24/7 Helpdesk", description: "Dukungan Lokal" },
       ],
       imageUrl: "",
       cardTitle: "Infrastruktur Digital Sulawesi",
       cardDescription:
         "Jaringan Fiber Backbone terhubung di Makassar, Manado, Palu, Kendari, Gorontalo & Mamuju.",
+      bannerTitle: "Membangun Sulawesi Lebih Terkoneksi",
+      bannerDescription: "Internet untuk masa depan yang lebih baik",
+      bannerHref: "/area-jangkauan",
     },
     vision: {
       title: "Visi Perusahaan",

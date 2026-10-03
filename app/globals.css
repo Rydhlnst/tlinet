@@ -5,6 +5,10 @@
 /* Situs hanya punya tema terang; varian dark: baru aktif bila ada kelas .dark. */
 @custom-variant dark (&:is(.dark *));
 
+/* Header masih di puncak halaman yang punya hero gelap: tampil transparan dengan teks putih.
+   Tanpa dukungan :has() varian ini tidak aktif dan header tetap berupa kaca terang. */
+@custom-variant on-hero (&:is(body:has(.hero-under-header) [data-at-top="true"] *));
+
 
 @theme inline {
   --color-background: var(--background);
@@ -187,10 +191,10 @@
   .surface-ink {
     background: linear-gradient(150deg, oklch(0.29 0.13 264), var(--ink) 65%);
   }
-  /* Header mengambang setinggi 4.75rem; hero gelap ditarik ke bawahnya agar menyatu. */
+  /* Header mengambang setinggi 4.25rem; hero gelap ditarik ke bawahnya agar menyatu. */
   .hero-under-header {
-    margin-top: -4.75rem;
-    padding-top: 4.75rem;
+    margin-top: -4.25rem;
+    padding-top: 4.25rem;
   }
   .container-page {
     @apply mx-auto w-full max-w-6xl px-5 sm:px-8;

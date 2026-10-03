@@ -26,10 +26,11 @@ type BrandProps = {
   highlight?: string;
   inverted?: boolean;
   className?: string;
+  highlightClassName?: string;
 };
 
 /** Logo dari CMS bila ada; jika tidak, lambang dan nama merek. */
-export function Brand({ name, logoUrl, highlight = "", inverted = false, className }: BrandProps) {
+export function Brand({ name, logoUrl, highlight = "", inverted = false, className, highlightClassName }: BrandProps) {
   if (logoUrl) return <CmsImage src={logoUrl} alt={name} loading="eager" className={cn("h-8 w-auto", className)} />;
 
   const cut = highlight && name.toLowerCase().endsWith(highlight.toLowerCase()) ? name.length - highlight.length : name.length;
@@ -38,7 +39,9 @@ export function Brand({ name, logoUrl, highlight = "", inverted = false, classNa
       <BrandMark />
       <span>
         {name.slice(0, cut)}
-        <span className={cn("bg-gradient-to-r bg-clip-text text-transparent", inverted ? "from-sky-300 to-brand" : "from-brand to-primary")}>
+        <span
+          className={cn("bg-gradient-to-r bg-clip-text text-transparent", inverted ? "from-sky-300 to-brand" : "from-brand to-primary", highlightClassName)}
+        >
           {name.slice(cut)}
         </span>
       </span>

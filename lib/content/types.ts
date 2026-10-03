@@ -42,9 +42,21 @@ export type HomeContent = {
   };
   features: SectionHead & { items: IconCard[] };
   packages: SectionHead & { note: string };
-  why: SectionHead & { ctaLabel: string; ctaHref: string; items: { value: string; title: string; description: string }[] };
-  steps: SectionHead & { ctaLabel: string; ctaHref: string; items: { title: string; description: string }[] };
-  faq: SectionHead & { ctaLabel: string; ctaHref: string };
+  why: SectionHead & {
+    titleAccent: string;
+    ctaLabel: string;
+    ctaHref: string;
+    items: { icon: string; value: string; title: string; description: string; imageUrl?: string }[];
+  };
+  steps: SectionHead & {
+    /** Bagian dari judul yang ditampilkan dengan gradasi biru; diabaikan bila tidak ada di dalam judul. */
+    titleAccent: string;
+    ctaLabel: string;
+    ctaHref: string;
+    items: { title: string; description: string; ctaLabel: string; ctaHref: string }[];
+  };
+  news: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string };
+  faq: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string; helpTitle: string; helpDescription: string };
   clients: SectionHead;
 };
 
@@ -84,11 +96,17 @@ export type AboutContent = {
   who: {
     eyebrow: string;
     title: string;
+    /** Bagian judul yang diberi gradasi biru. */
+    titleAccent: string;
     body: string;
-    highlights: { title: string; description: string }[];
+    features: IconCard[];
+    highlights: { icon: string; title: string; description: string }[];
     imageUrl: string;
     cardTitle: string;
     cardDescription: string;
+    bannerTitle: string;
+    bannerDescription: string;
+    bannerHref: string;
   };
   vision: { title: string; body: string };
   mission: { title: string; items: string[] };

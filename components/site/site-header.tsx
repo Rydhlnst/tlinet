@@ -17,23 +17,20 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Tombol ajakan header: gradasi biru dengan panah di dalam lingkaran kaca. */
+/** Tombol ajakan header: ringkas, panahnya bergeser saat disorot. */
 function HeaderCta({ href, label, className, onClick }: { href: string; label: string; className?: string; onClick?: () => void }) {
   return (
-    <LinkButton
-      href={href}
-      onClick={onClick}
-      className={cn("h-11 gap-2.5 bg-[linear-gradient(135deg,#4c8dff,#1f4fe0)] pr-1.5 pl-5 shadow-[0_10px_30px_-10px_rgba(59,130,246,0.9)]", className)}
-    >
+    <LinkButton href={href} onClick={onClick} className={cn("group h-10 gap-1.5 px-5", className)}>
       {label}
-      <span className="flex size-8 items-center justify-center rounded-full bg-white/20">
-        <ArrowRight />
-      </span>
+      <ArrowRight className="transition-transform duration-200 group-hover:translate-x-0.5" />
     </LinkButton>
   );
 }
 
-/** Header kaca mengambang; tingginya (4.75rem) dipakai kelas `hero-under-header`. */
+/**
+ * Header mengambang; tingginya (4.25rem) dipakai kelas `hero-under-header`.
+ * Di puncak halaman berhero gelap ia transparan (varian `on-hero`), selebihnya kaca terang.
+ */
 export function SiteHeader({ brandName, brandHighlight, logoUrl, navLinks, ctaLabel, ctaHref }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -48,20 +45,18 @@ export function SiteHeader({ brandName, brandHighlight, logoUrl, navLinks, ctaLa
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 px-3 pt-3">
+    <header data-at-top={!scrolled} className="sticky top-0 z-40 px-3 pt-3">
       <div
         className={cn(
-          "relative mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 rounded-full border border-white/10 pr-2.5 pl-5 text-white backdrop-blur-2xl transition-[background-color,box-shadow] duration-300 sm:pl-6",
-          // Garis cahaya tipis di tepi atas memberi kesan kaca.
-          "before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/50 before:to-transparent",
-          scrolled ? "bg-ink/85 shadow-[0_20px_44px_-20px_rgba(2,6,23,0.8)]" : "bg-ink/40 shadow-[0_12px_32px_-20px_rgba(2,6,23,0.7)]",
+          "mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 rounded-full border border-foreground/[0.07] bg-white/85 pr-2 pl-4 text-foreground shadow-[0_10px_32px_-16px_rgba(15,23,42,0.35)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,border-color,box-shadow,color] duration-300 sm:pl-5",
+          "on-hero:border-transparent on-hero:bg-transparent on-hero:text-white on-hero:shadow-none on-hero:backdrop-blur-none on-hero:backdrop-saturate-100",
         )}
       >
         <Link href="/" aria-label={`${brandName} — beranda`}>
-          <Brand name={brandName} highlight={brandHighlight} logoUrl={logoUrl} inverted />
+          <Brand name={brandName} highlight={brandHighlight} logoUrl={logoUrl} highlightClassName="on-hero:from-sky-300 on-hero:to-brand" />
         </Link>
 
-        <nav className="hidden items-center gap-0.5 rounded-full border border-white/10 bg-white/[0.04] p-1 lg:flex" aria-label="Menu utama">
+        <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Menu utama">
           {navLinks.map((link) => {
             const active = isActive(pathname, link.href);
             return (
@@ -70,24 +65,24 @@ export function SiteHeader({ brandName, brandHighlight, logoUrl, navLinks, ctaLa
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white",
-                  active && "bg-white/[0.12] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/[0.12]",
+                  "rounded-full px-3 py-2 text-[13px] font-medium whitespace-nowrap text-foreground/65 transition-colors hover:bg-foreground/[0.05] hover:text-foreground on-hero:text-white/75 on-hero:hover:bg-white/10 on-hero:hover:text-white",
+                  active &&
+                    "bg-brand-soft text-brand-ink hover:bg-brand-soft hover:text-brand-ink on-hero:bg-white/15 on-hero:text-white on-hero:hover:bg-white/15",
                 )}
               >
-                {active && <span className="size-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_2px_rgba(56,189,248,0.7)]" aria-hidden="true" />}
                 {link.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {ctaLabel && <HeaderCta href={cta} label={ctaLabel} className="hidden sm:inline-flex" />}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white lg:hidden"
+                className="flex size-10 items-center justify-center rounded-full border border-foreground/10 text-foreground transition-colors hover:bg-foreground/[0.05] lg:hidden on-hero:border-white/20 on-hero:text-white on-hero:hover:bg-white/10"
                 aria-label="Buka menu"
               >
                 <Menu className="size-4.5" />
@@ -107,13 +102,13 @@ export function SiteHeader({ brandName, brandHighlight, logoUrl, navLinks, ctaLa
                     onClick={() => setOpen(false)}
                     className={cn(
                       "rounded-xl px-3.5 py-3 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
-                      isActive(pathname, link.href) && "bg-muted text-foreground",
+                      isActive(pathname, link.href) && "bg-brand-soft text-brand-ink hover:bg-brand-soft hover:text-brand-ink",
                     )}
                   >
                     {link.label}
                   </Link>
                 ))}
-                {ctaLabel && <HeaderCta href={cta} label={ctaLabel} className="mt-4" onClick={() => setOpen(false)} />}
+                {ctaLabel && <HeaderCta href={cta} label={ctaLabel} className="mt-4 h-11" onClick={() => setOpen(false)} />}
               </nav>
             </SheetContent>
           </Sheet>

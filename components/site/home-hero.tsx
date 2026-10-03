@@ -6,6 +6,9 @@ import { HeroArcs } from "./hero-arcs";
 import { NodeField } from "./node-field";
 import { CmsImage, LinkButton, SmartLink } from "./ui";
 
+/** Garis pemisah sel kisi: 2×2 di bawah lg, satu baris empat kolom mulai lg. */
+const cellBorders = "border-white/10 odd:border-r max-lg:nth-[-n+2]:border-b lg:border-r lg:last:border-r-0";
+
 /** Hero beranda: foto latar penuh yang digelapkan di sisi kiri, statistik, dan kartu segmen pelanggan. */
 export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
   const { imageUrl } = hero;
@@ -14,10 +17,10 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
     <section className="hero-under-header relative isolate overflow-hidden bg-ink text-white">
       {/*
         Di layar lebar foto dipasang selebar hero dengan tinggi aslinya (tidak diperbesar), mulai di bawah header,
-        dan memudar di tepi atas dan bawah; di layar kecil foto menutupi seluruh hero.
+        dan memudar di tepi atas dan bawah; di layar kecil foto hanya mengisi bagian atas agar tidak diperbesar sampai buram.
       */}
       <div
-        className="absolute inset-x-0 top-0 grid h-full lg:top-14 lg:h-auto lg:min-h-[60%] -z-20 [mask-image:linear-gradient(to_bottom,black_55%,transparent)] lg:[mask-image:linear-gradient(to_bottom,transparent,black_12%,black_58%,transparent)]"
+        className="absolute inset-x-0 top-0 grid h-[38rem] lg:top-14 lg:h-auto lg:min-h-[60%] -z-20 [mask-image:linear-gradient(to_bottom,black_45%,transparent)] lg:[mask-image:linear-gradient(to_bottom,transparent,black_12%,black_58%,transparent)]"
         aria-hidden="true"
       >
         {imageUrl &&
@@ -37,33 +40,46 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
             <CmsImage src={imageUrl} alt="" loading="eager" fetchPriority="high" className="h-full w-full object-cover object-right" />
           ))}
       </div>
-      {/* Di layar lebar hanya sisi kiri yang digelapkan; di layar kecil teks menutupi seluruh foto. */}
+      {/* Di layar lebar hanya sisi kiri yang digelapkan; di layar kecil foto digelapkan makin pekat ke bawah. */}
       <div
-        className="absolute inset-0 -z-10 bg-ink/80 lg:bg-transparent lg:bg-[linear-gradient(90deg,var(--ink)_8%,color-mix(in_oklch,var(--ink)_90%,transparent)_42%,color-mix(in_oklch,var(--ink)_64%,transparent)_58%,color-mix(in_oklch,var(--ink)_30%,transparent)_78%,color-mix(in_oklch,var(--ink)_16%,transparent)_100%)]"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-ink/65 via-ink/85 to-ink lg:bg-[linear-gradient(90deg,var(--ink)_8%,color-mix(in_oklch,var(--ink)_90%,transparent)_42%,color-mix(in_oklch,var(--ink)_64%,transparent)_58%,color-mix(in_oklch,var(--ink)_30%,transparent)_78%,color-mix(in_oklch,var(--ink)_16%,transparent)_100%)]"
         aria-hidden="true"
       />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-64 bg-gradient-to-t from-ink to-transparent" aria-hidden="true" />
-      {/* Garis jaringan memakai kotak yang sama dengan foto agar berimpit dengan petanya, tetapi di atas lapisan gelap supaya tetap terlihat. */}
-      <div className="absolute inset-x-0 top-0 grid h-full lg:top-14 lg:h-auto lg:min-h-[60%] -z-10 opacity-90 [mask-image:linear-gradient(to_bottom,black_45%,transparent_80%)]" aria-hidden="true">
+      {/*
+        Garis jaringan memakai kotak yang sama dengan foto agar berimpit dengan petanya, tetapi di atas lapisan gelap supaya tetap terlihat.
+        Di layar kecil petanya terpotong dan garisnya jatuh di atas teks, jadi disembunyikan.
+      */}
+      <div className="absolute inset-x-0 top-14 -z-10 hidden min-h-[60%] opacity-90 [mask-image:linear-gradient(to_bottom,black_45%,transparent_80%)] lg:grid" aria-hidden="true">
         <HeroArcs className="h-full w-full" />
       </div>
+      <div className="absolute -top-32 -left-32 -z-10 size-[30rem] rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
       <NodeField tone="dark" className="-z-10 opacity-70 [mask-image:linear-gradient(to_right,black,transparent_65%)]" />
 
-      <div className="container-page flex flex-col gap-12 pt-14 pb-10 sm:pt-20 lg:pt-24 lg:pb-12">
-        <div className="flex max-w-2xl flex-col items-start gap-6">
-          {hero.badge && <p className="text-xs font-semibold tracking-[0.28em] text-white/80 uppercase">{hero.badge}</p>}
+      <div className="container-page flex flex-col gap-10 pt-12 pb-10 sm:gap-12 sm:pt-20 lg:pt-24 lg:pb-12">
+        <div className="flex max-w-2xl flex-col items-start gap-5 sm:gap-6">
+          {hero.badge && (
+            <p className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] py-1.5 pr-4 pl-3 text-[11px] font-semibold tracking-[0.2em] text-white/85 uppercase backdrop-blur">
+              <span className="relative flex size-2" aria-hidden="true">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-sky-400/70 motion-reduce:hidden" />
+                <span className="relative inline-flex size-2 rounded-full bg-sky-400" />
+              </span>
+              {hero.badge}
+            </p>
+          )}
           <h1 className="text-[2.75rem] leading-[1.04] font-bold sm:text-6xl lg:text-[4.25rem]">
             {hero.title}
             {hero.titleAccent && (
               <span className="block bg-gradient-to-r from-[#3b82ff] to-[#38bdf8] bg-clip-text pb-1 text-transparent">{hero.titleAccent}</span>
             )}
           </h1>
-          <p className="max-w-xl text-lg leading-relaxed text-pretty text-white/80">{hero.description}</p>
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+          <p className="max-w-xl text-base leading-relaxed text-pretty text-white/75 sm:text-lg">{hero.description}</p>
+          {/* Bersebelahan begitu lebarnya cukup; di ponsel sempit ditumpuk selebar layar. */}
+          <div className="flex w-full flex-col gap-3 pt-2 min-[26rem]:w-auto min-[26rem]:flex-row">
             {hero.primaryLabel && (
-              <LinkButton href={hero.primaryHref || "/formulir-registrasi"} className="h-12 px-7">
+              <LinkButton href={hero.primaryHref || "/formulir-registrasi"} className="group h-12 px-7">
                 {hero.primaryLabel}
-                <ArrowRight />
+                <ArrowRight className="transition-transform duration-200 group-hover:translate-x-0.5" />
               </LinkButton>
             )}
             {hero.secondaryLabel && (
@@ -75,13 +91,18 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
         </div>
 
         {hero.stats.length > 0 && (
-          <dl className="grid max-w-4xl grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 sm:gap-x-0 sm:divide-x sm:divide-white/15">
+          <dl className="grid max-w-xl grid-cols-2 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md lg:max-w-4xl lg:grid-cols-4">
             {hero.stats.slice(0, 4).map((stat) => (
-              <div key={stat.label} className="flex items-center gap-3 sm:px-5 sm:first:pl-0">
-                <Icon name={stat.icon || "gauge"} strokeWidth={1.6} className="size-9 shrink-0 text-[#4f8dff]" />
+              <div
+                key={stat.label}
+                className={`flex flex-col items-start gap-2.5 px-4 py-4 min-[30rem]:flex-row min-[30rem]:items-center min-[30rem]:gap-3 sm:px-5 ${cellBorders}`}
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#4f8dff]/15 text-[#8ab6ff] ring-1 ring-white/10 ring-inset">
+                  <Icon name={stat.icon || "gauge"} strokeWidth={1.7} className="size-5" />
+                </span>
                 <div className="flex flex-col-reverse">
-                  <dt className="text-xs whitespace-nowrap text-white/70">{stat.label}</dt>
-                  <dd className="text-xl font-semibold tracking-tight">{stat.value}</dd>
+                  <dt className="text-xs whitespace-nowrap text-white/65">{stat.label}</dt>
+                  <dd className="text-xl leading-tight font-semibold tracking-tight">{stat.value}</dd>
                 </div>
               </div>
             ))}
@@ -89,16 +110,19 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
         )}
 
         {hero.segments.length > 0 && (
-          <ul className="grid overflow-hidden rounded-3xl border border-white/10 bg-ink/55 backdrop-blur-md sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="grid grid-cols-2 overflow-hidden rounded-3xl border border-white/10 bg-ink/55 backdrop-blur-md lg:grid-cols-4">
             {hero.segments.slice(0, 4).map((segment) => (
-              <li key={segment.title} className="border-white/10 not-last:border-b sm:not-last:border-b-0 sm:odd:border-r lg:border-r lg:last:border-r-0">
-                <SmartLink href={segment.href || "/#produk-layanan"} className="group flex h-full items-center gap-4 px-5 py-5 transition-colors hover:bg-white/5">
-                  <Icon name={segment.icon} strokeWidth={1.5} className="size-9 shrink-0 text-white/90" />
+              <li key={segment.title} className={cellBorders}>
+                <SmartLink
+                  href={segment.href || "/#produk-layanan"}
+                  className="group relative flex h-full flex-col gap-3 p-4 transition-colors hover:bg-white/5 sm:flex-row sm:items-center sm:gap-4 sm:p-5"
+                >
+                  <Icon name={segment.icon} strokeWidth={1.5} className="size-8 shrink-0 text-white/90 sm:size-9" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">{segment.title}</span>
                     <span className="mt-0.5 block text-xs leading-relaxed text-white/65">{segment.description}</span>
                   </span>
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-white/80 transition-colors group-hover:border-white/50 group-hover:text-white">
+                  <span className="absolute top-4 right-4 flex size-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-white/80 transition-colors group-hover:border-white/50 group-hover:text-white sm:static">
                     <ArrowRight className="size-4" />
                   </span>
                 </SmartLink>

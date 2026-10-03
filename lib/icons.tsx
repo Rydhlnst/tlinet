@@ -3,6 +3,8 @@ import {
   Building2,
   CircleHelp,
   Factory,
+  FileText,
+  Gift,
   Clock,
   Gauge,
   Globe,
@@ -15,6 +17,7 @@ import {
   Rocket,
   Router,
   Server,
+  Settings,
   ShieldCheck,
   Signal,
   Sparkles,
@@ -53,6 +56,9 @@ export const icons: Record<string, { label: string; icon: LucideIcon }> = {
   users: { label: "Orang", icon: Users },
   rocket: { label: "Roket", icon: Rocket },
   sparkles: { label: "Kilau (inovasi)", icon: Sparkles },
+  settings: { label: "Roda gigi (solusi)", icon: Settings },
+  file: { label: "Dokumen", icon: FileText },
+  gift: { label: "Hadiah (promo)", icon: Gift },
 };
 
 export function Icon({ name, ...props }: { name: string } & LucideProps) {
