@@ -3,10 +3,11 @@ import { ArticleCard } from "@/components/site/article-card";
 import { CtaBand } from "@/components/site/cta-band";
 import { PageHero } from "@/components/site/ui";
 import { getContent, getPublishedArticles } from "@/lib/data";
+import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hero } = await getContent("news");
-  return { title: hero.title, description: hero.description };
+  return pageMetadata({ title: hero.title, description: hero.description, path: "/berita" });
 }
 
 export default async function NewsPage() {

@@ -4,10 +4,11 @@ import { CtaBand } from "@/components/site/cta-band";
 import { LeadForm } from "@/components/site/lead-form";
 import { PageHero, SectionHeading } from "@/components/site/ui";
 import { getContent, getCoverageAreas } from "@/lib/data";
+import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hero } = await getContent("coverage");
-  return { title: hero.title, description: hero.description };
+  return pageMetadata({ title: hero.title, description: hero.description, path: "/area-jangkauan" });
 }
 
 export default async function CoveragePage() {

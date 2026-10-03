@@ -7,6 +7,7 @@ import { listMediaAction, type MediaItem } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /** Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. */
 export async function uploadImage(file: File): Promise<string | null> {
@@ -92,10 +93,11 @@ export function ImageField({ value, onChange, id }: { value: string; onChange: (
             <DialogDescription>Gambar yang pernah diunggah ke dashboard.</DialogDescription>
           </DialogHeader>
           {library === null ? (
-            <p className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <LoaderCircle className="size-4 animate-spin" />
-              Memuat…
-            </p>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4" role="status" aria-label="Memuat media">
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((item) => (
+                <Skeleton key={item} className="aspect-square rounded-lg" />
+              ))}
+            </div>
           ) : library.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">Belum ada gambar. Unggah gambar terlebih dahulu.</p>
           ) : (

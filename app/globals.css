@@ -77,14 +77,15 @@
   --border: oklch(0.922 0.012 262);
   --input: oklch(0.905 0.014 262);
   --ring: oklch(0.68 0.14 262);
-  --brand: oklch(0.6 0.21 258);
+  /* Cukup gelap agar teks putih di atasnya lolos kontras AA (≥ 4.5:1). */
+  --brand: oklch(0.55 0.215 260);
   --brand-ink: oklch(0.48 0.22 263);
   --brand-soft: oklch(0.96 0.026 258);
   --brand-foreground: oklch(1 0 0);
   /* Biru malam untuk permukaan gelap: footer, ajakan, kartu unggulan. */
   --ink: oklch(0.19 0.065 266);
   --warning: oklch(0.75 0.15 75);
-  --chart-1: oklch(0.6 0.21 258);
+  --chart-1: oklch(0.55 0.215 260);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
@@ -138,6 +139,18 @@
       linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px);
     background-size: 44px 44px;
     mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 75%);
+  }
+  /* Kisi yang sama untuk permukaan gelap (ajakan penutup, kartu profil). */
+  .bg-grid-dark {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.07) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to bottom, black, transparent 85%);
+  }
+  /* Permukaan gelap bermerek: biru malam dengan gradasi linear tipis. */
+  .surface-ink {
+    background: linear-gradient(150deg, oklch(0.29 0.13 264), var(--ink) 65%);
   }
   .container-page {
     @apply mx-auto w-full max-w-6xl px-5 sm:px-8;

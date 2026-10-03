@@ -79,7 +79,7 @@ export function PackageTabs({ categories, packages }: { categories: PackageCateg
               aria-selected={active}
               onClick={() => setActiveId(category.id)}
               className={cn(
-                "flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                "flex min-w-0 items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                 active ? "bg-background shadow-sm ring-1 ring-border" : "text-muted-foreground hover:text-foreground",
               )}
             >

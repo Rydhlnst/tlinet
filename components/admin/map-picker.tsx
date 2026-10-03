@@ -3,6 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import type { Circle, CircleMarker, Map as LeafletMap } from "leaflet";
 import { useEffect, useRef, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Props = {
   lat: unknown;
@@ -47,6 +48,7 @@ export function MapPicker({ lat, lng, radiusKm, onPick }: Props) {
       const instance = L.map(container.current, { center: fallbackCenter, zoom: 7 });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 18,
+        detectRetina: true,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(instance);
       instance.on("click", (event) => pick.current(Number(event.latlng.lat.toFixed(6)), Number(event.latlng.lng.toFixed(6))));
@@ -79,5 +81,10 @@ export function MapPicker({ lat, lng, radiusKm, onPick }: Props) {
     if (!instance.getBounds().pad(-0.2).contains(position)) instance.setView(position, Math.max(instance.getZoom(), 12));
   }, [mapVersion, pointLat, pointLng, radius]);
 
-  return <div ref={container} className="h-64 w-full overflow-hidden rounded-lg border bg-muted" />;
+  return (
+    <div className="relative h-64 w-full overflow-hidden rounded-lg border bg-muted">
+      <div ref={container} className="size-full" />
+      {mapVersion === 0 && <Skeleton className="absolute inset-0 rounded-none" role="status" aria-label="Memuat peta" />}
+    </div>
+  );
 }

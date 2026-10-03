@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { LeadForm } from "@/components/site/lead-form";
 import { PageHero } from "@/components/site/ui";
 import { getContent, getPackages } from "@/lib/data";
+import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hero } = await getContent("register");
-  return { title: hero.title, description: hero.description };
+  return pageMetadata({ title: hero.title, description: hero.description, path: "/formulir-registrasi" });
 }
 
 export default async function RegisterPage({ searchParams }: PageProps<"/formulir-registrasi">) {

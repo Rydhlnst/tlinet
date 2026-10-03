@@ -9,8 +9,8 @@ export function CtaBand({ settings }: { settings: SiteSettings }) {
   const { cta } = settings;
   return (
     <section className="container-page py-20 sm:py-24">
-      <div className="relative overflow-hidden rounded-[2rem] bg-ink px-6 py-16 text-center text-white sm:px-16 sm:py-20">
-        <div className="absolute -top-32 left-1/2 size-[30rem] -translate-x-1/2 rounded-full bg-brand/40 blur-3xl" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-[2rem] surface-ink px-6 py-16 text-center text-white sm:px-16 sm:py-20">
+        <div className="bg-grid-dark absolute inset-0" aria-hidden="true" />
         <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-5">
           {cta.eyebrow && (
             <span className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1 text-xs font-semibold tracking-[0.14em] text-white/80 uppercase">

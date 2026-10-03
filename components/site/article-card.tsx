@@ -11,8 +11,7 @@ export function ArticleCover({ article, className, eager }: { article: Pick<Arti
     return <CmsImage src={article.coverUrl} alt={article.title} loading={eager ? "eager" : "lazy"} className={cn("size-full object-cover", className)} />;
   }
   return (
-    <div className={cn("relative flex size-full items-end overflow-hidden bg-ink p-6", className)} aria-hidden="true">
-      <div className="absolute -top-16 -right-10 size-56 rounded-full bg-brand/35 blur-3xl" />
+    <div className={cn("relative flex size-full items-end overflow-hidden surface-ink p-6", className)} aria-hidden="true">
       <svg viewBox="0 0 200 120" className="absolute inset-0 size-full" fill="none" preserveAspectRatio="xMidYMid slice">
         <g stroke="white" strokeOpacity="0.12">
           <circle cx="150" cy="30" r="30" />

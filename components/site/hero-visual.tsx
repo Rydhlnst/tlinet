@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CmsImage } from "./ui";
 
 type Stat = { value: string; label: string };
@@ -21,7 +22,21 @@ export function HeroVisual({ stats, imageUrl, alt }: { stats: Stat[]; imageUrl: 
   if (imageUrl) {
     return (
       <div className="relative w-full overflow-hidden rounded-[1.75rem] bg-ink shadow-2xl shadow-primary/25 ring-1 ring-ink/10 sm:rounded-[2rem]">
-        <CmsImage src={imageUrl} alt={alt} loading="eager" fetchPriority="high" className="aspect-[16/9] w-full object-cover" />
+        {/* Gambar lokal (public/ atau /media) dioptimalkan Next; URL luar ditampilkan apa adanya. */}
+        {imageUrl.startsWith("/") ? (
+          <Image
+            src={imageUrl}
+            alt={alt}
+            width={1600}
+            height={900}
+            preload
+            fetchPriority="high"
+            sizes="(min-width: 1152px) 1088px, 100vw"
+            className="aspect-[16/9] w-full object-cover"
+          />
+        ) : (
+          <CmsImage src={imageUrl} alt={alt} loading="eager" fetchPriority="high" className="aspect-[16/9] w-full object-cover" />
+        )}
         {/* Di layar kecil statistik berada di bawah foto agar tidak menutupinya. */}
         <div className="p-3 md:absolute md:inset-x-5 md:bottom-5 md:p-0">
           <StatTiles stats={stats} />
@@ -31,9 +46,8 @@ export function HeroVisual({ stats, imageUrl, alt }: { stats: Stat[]; imageUrl: 
   }
 
   return (
-    <div className="relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden rounded-[2rem] bg-ink p-4 shadow-2xl shadow-primary/20 sm:min-h-[30rem] sm:p-5">
+    <div className="relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden rounded-[2rem] surface-ink p-4 shadow-2xl shadow-primary/20 sm:min-h-[30rem] sm:p-5">
       <div className="absolute inset-0 -z-10" aria-hidden="true">
-        <div className="absolute top-[38%] left-1/2 size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/35 blur-3xl" />
         <svg viewBox="0 0 480 480" className="absolute top-[38%] left-1/2 w-[125%] max-w-none -translate-x-1/2 -translate-y-1/2" fill="none">
           {[60, 110, 165, 225].map((radius, index) => (
             <circle key={radius} cx="240" cy="240" r={radius} stroke="white" strokeOpacity={0.16 - index * 0.03} />

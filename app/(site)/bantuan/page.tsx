@@ -2,14 +2,16 @@ import { ArrowUpRight } from "lucide-react";
 import type { Metadata } from "next";
 import { CtaBand } from "@/components/site/cta-band";
 import { FaqList } from "@/components/site/faq-list";
+import { JsonLd } from "@/components/site/json-ld";
 import { PageHero, SmartLink } from "@/components/site/ui";
 import { getContent, getFaqs } from "@/lib/data";
 import { resolveHref, whatsappUrl } from "@/lib/format";
+import { pageMetadata } from "@/lib/seo";
 import { Icon } from "@/lib/icons";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hero } = await getContent("help");
-  return { title: "Bantuan", description: hero.description };
+  return pageMetadata({ title: "Bantuan & FAQ", description: hero.description, path: "/bantuan" });
 }
 
 export default async function HelpPage() {
@@ -18,6 +20,19 @@ export default async function HelpPage() {
 
   return (
     <>
+      {faqs.length > 0 && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map((faq) => ({
+              "@type": "Question",
+              name: faq.question,
+              acceptedAnswer: { "@type": "Answer", text: faq.answer },
+            })),
+          }}
+        />
+      )}
       <PageHero {...help.hero} />
 
       <section className="container-page relative z-10 -mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

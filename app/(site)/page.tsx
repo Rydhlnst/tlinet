@@ -1,4 +1,5 @@
 import { ArrowRight, CircleCheck } from "lucide-react";
+import type { Metadata } from "next";
 import { CtaBand } from "@/components/site/cta-band";
 import { FaqList } from "@/components/site/faq-list";
 import { HeroVisual } from "@/components/site/hero-visual";
@@ -6,7 +7,13 @@ import { PackageTabs } from "@/components/site/package-tabs";
 import { CmsImage, Eyebrow, LinkButton, SectionHeading, SmartLink } from "@/components/site/ui";
 import { getClients, getContent, getFaqs, getPackageCategories, getPackages } from "@/lib/data";
 import { Icon } from "@/lib/icons";
+import { pageMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getContent("settings");
+  return pageMetadata({ description: settings.seoDescription, path: "/" });
+}
 
 export default async function HomePage() {
   const [settings, home, categories, packages, faqs, clients] = await Promise.all([

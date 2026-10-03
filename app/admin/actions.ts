@@ -19,6 +19,7 @@ const expired: SaveResult = { ok: false, message: "Sesi berakhir. Silakan masuk 
 /** Halaman publik dibuat statis; setiap perubahan dari dashboard menyegarkan semuanya. */
 function refreshSite() {
   revalidatePath("/", "layout");
+  revalidatePath("/sitemap.xml");
 }
 
 export async function loginAction(_previous: FormState, formData: FormData): Promise<FormState> {

@@ -4,10 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleCover, ArticleMeta } from "@/components/site/article-card";
 import { CtaBand } from "@/components/site/cta-band";
+import { JsonLd } from "@/components/site/json-ld";
 import { LinkButton } from "@/components/site/ui";
 import { WhatsAppIcon } from "@/components/site/whatsapp-float";
 import { getArticle, getContent, getPublishedArticles } from "@/lib/data";
 import { whatsappUrl } from "@/lib/format";
+import { absoluteUrl, pageMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   return (await getPublishedArticles()).map((article) => ({ slug: article.slug }));
@@ -16,11 +18,13 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/berita/[slug]">): Promise<Metadata> {
   const article = await getArticle((await params).slug);
   if (!article) return {};
-  return {
+  return pageMetadata({
     title: article.title,
     description: article.excerpt,
-    openGraph: { type: "article", title: article.title, description: article.excerpt, images: article.coverUrl ? [article.coverUrl] : undefined },
-  };
+    path: `/berita/${article.slug}`,
+    image: article.coverUrl,
+    article: { publishedTime: `${article.publishDate}T00:00:00+08:00`, tags: article.tags },
+  });
 }
 
 type Block = { type: "heading" | "paragraph"; text: string } | { type: "list"; items: string[] };
@@ -54,6 +58,25 @@ export default async function ArticlePage({ params }: PageProps<"/berita/[slug]"
 
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: article.title,
+          description: article.excerpt,
+          datePublished: `${article.publishDate}T00:00:00+08:00`,
+          articleSection: article.category,
+          keywords: article.tags.join(", "),
+          image: article.coverUrl ? [absoluteUrl(article.coverUrl)] : undefined,
+          mainEntityOfPage: absoluteUrl(`/berita/${article.slug}`),
+          author: { "@type": "Organization", name: settings.brandName },
+          publisher: {
+            "@type": "Organization",
+            name: settings.brandName,
+            logo: { "@type": "ImageObject", url: absoluteUrl(settings.logoUrl || "/icon.svg") },
+          },
+        }}
+      />
       <article className="container-page max-w-3xl pt-12 sm:pt-16">
         <Link href="/berita" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" />

@@ -15,6 +15,7 @@ Neon Postgres (Drizzle) + Cloudflare R2 untuk gambar.
 
 | Nama | Dipakai untuk |
 | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Alamat publik situs, mis. `https://domain-anda.com`. Dipakai untuk URL kanonis, sitemap, robots.txt, dan Open Graph |
 | `DATABASE_URL` | Koneksi Neon Postgres (juga dibaca saat build) |
 | `SESSION_SECRET` | Menandatangani cookie sesi admin (wajib di produksi) |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Hanya dibaca `npm run db:seed` untuk membuat akun admin pertama |
@@ -30,7 +31,14 @@ Neon Postgres (Drizzle) + Cloudflare R2 untuk gambar.
 - `lib/data.ts` — pembacaan data untuk halaman publik.
 
 Halaman publik dibuat statis. Setiap simpan dari dashboard memanggil `revalidatePath("/", "layout")`,
-sehingga perubahan langsung tampil tanpa build ulang.
+sehingga perubahan langsung tampil tanpa build ulang. Perubahan yang dilakukan langsung di database
+(di luar dashboard) ikut tampil paling lambat 5 menit kemudian.
+
+## SEO
+
+Setiap halaman publik punya judul, deskripsi, URL kanonis, Open Graph, dan kartu Twitter (`lib/seo.ts`),
+ditambah data terstruktur schema.org: Organization di semua halaman, FAQPage di Bantuan, Article di berita.
+`/robots.txt` dan `/sitemap.xml` dibuat otomatis; dashboard dikecualikan dari indeks.
 
 ## Penyimpanan gambar
 
@@ -42,7 +50,11 @@ sehingga perubahan langsung tampil tanpa build ulang.
 Halaman Ringkasan di dashboard menampilkan penyimpanan mana yang sedang aktif. Gambar lama tetap tampil
 setelah berpindah penyimpanan, karena konten menyimpan URL lengkapnya.
 
-## Deploy
+## Deploy ke Vercel
 
-Tambahkan `DATABASE_URL` dan `SESSION_SECRET` (serta `R2_*` bila dipakai) di environment hosting.
-Database harus sudah di-push dan di-seed sebelum build pertama, karena halaman publik dibuat saat build.
+1. Impor repo di Vercel.
+2. Di Project Settings → Environment Variables, tambahkan `NEXT_PUBLIC_SITE_URL`, `DATABASE_URL`, dan `SESSION_SECRET`
+   (serta `R2_*` bila dipakai). `ADMIN_EMAIL` dan `ADMIN_PASSWORD` tidak diperlukan di Vercel; keduanya hanya dibaca `npm run db:seed`.
+3. Deploy. Database harus sudah di-push dan di-seed sebelum build pertama, karena halaman publik dibuat saat build.
+
+Fungsi server dijalankan di region `sin1` (lihat `vercel.json`) agar dekat dengan database Neon di Singapura.

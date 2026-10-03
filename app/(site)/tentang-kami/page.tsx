@@ -4,10 +4,11 @@ import { CtaBand } from "@/components/site/cta-band";
 import { CmsImage, Eyebrow, PageHero, SectionHeading } from "@/components/site/ui";
 import { getContent } from "@/lib/data";
 import { Icon } from "@/lib/icons";
+import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hero } = await getContent("about");
-  return { title: "Tentang Kami", description: hero.description };
+  return pageMetadata({ title: "Tentang Kami", description: hero.description, path: "/tentang-kami" });
 }
 
 export default async function AboutPage() {
@@ -40,7 +41,7 @@ export default async function AboutPage() {
           )}
         </div>
 
-        <div className="relative isolate flex min-h-[24rem] flex-col justify-end overflow-hidden rounded-[2rem] bg-ink p-6 text-white sm:min-h-[30rem] sm:p-8">
+        <div className="relative isolate flex min-h-[24rem] flex-col justify-end overflow-hidden rounded-[2rem] surface-ink p-6 text-white sm:min-h-[30rem] sm:p-8">
           {who.imageUrl ? (
             <>
               <CmsImage src={who.imageUrl} alt={who.cardTitle} className="absolute inset-0 -z-10 size-full object-cover" />
@@ -48,7 +49,7 @@ export default async function AboutPage() {
             </>
           ) : (
             <div className="absolute inset-0 -z-10" aria-hidden="true">
-              <div className="absolute -top-20 -right-20 size-96 rounded-full bg-brand/30 blur-3xl" />
+              <div className="bg-grid-dark absolute inset-0" />
               <svg viewBox="0 0 400 400" className="absolute inset-0 size-full" fill="none" preserveAspectRatio="xMidYMid slice">
                 <g stroke="white" strokeOpacity="0.14">
                   <path d="M40 300 L130 190 L230 240 L330 110" />

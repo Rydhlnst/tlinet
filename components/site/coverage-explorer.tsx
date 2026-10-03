@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import type { CoverageContent } from "@/lib/content/types";
 import type { CoverageArea } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { linkButtonClass } from "./ui";
 
 type Point = { lat: number; lng: number };
@@ -81,6 +82,7 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
       });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 18,
+        detectRetina: true,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
@@ -250,12 +252,7 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
           )}
           <div className="relative h-[24rem] bg-muted sm:h-[32rem]">
             <div ref={container} className="size-full" />
-            {!ready && (
-              <div className="absolute inset-0 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <LoaderCircle className="size-4 animate-spin" />
-                Memuat peta…
-              </div>
-            )}
+            {!ready && <Skeleton className="absolute inset-0 rounded-none" role="status" aria-label="Memuat peta" />}
           </div>
           <ul className="flex flex-wrap gap-x-6 gap-y-2 border-t px-5 py-4 text-xs text-muted-foreground">
             <li className="flex items-center gap-2">
