@@ -6,6 +6,7 @@ import { NodeField } from "./node-field";
 const linkButtonVariants = {
   primary: "bg-primary text-primary-foreground shadow-[0_10px_28px_-10px] shadow-primary/80 hover:brightness-110",
   brand: "bg-primary text-primary-foreground shadow-[0_10px_28px_-10px] shadow-primary/80 hover:brightness-110",
+  ink: "bg-ink text-white shadow-[0_10px_28px_-14px] shadow-ink/80 hover:bg-ink/90",
   outline: "border border-border bg-background text-foreground hover:border-primary/50 hover:text-primary",
   white: "bg-white text-ink shadow-[0_10px_28px_-12px] shadow-black/40 hover:bg-white/90",
   glass: "border border-white/20 bg-white/5 text-white backdrop-blur hover:border-white/35 hover:bg-white/10",
