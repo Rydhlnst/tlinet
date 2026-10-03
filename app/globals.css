@@ -152,6 +152,11 @@
   .surface-ink {
     background: linear-gradient(150deg, oklch(0.29 0.13 264), var(--ink) 65%);
   }
+  /* Header mengambang setinggi 4.75rem; hero gelap ditarik ke bawahnya agar menyatu. */
+  .hero-under-header {
+    margin-top: -4.75rem;
+    padding-top: 4.75rem;
+  }
   .container-page {
     @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
   }

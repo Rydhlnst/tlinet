@@ -215,7 +215,7 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
               </ul>
             )}
           </div>
-          <button type="button" onClick={locate} disabled={locating} className={linkButtonClass("brand", "h-12 rounded-2xl px-6 disabled:opacity-70")}>
+          <button type="button" onClick={locate} disabled={locating} className={linkButtonClass("brand", "h-12 px-6 disabled:opacity-70")}>
             {locating ? <LoaderCircle className="animate-spin" /> : <LocateFixed />}
             {content.locateLabel}
           </button>

@@ -1,9 +1,9 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { ArrowRight, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import type { LinkItem } from "@/lib/content/types";
 import { cn } from "@/lib/utils";
@@ -17,56 +17,49 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Header mengambang berlatar biru malam; tingginya (4.75rem) dipakai kelas `hero-under-header`. */
 export function SiteHeader({ brandName, brandHighlight, logoUrl, navLinks, ctaLabel, ctaHref }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-40 border-b border-transparent bg-background/80 backdrop-blur-xl transition-colors",
-        scrolled && "border-border",
-      )}
-    >
-      <div className="container-page flex h-16 items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 px-3 pt-3">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 rounded-2xl border border-white/10 bg-ink/80 px-4 text-white shadow-lg shadow-ink/20 backdrop-blur-xl sm:px-6">
         <Link href="/" aria-label={`${brandName} — beranda`}>
-          <Brand name={brandName} highlight={brandHighlight} logoUrl={logoUrl} />
+          <Brand name={brandName} highlight={brandHighlight} logoUrl={logoUrl} inverted />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Menu utama">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label + link.href}
-              href={link.href}
-              className={cn(
-                "rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground xl:px-3.5",
-                isActive(pathname, link.href) && "bg-muted text-foreground",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const active = isActive(pathname, link.href);
+            return (
+              <Link
+                key={link.label + link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative px-3 py-2 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:text-white xl:px-3.5",
+                  active && "text-sky-300 after:absolute after:inset-x-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-sky-300",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-2">
           {ctaLabel && (
-            <LinkButton href={ctaHref || "/formulir-registrasi"} className="hidden h-10 sm:inline-flex">
+            <LinkButton href={ctaHref || "/formulir-registrasi"} className="hidden h-10 px-5 sm:inline-flex">
               {ctaLabel}
+              <ArrowRight />
             </LinkButton>
           )}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="flex size-10 items-center justify-center rounded-full border bg-background lg:hidden"
+                className="flex size-10 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white lg:hidden"
                 aria-label="Buka menu"
               >
                 <Menu className="size-4.5" />
@@ -95,6 +88,7 @@ export function SiteHeader({ brandName, brandHighlight, logoUrl, navLinks, ctaLa
                 {ctaLabel && (
                   <LinkButton href={ctaHref || "/formulir-registrasi"} className="mt-4" onClick={() => setOpen(false)}>
                     {ctaLabel}
+                    <ArrowRight />
                   </LinkButton>
                 )}
               </nav>

@@ -1,15 +1,13 @@
-import { ArrowRight, CircleCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import { CtaBand } from "@/components/site/cta-band";
 import { FaqList } from "@/components/site/faq-list";
-import { HeroVisual } from "@/components/site/hero-visual";
-import { NodeField } from "@/components/site/node-field";
+import { HomeHero } from "@/components/site/home-hero";
 import { PackageTabs } from "@/components/site/package-tabs";
 import { CmsImage, Eyebrow, LinkButton, SectionHeading, SmartLink } from "@/components/site/ui";
 import { getClients, getContent, getFaqs, getPackageCategories, getPackages } from "@/lib/data";
 import { Icon } from "@/lib/icons";
 import { pageMetadata } from "@/lib/seo";
-import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getContent("settings");
@@ -27,58 +25,10 @@ export default async function HomePage() {
   ]);
   const { hero, features, why, steps } = home;
   const homeFaqs = faqs.filter((faq) => faq.showOnHome);
-  // Dengan foto, hero ditumpuk dan dipusatkan agar foto 16:9 tampil utuh; tanpa foto, teks dan ilustrasi berdampingan.
-  const stacked = Boolean(hero.imageUrl);
 
   return (
     <>
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-soft/70 to-background to-60%">
-        <NodeField className="bottom-auto h-[46rem] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" />
-        <div
-          className={cn(
-            "container-page relative py-14 lg:py-20",
-            stacked ? "flex flex-col items-center gap-12 text-center" : "grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:py-24",
-          )}
-        >
-          <div className={cn("flex flex-col gap-6", stacked ? "max-w-3xl items-center" : "items-start")}>
-            {hero.badge && (
-              <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-xs">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-60" />
-                  <span className="relative inline-flex size-2 rounded-full bg-brand" />
-                </span>
-                {hero.badge}
-              </span>
-            )}
-            <h1 className="text-[2.6rem] leading-[1.05] font-semibold sm:text-6xl">{hero.title}</h1>
-            <p className="max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground">{hero.description}</p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              {hero.primaryLabel && (
-                <LinkButton href={hero.primaryHref || "/area-jangkauan"} className="h-12 px-6">
-                  {hero.primaryLabel}
-                  <ArrowRight />
-                </LinkButton>
-              )}
-              {hero.secondaryLabel && (
-                <LinkButton href={hero.secondaryHref || "/bantuan"} variant="outline" className="h-12 px-6">
-                  {hero.secondaryLabel}
-                </LinkButton>
-              )}
-            </div>
-            {hero.highlights.length > 0 && (
-              <ul className={cn("flex flex-wrap gap-x-6 gap-y-2 pt-2 text-sm text-muted-foreground", stacked && "justify-center")}>
-                {hero.highlights.map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <CircleCheck className="size-4 text-brand-ink" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <HeroVisual stats={hero.stats} imageUrl={hero.imageUrl} alt={hero.title} />
-        </div>
-      </section>
+      <HomeHero hero={hero} />
 
       <section className="container-page py-20 sm:py-24">
         <SectionHeading {...features} />

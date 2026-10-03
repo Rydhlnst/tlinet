@@ -56,19 +56,26 @@ export const defaultContent: ContentMap = {
   home: {
     hero: {
       badge: "Internet Fiber Optic Sulawesi",
-      title: "Internet Cepat untuk Semua Kebutuhan",
+      title: "Internet Cepat",
+      titleAccent: "untuk Semua Kebutuhan",
       description:
         "Nikmati koneksi fiber optic ultra cepat, stabil, dan tanpa batas untuk rumah, bisnis, hingga enterprise di seluruh Sulawesi.",
       primaryLabel: "Cek Ketersediaan",
       primaryHref: "/area-jangkauan",
       secondaryLabel: "Hubungi Kami",
       secondaryHref: "/bantuan",
-      imageUrl: "/images/hero-tlinet.jpg",
-      highlights: ["100% Fiber Optic", "Support Responsif 24/7"],
+      imageUrl: "/images/hero-bg.jpg",
       stats: [
-        { value: "1 Gbps", label: "Kecepatan Hingga" },
-        { value: "99.9%", label: "Uptime Jaringan" },
-        { value: "24/7", label: "Dukungan Responsif" },
+        { icon: "gauge", value: "1 Gbps", label: "Kecepatan Hingga" },
+        { icon: "shield", value: "99.9%", label: "Uptime Jaringan" },
+        { icon: "headset", value: "24/7", label: "Dukungan Responsif" },
+        { icon: "globe", value: "100%", label: "Fiber Optic" },
+      ],
+      segments: [
+        { icon: "home", title: "Rumah", description: "Internet stabil untuk seluruh keluarga", href: "/#produk-layanan" },
+        { icon: "building", title: "Bisnis", description: "Mendukung produktivitas tanpa hambatan", href: "/#produk-layanan" },
+        { icon: "factory", title: "Industri", description: "Solusi konektivitas untuk kebutuhan industri", href: "/#produk-layanan" },
+        { icon: "tower", title: "Korporasi & Pemerintah", description: "Jaringan andal untuk skala besar", href: "/#produk-layanan" },
       ],
     },
     features: {

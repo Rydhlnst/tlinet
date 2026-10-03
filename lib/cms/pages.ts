@@ -66,7 +66,8 @@ export const pageDefs: PageDef[] = [
         description: "Bagian paling atas halaman utama.",
         fields: [
           { name: "badge", label: "Label kecil", type: "text" },
-          { name: "title", label: "Judul utama", type: "text", required: true },
+          { name: "title", label: "Judul utama (baris pertama)", type: "text", required: true },
+          { name: "titleAccent", label: "Judul baris kedua (bergradasi biru)", type: "text" },
           { name: "description", label: "Deskripsi", type: "textarea", rows: 3 },
           { name: "primaryLabel", label: "Tombol utama", type: "text", half: true },
           { name: "primaryHref", label: "Tautan tombol utama", type: "url", half: true },
@@ -74,11 +75,10 @@ export const pageDefs: PageDef[] = [
           { name: "secondaryHref", label: "Tautan tombol kedua", type: "url", half: true },
           {
             name: "imageUrl",
-            label: "Gambar hero",
+            label: "Gambar latar hero",
             type: "image",
-            help: "Disarankan rasio 16:9. Jika kosong, ditampilkan ilustrasi jaringan.",
+            help: "Foto lebar (16:9 atau lebih lebar). Sisi kiri digelapkan untuk teks, jadi objek utama sebaiknya di kanan. Jika kosong, latar biru malam dengan animasi jaringan.",
           },
-          { name: "highlights", label: "Poin singkat", type: "strings", itemLabel: "Poin" },
           {
             name: "stats",
             label: "Angka statistik",
@@ -86,10 +86,12 @@ export const pageDefs: PageDef[] = [
             itemLabel: "Statistik",
             titleField: "label",
             fields: [
+              { name: "icon", label: "Ikon", type: "icon" },
               { name: "value", label: "Angka", type: "text", required: true, half: true },
               { name: "label", label: "Keterangan", type: "text", required: true, half: true },
             ],
           },
+          iconCards("segments", "Kartu segmen pelanggan", "Segmen", [{ name: "href", label: "Tautan", type: "url" }]),
         ],
       },
       {

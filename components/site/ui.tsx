@@ -4,15 +4,15 @@ import { cn } from "@/lib/utils";
 import { NodeField } from "./node-field";
 
 const linkButtonVariants = {
-  primary: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/85",
-  brand: "bg-brand text-brand-foreground shadow-sm shadow-brand/25 hover:brightness-105",
-  outline: "border border-border bg-background text-foreground hover:bg-muted",
-  white: "bg-white text-foreground hover:bg-white/90",
-  glass: "border border-white/15 bg-white/10 text-white backdrop-blur hover:bg-white/15",
+  primary: "bg-primary text-primary-foreground shadow-[0_10px_28px_-10px] shadow-primary/80 hover:brightness-110",
+  brand: "bg-primary text-primary-foreground shadow-[0_10px_28px_-10px] shadow-primary/80 hover:brightness-110",
+  outline: "border border-border bg-background text-foreground hover:border-primary/50 hover:text-primary",
+  white: "bg-white text-ink shadow-[0_10px_28px_-12px] shadow-black/40 hover:bg-white/90",
+  glass: "border border-white/20 bg-white/5 text-white backdrop-blur hover:border-white/35 hover:bg-white/10",
 };
 
 const linkButtonBase =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px [&_svg]:size-4 [&_svg]:shrink-0";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold whitespace-nowrap transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px [&_svg]:size-4 [&_svg]:shrink-0";
 
 export const linkButtonClass = (variant: keyof typeof linkButtonVariants = "primary", className?: string) =>
   cn(linkButtonBase, linkButtonVariants[variant], className);
@@ -92,16 +92,12 @@ export function SectionHeading({
 /** Hero halaman dalam: judul besar di atas kisi halus. */
 export function PageHero({ eyebrow, title, description, children }: { eyebrow?: string; title: string; description?: string; children?: ReactNode }) {
   return (
-    <section className="relative overflow-hidden border-b bg-gradient-to-b from-brand-soft to-background">
-      <NodeField className="[mask-image:linear-gradient(to_bottom,black_55%,transparent)]" />
+    <section className="surface-ink hero-under-header relative overflow-hidden text-white">
+      <NodeField tone="dark" className="[mask-image:linear-gradient(to_bottom,black_45%,transparent)]" />
       <div className="container-page relative flex flex-col items-center gap-5 py-20 text-center sm:py-24">
-        {eyebrow && (
-          <span className="rounded-full border bg-background px-3.5 py-1 text-xs font-semibold tracking-[0.14em] text-brand-ink uppercase shadow-xs">
-            {eyebrow}
-          </span>
-        )}
+        {eyebrow && <span className="text-xs font-semibold tracking-[0.22em] text-white/75 uppercase">{eyebrow}</span>}
         <h1 className="max-w-3xl text-4xl leading-[1.1] font-semibold sm:text-5xl">{title}</h1>
-        {description && <p className="max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">{description}</p>}
+        {description && <p className="max-w-2xl text-base leading-relaxed text-pretty text-white/70 sm:text-lg">{description}</p>}
         {children}
       </div>
     </section>

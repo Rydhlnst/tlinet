@@ -6,15 +6,16 @@ import { cn } from "@/lib/utils";
 type Node = { x: number; y: number; vx: number; vy: number; accent: boolean };
 
 const LINK_DISTANCE = 160;
-const LINE_COLOR = "36, 86, 245";
-const DOT_COLOR = "rgba(36, 86, 245, 0.65)";
-const ACCENT_COLOR = "rgba(14, 165, 233, 0.8)";
+const tones = {
+  light: { line: "36, 86, 245", dot: "rgba(36, 86, 245, 0.65)", accent: "rgba(14, 165, 233, 0.8)" },
+  dark: { line: "147, 197, 253", dot: "rgba(191, 219, 254, 0.75)", accent: "rgba(56, 189, 248, 0.95)" },
+};
 
 /**
  * Latar hero: titik-titik jaringan yang bergerak pelan dan terhubung garis saat berdekatan.
  * Animasi berhenti ketika tidak terlihat, dan melambat bila pengguna meminta gerak dikurangi.
  */
-export function NodeField({ className }: { className?: string }) {
+export function NodeField({ className, tone = "light" }: { className?: string; tone?: keyof typeof tones }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export function NodeField({ className }: { className?: string }) {
     const context = canvas?.getContext("2d");
     if (!canvas || !context) return;
 
+    const colors = tones[tone];
     // Gerakannya kecil dan lambat, jadi pada mode "kurangi gerakan" cukup diperlambat, tidak dimatikan.
     const pace = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0.45 : 1;
     let nodes: Node[] = [];
@@ -50,7 +52,7 @@ export function NodeField({ className }: { className?: string }) {
         for (let j = i + 1; j < nodes.length; j++) {
           const distance = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
           if (distance > LINK_DISTANCE) continue;
-          context.strokeStyle = `rgba(${LINE_COLOR}, ${(1 - distance / LINK_DISTANCE) * 0.3})`;
+          context.strokeStyle = `rgba(${colors.line}, ${(1 - distance / LINK_DISTANCE) * 0.3})`;
           context.beginPath();
           context.moveTo(nodes[i].x, nodes[i].y);
           context.lineTo(nodes[j].x, nodes[j].y);
@@ -58,7 +60,7 @@ export function NodeField({ className }: { className?: string }) {
         }
       }
       for (const node of nodes) {
-        context.fillStyle = node.accent ? ACCENT_COLOR : DOT_COLOR;
+        context.fillStyle = node.accent ? colors.accent : colors.dot;
         context.beginPath();
         context.arc(node.x, node.y, node.accent ? 2.4 : 1.8, 0, Math.PI * 2);
         context.fill();
@@ -120,7 +122,7 @@ export function NodeField({ className }: { className?: string }) {
       viewObserver.disconnect();
       document.removeEventListener("visibilitychange", start);
     };
-  }, []);
+  }, [tone]);
 
   return <canvas ref={ref} aria-hidden="true" className={cn("pointer-events-none absolute inset-0 h-full w-full", className)} />;
 }

@@ -29,14 +29,16 @@ export type HomeContent = {
   hero: {
     badge: string;
     title: string;
+    /** Baris kedua judul, ditampilkan dengan gradasi biru. */
+    titleAccent: string;
     description: string;
     primaryLabel: string;
     primaryHref: string;
     secondaryLabel: string;
     secondaryHref: string;
     imageUrl: string;
-    highlights: string[];
-    stats: { value: string; label: string }[];
+    stats: { icon: string; value: string; label: string }[];
+    segments: (IconCard & { href: string })[];
   };
   features: SectionHead & { items: IconCard[] };
   packages: SectionHead & { note: string };
