@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { CtaBand } from "@/components/site/cta-band";
 import { FaqList } from "@/components/site/faq-list";
 import { HeroVisual } from "@/components/site/hero-visual";
+import { NodeField } from "@/components/site/node-field";
 import { PackageTabs } from "@/components/site/package-tabs";
 import { CmsImage, Eyebrow, LinkButton, SectionHeading, SmartLink } from "@/components/site/ui";
 import { getClients, getContent, getFaqs, getPackageCategories, getPackages } from "@/lib/data";
@@ -31,8 +32,8 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative overflow-hidden">
-        <div className="bg-grid absolute inset-0" aria-hidden="true" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-soft/70 to-background to-60%">
+        <NodeField className="bottom-auto h-[46rem] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" />
         <div
           className={cn(
             "container-page relative py-14 lg:py-20",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { NodeField } from "./node-field";
 
 const linkButtonVariants = {
   primary: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/85",
@@ -92,7 +93,7 @@ export function SectionHeading({
 export function PageHero({ eyebrow, title, description, children }: { eyebrow?: string; title: string; description?: string; children?: ReactNode }) {
   return (
     <section className="relative overflow-hidden border-b bg-gradient-to-b from-brand-soft to-background">
-      <div className="bg-grid absolute inset-0" aria-hidden="true" />
+      <NodeField className="[mask-image:linear-gradient(to_bottom,black_55%,transparent)]" />
       <div className="container-page relative flex flex-col items-center gap-5 py-20 text-center sm:py-24">
         {eyebrow && (
           <span className="rounded-full border bg-background px-3.5 py-1 text-xs font-semibold tracking-[0.14em] text-brand-ink uppercase shadow-xs">
