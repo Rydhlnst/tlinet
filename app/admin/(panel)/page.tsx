@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { accurateMode } from "@/lib/accurate";
 import { requireAdmin } from "@/lib/auth";
 import { leadStatusLabels, leadTypeLabels } from "@/lib/cms/entities";
 import { pageDefs } from "@/lib/cms/pages";
@@ -127,7 +128,18 @@ export default async function DashboardPage() {
               <ul className="flex flex-col gap-4">
                 <StatusRow ok title="Database" detail="Neon Postgres terhubung." />
                 <StatusRow ok={storage.ok} title="Penyimpanan media" detail={storage.detail} />
+                <StatusRow
+                  ok={accurateMode === "ready"}
+                  title="Pencatatan Accurate"
+                  detail={accurateMode === "ready" ? "Kredensial Accurate Online terpasang." : "Accurate Online belum dihubungkan."}
+                />
               </ul>
+              <Button asChild variant="outline" size="sm" className="mt-4">
+                <Link href="/admin/accurate">
+                  Buka Pencatatan Accurate
+                  <ArrowRight />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
 

@@ -3,6 +3,8 @@
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { accurateMode } from "@/lib/accurate";
+import { importAccurateCustomers } from "@/lib/accurate-import";
 import { createSession, credentialsConfigured, credentialsMatch, destroySession, getAdmin } from "@/lib/auth";
 import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
@@ -65,6 +67,16 @@ export async function deleteRecordAction(entityKey: string, id: string): Promise
   const result = await deleteRecord(entity, id);
   if (result.ok && !entity.internal) refreshSite();
   return result;
+}
+
+export async function importAccurateCustomersAction(): Promise<SaveResult> {
+  if (!(await getAdmin())) return expired;
+  if (accurateMode !== "ready") return { ok: false, message: "Accurate belum dihubungkan." };
+  try {
+    return await importAccurateCustomers();
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Impor dari Accurate gagal." };
+  }
 }
 
 export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {

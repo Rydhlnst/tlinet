@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronRight, ImagePlus, Images, LoaderCircle, Pencil, Plus, ReceiptText, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronRight, ImagePlus, Images, LoaderCircle, Pencil, Plus, ReceiptText, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ReactNode } from "react";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { AccurateLedger } from "@/lib/accurate";
 import { customerStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
 import type { customerPayments, customers } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
@@ -27,6 +28,8 @@ import { DeleteRecordDialog, RecordSheet, type Row } from "./record-dialogs";
 
 type Customer = typeof customers.$inferSelect;
 type Payment = typeof customerPayments.$inferSelect;
+/** Data Accurate pelanggan ini: null bila tidak tertaut, `error` bila Accurate gagal dijangkau. */
+export type LedgerState = AccurateLedger | { error: string } | null;
 
 const listPath = "/admin/data/customers";
 /** Sisi terpanjang foto setelah diperkecil di peramban, agar foto kamera ponsel lolos batas unggah 4 MB. */
@@ -116,7 +119,7 @@ function InfoList({ items }: { items: [label: string, value: ReactNode][] }) {
 }
 
 /** Halaman detail satu pelanggan: profil, layanan, foto, dan riwayat pembayaran. */
-export function CustomerDetail({ customer, payments }: { customer: Customer; payments: Payment[] }) {
+export function CustomerDetail({ customer, payments, ledger }: { customer: Customer; payments: Payment[]; ledger: LedgerState }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -230,6 +233,7 @@ export function CustomerDetail({ customer, payments }: { customer: Customer; pay
               ["No. Telepon", customer.phone],
               ["Site ID", customer.siteId],
               ["CID", customer.cid],
+              ...(customer.accurateNo ? ([["No. Accurate", customer.accurateNo]] as [string, string][]) : []),
               ["Kecamatan", customer.district],
               ["Kabupaten", customer.regency],
               ["Provinsi", customer.province],
@@ -312,6 +316,74 @@ export function CustomerDetail({ customer, payments }: { customer: Customer; pay
           </p>
         )}
       </Panel>
+
+      {ledger && (
+        <Panel icon={Calculator} title="Faktur & Pembayaran di Accurate">
+          {"error" in ledger ? (
+            <p className="p-5 text-sm leading-relaxed text-muted-foreground">Data Accurate tidak dapat dimuat: {ledger.error}</p>
+          ) : (
+            <>
+              <p className="border-b px-5 py-3 text-sm text-muted-foreground">
+                {ledger.invoices.length} faktur, {ledger.receipts.length} penerimaan. Sisa tagihan{" "}
+                <span className="font-semibold text-foreground tabular-nums">{formatRupiah(ledger.invoices.reduce((sum, invoice) => sum + invoice.owing, 0))}</span>.
+              </p>
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="pl-5">No. Faktur</TableHead>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Sisa Tagihan</TableHead>
+                    <TableHead className="pr-5">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ledger.invoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell className="pl-5 font-medium whitespace-nowrap">{invoice.number}</TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">{invoice.date ? formatDate(invoice.date) : "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap tabular-nums">{formatRupiah(invoice.total)}</TableCell>
+                      <TableCell className="whitespace-nowrap tabular-nums">{formatRupiah(invoice.owing)}</TableCell>
+                      <TableCell className="pr-5">
+                        <StatusPill tone={invoice.owing > 0 ? "warn" : "good"}>{invoice.status || (invoice.owing > 0 ? "Belum lunas" : "Lunas")}</StatusPill>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {ledger.invoices.length === 0 && (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
+                        Belum ada faktur penjualan di Accurate.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              {ledger.receipts.length > 0 && (
+                <div className="border-t">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="pl-5">No. Penerimaan</TableHead>
+                        <TableHead>Tanggal</TableHead>
+                        <TableHead className="pr-5">Jumlah Diterima</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {ledger.receipts.map((receipt) => (
+                        <TableRow key={receipt.id}>
+                          <TableCell className="pl-5 font-medium whitespace-nowrap">{receipt.number}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">{receipt.date ? formatDate(receipt.date) : "—"}</TableCell>
+                          <TableCell className="pr-5 whitespace-nowrap tabular-nums">{formatRupiah(receipt.amount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </>
+          )}
+        </Panel>
+      )}
 
       <Panel
         icon={ReceiptText}

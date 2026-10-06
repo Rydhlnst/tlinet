@@ -1,4 +1,5 @@
-import { boolean, date, doublePrecision, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, date, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 const timestamps = {
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -116,27 +117,35 @@ export const leads = pgTable(
  * Data pelanggan untuk keperluan internal; tidak pernah tampil di situs publik.
  * Tanggal dan bulan disimpan sebagai teks ("YYYY-MM-DD", "YYYY-MM") karena boleh kosong.
  */
-export const customers = pgTable("customers", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  company: text("company").notNull().default(""),
-  phone: text("phone").notNull().default(""),
-  siteId: text("site_id").notNull().default(""),
-  cid: text("cid").notNull().default(""),
-  district: text("district").notNull().default(""),
-  regency: text("regency").notNull().default(""),
-  province: text("province").notNull().default(""),
-  capacity: text("capacity").notNull().default(""),
-  monthlyFee: integer("monthly_fee").notNull().default(0),
-  paymentNumber: text("payment_number").notNull().default(""),
-  vendor: text("vendor").notNull().default(""),
-  ipAddress: text("ip_address").notNull().default(""),
-  status: text("status").notNull().default("active"),
-  activationDate: text("activation_date").notNull().default(""),
-  note: text("note").notNull().default(""),
-  photos: jsonb("photos").$type<string[]>().notNull().default([]),
-  ...timestamps,
-});
+export const customers = pgTable(
+  "customers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    company: text("company").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    siteId: text("site_id").notNull().default(""),
+    cid: text("cid").notNull().default(""),
+    district: text("district").notNull().default(""),
+    regency: text("regency").notNull().default(""),
+    province: text("province").notNull().default(""),
+    capacity: text("capacity").notNull().default(""),
+    monthlyFee: integer("monthly_fee").notNull().default(0),
+    paymentNumber: text("payment_number").notNull().default(""),
+    vendor: text("vendor").notNull().default(""),
+    ipAddress: text("ip_address").notNull().default(""),
+    status: text("status").notNull().default("active"),
+    activationDate: text("activation_date").notNull().default(""),
+    note: text("note").notNull().default(""),
+    photos: jsonb("photos").$type<string[]>().notNull().default([]),
+    /** Terisi bila pelanggan ini berasal dari (atau ditautkan ke) pelanggan di Accurate Online. */
+    accurateId: integer("accurate_id"),
+    accurateNo: text("accurate_no").notNull().default(""),
+    ...timestamps,
+  },
+  // Satu pelanggan Accurate hanya boleh ditautkan ke satu baris, agar impor ulang tidak menggandakan.
+  (table) => [uniqueIndex("customers_accurate_id_idx").on(table.accurateId).where(sql`${table.accurateId} is not null`)],
+);
 
 export const customerPayments = pgTable(
   "customer_payments",

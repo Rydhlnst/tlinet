@@ -2,6 +2,7 @@
 
 import {
   BookOpenText,
+  Calculator,
   CircleHelp,
   ClipboardList,
   ExternalLink,
@@ -58,8 +59,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { accurateFeatures, accurateWebUrl } from "@/lib/accurate-features";
 
-type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string };
+/** `external`: tautan ke luar dashboard, dibuka di tab baru. */
+type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string; external?: boolean };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
@@ -94,6 +97,13 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
+    label: "Accurate",
+    items: [
+      { href: "/admin/accurate", label: "Pencatatan Accurate", icon: Calculator, keywords: "akuntansi pembukuan koneksi sinkron" },
+      ...accurateFeatures.map((feature) => ({ href: accurateWebUrl, label: feature.label, icon: feature.icon, keywords: "accurate", external: true })),
+    ],
+  },
+  {
     label: "Sistem",
     items: [
       { href: "/admin/media", label: "Media", icon: FolderOpen, keywords: "gambar unggah foto r2" },
@@ -125,18 +135,26 @@ function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: nu
             <SidebarGroupLabel className="text-[11px] font-medium tracking-wider uppercase">{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map(({ href, label, icon: Icon }) => (
-                  <SidebarMenuItem key={href}>
+                {group.items.map(({ href, label, icon: Icon, external }) => (
+                  <SidebarMenuItem key={label}>
                     <SidebarMenuButton
                       asChild
                       tooltip={label}
-                      isActive={isActive(pathname, href)}
+                      isActive={!external && isActive(pathname, href)}
                       className="data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground"
                     >
-                      <Link href={href} onClick={() => setOpenMobile(false)}>
-                        <Icon />
-                        <span>{label}</span>
-                      </Link>
+                      {external ? (
+                        <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => setOpenMobile(false)}>
+                          <Icon />
+                          <span>{label}</span>
+                          <ExternalLink className="ml-auto size-3.5! text-muted-foreground" aria-label="Buka di tab baru" />
+                        </a>
+                      ) : (
+                        <Link href={href} onClick={() => setOpenMobile(false)}>
+                          <Icon />
+                          <span>{label}</span>
+                        </Link>
+                      )}
                     </SidebarMenuButton>
                     {href === "/admin/data/leads" && newLeads > 0 && (
                       <SidebarMenuBadge className="rounded-full bg-brand px-1.5 text-brand-foreground peer-hover/menu-button:text-brand-foreground peer-data-active/menu-button:text-brand-foreground">
@@ -194,13 +212,14 @@ function CommandMenu() {
           <CommandEmpty>Menu tidak ditemukan.</CommandEmpty>
           {navGroups.map((group) => (
             <CommandGroup key={group.label} heading={group.label}>
-              {group.items.map(({ href, label, icon: Icon, keywords }) => (
+              {group.items.map(({ href, label, icon: Icon, keywords, external }) => (
                 <CommandItem
-                  key={href}
+                  key={label}
                   value={`${label} ${keywords ?? ""}`}
                   onSelect={() => {
                     setOpen(false);
-                    router.push(href);
+                    if (external) window.open(href, "_blank", "noopener,noreferrer");
+                    else router.push(href);
                   }}
                 >
                   <Icon />
