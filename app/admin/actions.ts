@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createSession, credentialsConfigured, credentialsMatch, destroySession, getAdmin } from "@/lib/auth";
 import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
-import { deleteRecord, saveContent, saveRecord, type SaveResult } from "@/lib/cms/store";
+import { deleteRecord, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
 import { mediaAssets } from "@/lib/db/schema";
 import { deleteR2Object } from "@/lib/storage";
@@ -54,7 +54,7 @@ export async function saveRecordAction(entityKey: string, data: unknown): Promis
   const entity = getEntityDef(entityKey);
   if (!entity) return { ok: false, message: "Jenis data tidak dikenal." };
   const result = await saveRecord(entity, data);
-  if (result.ok) refreshSite();
+  if (result.ok && !entity.internal) refreshSite();
   return result;
 }
 
@@ -63,8 +63,13 @@ export async function deleteRecordAction(entityKey: string, id: string): Promise
   const entity = getEntityDef(entityKey);
   if (!entity) return { ok: false, message: "Jenis data tidak dikenal." };
   const result = await deleteRecord(entity, id);
-  if (result.ok) refreshSite();
+  if (result.ok && !entity.internal) refreshSite();
   return result;
+}
+
+export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {
+  if (!(await getAdmin())) return expired;
+  return saveCustomerPhotos(id, photos);
 }
 
 export type MediaItem = { id: string; url: string; filename: string; size: number; createdAt: Date };

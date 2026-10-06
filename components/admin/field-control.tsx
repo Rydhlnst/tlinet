@@ -150,6 +150,8 @@ function Control({ field, value, onChange, options, id }: { field: Field; value:
       return <Input id={id} type="number" step="any" value={text} onChange={(event) => onChange(event.target.value)} />;
     case "date":
       return <Input id={id} type="date" value={text} onChange={(event) => onChange(event.target.value)} />;
+    case "month":
+      return <Input id={id} type="month" value={text} onChange={(event) => onChange(event.target.value)} />;
     case "switch":
       return <Switch id={id} checked={value === true} onCheckedChange={onChange} />;
     case "image":

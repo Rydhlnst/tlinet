@@ -2,7 +2,7 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
-import { articles, clients, coverageAreas, faqs, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
+import { articles, clients, coverageAreas, customerPayments, customers, faqs, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
 import type { EntityDef } from "./entities";
 import { sanitizeDocument, sanitizeFields } from "./fields";
@@ -18,6 +18,8 @@ const tables: Record<string, EntityTable> = {
   articles,
   clients,
   leads,
+  customers,
+  "customer-payments": customerPayments,
 };
 
 export type SaveResult = { ok: true; message: string } | { ok: false; message: string };
@@ -31,6 +33,10 @@ export async function listRecords(entity: EntityDef): Promise<RecordRow[]> {
       ? [desc(articles.publishDate), desc(articles.createdAt)]
       : entity.key === "packages"
         ? [asc(packages.categoryId), asc(packages.sortOrder)]
+        : entity.key === "customers"
+        ? [asc(customers.name)]
+        : entity.key === "customer-payments"
+        ? [desc(customerPayments.period), desc(customerPayments.createdAt)]
         : table.sortOrder
         ? [asc(table.sortOrder), asc(table.createdAt)]
         : [desc(table.createdAt)];
@@ -56,6 +62,10 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
       if (clash.length) errors.push("Slug URL sudah dipakai artikel lain.");
     }
   }
+  if (entity.key === "customer-payments" && values.customerId) {
+    const owner = await db.select({ id: customers.id }).from(customers).where(eq(customers.id, String(values.customerId))).limit(1);
+    if (!owner.length) errors.push("Pelanggan tidak ditemukan.");
+  }
   if (errors.length) return { ok: false, message: errors[0] };
 
   if (givenId) {
@@ -74,8 +84,22 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
     const used = await db.select({ id: packages.id }).from(packages).where(eq(packages.categoryId, id)).limit(1);
     if (used.length) return { ok: false, message: "Kategori masih dipakai paket. Pindahkan atau hapus paketnya terlebih dahulu." };
   }
+  // Riwayat pembayaran ikut terhapus bersama pelanggannya.
+  if (entity.key === "customers") await db.delete(customerPayments).where(eq(customerPayments.customerId, id));
   await db.delete(tables[entity.key]).where(eq(tables[entity.key].id, id));
   return { ok: true, message: "Data dihapus." };
+}
+
+const maxCustomerPhotos = 30;
+
+/** Mengganti daftar foto pelanggan. Hanya URL hasil unggahan (/media/… atau https://…) yang diterima. */
+export async function saveCustomerPhotos(id: string, input: unknown): Promise<SaveResult> {
+  const photos = [...new Set((Array.isArray(input) ? input : []).map((item) => String(item ?? "").trim()))];
+  if (photos.some((url) => !/^(\/media\/|https:\/\/)/.test(url) || url.length > 500)) return { ok: false, message: "Tautan foto tidak valid." };
+  if (photos.length > maxCustomerPhotos) return { ok: false, message: `Maksimal ${maxCustomerPhotos} foto per pelanggan.` };
+  const updated = await requireDb().update(customers).set({ photos, updatedAt: new Date() }).where(eq(customers.id, id)).returning({ id: customers.id });
+  if (!updated.length) return { ok: false, message: "Pelanggan tidak ditemukan. Muat ulang halaman lalu coba lagi." };
+  return { ok: true, message: "Foto pelanggan tersimpan." };
 }
 
 export async function saveContent(page: PageDef, input: unknown): Promise<SaveResult> {

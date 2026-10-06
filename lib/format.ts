@@ -29,6 +29,20 @@ export function formatDateTime(value: Date | string) {
   return Number.isNaN(date.getTime()) ? "" : dateTimeFormat.format(date);
 }
 
+const monthFormat = new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric", timeZone: "UTC" });
+const numberFormat = new Intl.NumberFormat("id-ID");
+
+/** "2026-10" → "Oktober 2026" */
+export function formatMonth(value: string) {
+  const date = new Date(`${value}-01T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? value : monthFormat.format(date);
+}
+
+/** 450000 → "Rp450.000" */
+export function formatRupiah(value: number) {
+  return `Rp${numberFormat.format(value)}`;
+}
+
 /** Menyisakan angka dan mengubah awalan 0 menjadi 62 agar cocok untuk wa.me. */
 export function normalizePhone(value: string) {
   const digits = value.replace(/\D/g, "");

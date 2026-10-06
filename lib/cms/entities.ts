@@ -3,8 +3,8 @@ import type { Field } from "./fields";
 export type Column = {
   key: string;
   label: string;
-  type?: "text" | "badge" | "boolean" | "image" | "date" | "datetime" | "whatsapp";
-  /** Untuk `badge`: label per nilai. Untuk kolom yang nilainya id, halaman admin mengisinya dari data terkait. */
+  type?: "text" | "badge" | "boolean" | "image" | "date" | "datetime" | "month" | "currency" | "whatsapp";
+  /** Untuk `badge` dan teks: label per nilai. Untuk kolom yang nilainya id, halaman admin mengisinya dari data terkait. */
   labels?: Record<string, string>;
   labelsFrom?: string;
   className?: string;
@@ -22,6 +22,10 @@ export type EntityDef = {
   defaults: Record<string, unknown>;
   searchKeys: string[];
   canCreate?: boolean;
+  /** Data internal: perubahannya tidak perlu menyegarkan halaman publik. */
+  internal?: boolean;
+  /** Bila diisi, baris tabel membuka halaman detail di `<detailPath>/<id>`. */
+  detailPath?: string;
 };
 
 const ordering: Field[] = [
@@ -33,6 +37,10 @@ const activeColumn: Column = { key: "active", label: "Tampil", type: "boolean" }
 
 export const leadStatusLabels = { new: "Baru", contacted: "Dihubungi", done: "Selesai" };
 export const leadTypeLabels = { registration: "Pendaftaran", coverage: "Cek area" };
+export const customerStatusLabels: Record<string, string> = { active: "Aktif", inactive: "Nonaktif" };
+export const paymentStatusLabels: Record<string, string> = { paid: "Lunas", unpaid: "Belum lunas" };
+
+const toOptions = (labels: Record<string, string>) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 
 export const entityDefs: EntityDef[] = [
   {
@@ -257,6 +265,69 @@ export const entityDefs: EntityDef[] = [
       { name: "need", label: "Kebutuhan", type: "text", half: true },
       { name: "source", label: "Sumber", type: "text", half: true },
       { name: "note", label: "Catatan internal", type: "textarea", rows: 3 },
+    ],
+  },
+  {
+    key: "customers",
+    label: "Data Pelanggan",
+    singular: "pelanggan",
+    description: "Data pelanggan untuk keperluan internal. Klik baris untuk membuka detail, foto, dan riwayat pembayaran.",
+    searchKeys: ["name", "company", "phone", "siteId", "cid", "regency", "ipAddress"],
+    internal: true,
+    detailPath: "/admin/data/customers",
+    defaults: { status: "active", monthlyFee: "" },
+    columns: [
+      { key: "name", label: "Nama" },
+      { key: "company", label: "PT" },
+      { key: "siteId", label: "Site ID" },
+      { key: "regency", label: "Kabupaten" },
+      { key: "capacity", label: "Kapasitas" },
+      { key: "monthlyFee", label: "Biaya bulanan", type: "currency" },
+      { key: "status", label: "Status", type: "badge", labels: customerStatusLabels },
+    ],
+    fields: [
+      { name: "name", label: "Nama", type: "text", required: true, half: true },
+      { name: "company", label: "PT", type: "text", half: true, placeholder: "Nama perusahaan" },
+      { name: "phone", label: "No. telepon", type: "text", half: true },
+      { name: "status", label: "Status layanan", type: "select", half: true, options: toOptions(customerStatusLabels) },
+      { name: "siteId", label: "Site ID", type: "text", half: true },
+      { name: "cid", label: "CID", type: "text", half: true },
+      { name: "district", label: "Kecamatan", type: "text", half: true },
+      { name: "regency", label: "Kabupaten", type: "text", half: true },
+      { name: "province", label: "Provinsi", type: "text", half: true },
+      { name: "capacity", label: "Kapasitas", type: "text", half: true, placeholder: "50 Mbps" },
+      { name: "monthlyFee", label: "Biaya bulanan (Rp)", type: "number", integer: true, half: true, help: "Angka saja, tanpa titik. Mis. 450000." },
+      { name: "paymentNumber", label: "No. pembayaran", type: "text", half: true },
+      { name: "vendor", label: "Vendor", type: "text", half: true },
+      { name: "ipAddress", label: "IP address", type: "text", half: true },
+      { name: "activationDate", label: "Tanggal aktivasi", type: "date", half: true },
+      { name: "note", label: "Keterangan", type: "textarea", rows: 3 },
+    ],
+  },
+  {
+    key: "customer-payments",
+    label: "History Pembayaran",
+    singular: "pembayaran",
+    description: "Riwayat pembayaran semua pelanggan. Pembayaran juga bisa dicatat dari halaman detail pelanggan.",
+    searchKeys: ["period", "method", "note"],
+    internal: true,
+    defaults: { status: "paid", amount: "" },
+    columns: [
+      { key: "customerId", label: "Pelanggan", labelsFrom: "customers" },
+      { key: "period", label: "Bulan", type: "month" },
+      { key: "paidDate", label: "Tanggal bayar", type: "date" },
+      { key: "amount", label: "Nominal", type: "currency" },
+      { key: "method", label: "Metode" },
+      { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
+    ],
+    fields: [
+      { name: "customerId", label: "Pelanggan", type: "select", optionsFrom: "customers", required: true },
+      { name: "period", label: "Bulan tagihan", type: "month", required: true, half: true },
+      { name: "paidDate", label: "Tanggal bayar", type: "date", half: true },
+      { name: "amount", label: "Nominal (Rp)", type: "number", integer: true, required: true, half: true },
+      { name: "method", label: "Metode", type: "text", half: true, placeholder: "Transfer BRI" },
+      { name: "status", label: "Status", type: "select", half: true, options: toOptions(paymentStatusLabels) },
+      { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
     ],
   },
 ];

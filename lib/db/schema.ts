@@ -112,6 +112,48 @@ export const leads = pgTable(
   (table) => [index("leads_status_created_idx").on(table.status, table.createdAt)],
 );
 
+/**
+ * Data pelanggan untuk keperluan internal; tidak pernah tampil di situs publik.
+ * Tanggal dan bulan disimpan sebagai teks ("YYYY-MM-DD", "YYYY-MM") karena boleh kosong.
+ */
+export const customers = pgTable("customers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  company: text("company").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  siteId: text("site_id").notNull().default(""),
+  cid: text("cid").notNull().default(""),
+  district: text("district").notNull().default(""),
+  regency: text("regency").notNull().default(""),
+  province: text("province").notNull().default(""),
+  capacity: text("capacity").notNull().default(""),
+  monthlyFee: integer("monthly_fee").notNull().default(0),
+  paymentNumber: text("payment_number").notNull().default(""),
+  vendor: text("vendor").notNull().default(""),
+  ipAddress: text("ip_address").notNull().default(""),
+  status: text("status").notNull().default("active"),
+  activationDate: text("activation_date").notNull().default(""),
+  note: text("note").notNull().default(""),
+  photos: jsonb("photos").$type<string[]>().notNull().default([]),
+  ...timestamps,
+});
+
+export const customerPayments = pgTable(
+  "customer_payments",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull(),
+    period: text("period").notNull(),
+    paidDate: text("paid_date").notNull().default(""),
+    amount: integer("amount").notNull().default(0),
+    method: text("method").notNull().default(""),
+    status: text("status").notNull().default("paid"),
+    note: text("note").notNull().default(""),
+    ...timestamps,
+  },
+  (table) => [index("customer_payments_customer_idx").on(table.customerId, table.period)],
+);
+
 /** `data` hanya terisi (base64) bila R2 belum diatur; saat itu `url` menunjuk ke /media/<id>. */
 export const mediaAssets = pgTable("media_assets", {
   id: text("id").primaryKey(),

@@ -17,9 +17,11 @@ import {
   MapPinned,
   Newspaper,
   Package,
+  ReceiptText,
   Search,
   Settings,
   Tags,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -84,6 +86,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/data/packages", label: "Paket Internet", icon: Package, keywords: "harga kecepatan produk" },
       { href: "/admin/data/package-categories", label: "Kategori Paket", icon: Tags, keywords: "rumah bisnis dedicated tab" },
       { href: "/admin/data/coverage-areas", label: "Titik Jangkauan", icon: MapPin, keywords: "peta koordinat area kota" },
+      { href: "/admin/data/customers", label: "Data Pelanggan", icon: Users, keywords: "customer site id cid foto detail" },
+      { href: "/admin/data/customer-payments", label: "History Pembayaran", icon: ReceiptText, keywords: "tagihan bayar lunas riwayat" },
       { href: "/admin/data/faqs", label: "FAQ", icon: CircleHelp, keywords: "pertanyaan jawaban" },
       { href: "/admin/data/articles", label: "Artikel Berita", icon: Newspaper, keywords: "blog tulisan" },
       { href: "/admin/data/clients", label: "Klien & Mitra", icon: Handshake, keywords: "logo marquee" },

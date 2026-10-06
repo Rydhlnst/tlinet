@@ -11,7 +11,7 @@ type FieldBase = {
 };
 
 export type Field =
-  | (FieldBase & { type: "text" | "url" | "image" | "icon" | "date" | "switch" })
+  | (FieldBase & { type: "text" | "url" | "image" | "icon" | "date" | "month" | "switch" })
   | (FieldBase & { type: "textarea"; rows?: number })
   | (FieldBase & { type: "number"; integer?: boolean })
   /** `optionsFrom` diisi halaman admin dari data lain (mis. kategori paket). */
@@ -70,6 +70,10 @@ function sanitizeValue(field: Field, value: unknown, errors: string[], label: st
       }
       if (field.type === "date" && text && !/^\d{4}-\d{2}-\d{2}$/.test(text)) {
         errors.push(`${label} harus berupa tanggal.`);
+        return "";
+      }
+      if (field.type === "month" && text && !/^\d{4}-\d{2}$/.test(text)) {
+        errors.push(`${label} harus berupa bulan dan tahun.`);
         return "";
       }
       if (field.type === "select" && field.options && text && !field.options.some((option) => option.value === text)) {
