@@ -66,17 +66,20 @@ async function shrinkPhoto(file: File): Promise<File> {
   }
 }
 
-function StatusPill({ tone, children }: { tone: "good" | "muted" | "warn"; children: ReactNode }) {
+const pillTones = {
+  good: ["bg-emerald-50 text-emerald-700", "bg-emerald-500"],
+  warn: ["bg-amber-50 text-amber-700", "bg-amber-500"],
+  bad: ["bg-red-50 text-red-700", "bg-red-500"],
+  muted: ["bg-muted text-muted-foreground", "bg-muted-foreground/60"],
+};
+
+const customerTones: Record<string, keyof typeof pillTones> = { active: "good", inactive: "muted", suspended: "bad", relocation: "warn" };
+
+function StatusPill({ tone, children }: { tone: keyof typeof pillTones; children: ReactNode }) {
+  const [surface, dot] = pillTones[tone];
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        tone === "good" && "bg-emerald-50 text-emerald-700",
-        tone === "warn" && "bg-amber-50 text-amber-700",
-        tone === "muted" && "bg-muted text-muted-foreground",
-      )}
-    >
-      <span className={cn("size-1.5 rounded-full", tone === "good" ? "bg-emerald-500" : tone === "warn" ? "bg-amber-500" : "bg-muted-foreground/60")} aria-hidden="true" />
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", surface)}>
+      <span className={cn("size-1.5 rounded-full", dot)} aria-hidden="true" />
       {children}
     </span>
   );
@@ -124,7 +127,7 @@ export function CustomerDetail({ customer, payments }: { customer: Customer; pay
   const [savingPhotos, startSavingPhotos] = useTransition();
 
   const statusPill = (
-    <StatusPill tone={customer.status === "active" ? "good" : "muted"}>{customerStatusLabels[customer.status] ?? customer.status}</StatusPill>
+    <StatusPill tone={customerTones[customer.status] ?? "muted"}>{customerStatusLabels[customer.status] ?? customer.status}</StatusPill>
   );
 
   async function savePhotos(photos: string[]) {

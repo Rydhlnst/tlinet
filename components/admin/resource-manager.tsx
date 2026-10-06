@@ -46,7 +46,7 @@ function Cell({ column, row, options }: { column: Column; row: Row; options: Dyn
     case "badge": {
       if (!label) return <span className="text-muted-foreground">—</span>;
       const strong = ["published", "new", "active", "paid"].includes(text);
-      return <Badge variant={strong ? "default" : "secondary"}>{label}</Badge>;
+      return <Badge variant={strong ? "default" : text === "suspended" ? "destructive" : text === "relocation" ? "outline" : "secondary"}>{label}</Badge>;
     }
     default:
       return <span className={cn("block", column.className)}>{label || "—"}</span>;

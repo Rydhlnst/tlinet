@@ -37,7 +37,7 @@ const activeColumn: Column = { key: "active", label: "Tampil", type: "boolean" }
 
 export const leadStatusLabels = { new: "Baru", contacted: "Dihubungi", done: "Selesai" };
 export const leadTypeLabels = { registration: "Pendaftaran", coverage: "Cek area" };
-export const customerStatusLabels: Record<string, string> = { active: "Aktif", inactive: "Nonaktif" };
+export const customerStatusLabels: Record<string, string> = { active: "Aktif", inactive: "Belum aktif", suspended: "Suspend", relocation: "Relokasi" };
 export const paymentStatusLabels: Record<string, string> = { paid: "Lunas", unpaid: "Belum lunas" };
 
 const toOptions = (labels: Record<string, string>) => Object.entries(labels).map(([value, label]) => ({ value, label }));
