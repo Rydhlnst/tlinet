@@ -201,6 +201,7 @@ export const defaultContent: ContentMap = {
     clients: {
       eyebrow: "Klien & Mitra Strategis",
       title: "Dipercaya untuk Kebutuhan Koneksi Digital di Sulawesi",
+      titleAccent: "Koneksi Digital",
       description: "",
     },
   },

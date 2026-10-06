@@ -180,7 +180,7 @@ export const pageDefs: PageDef[] = [
         path: "clients",
         title: "Bagian klien",
         description: "Daftar klien diatur di menu Klien & Mitra.",
-        fields: head,
+        fields: [...head, accent],
       },
     ],
   },

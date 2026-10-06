@@ -52,7 +52,8 @@ export function SiteHeader({ brandName, brandHighlight, logoUrl, navLinks, ctaLa
           "on-hero:border-transparent on-hero:bg-transparent on-hero:text-white on-hero:shadow-none on-hero:backdrop-blur-none on-hero:backdrop-saturate-100",
         )}
       >
-        <Link href="/" aria-label={`${brandName} — beranda`}>
+        {/* `flex` menghilangkan ruang baris di bawah logo, yang membuatnya tampak naik dari tengah bar. */}
+        <Link href="/" aria-label={`${brandName} — beranda`} className="flex shrink-0 items-center">
           <Brand name={brandName} highlight={brandHighlight} logoUrl={logoUrl} highlightClassName="on-hero:from-sky-300 on-hero:to-brand" />
         </Link>
 

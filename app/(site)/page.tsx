@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { AboutSection } from "@/components/site/about-section";
-import { ClientLogo } from "@/components/site/client-logo";
+import { ClientsSection } from "@/components/site/clients-section";
 import { CtaBand } from "@/components/site/cta-band";
-import { LinedEyebrow } from "@/components/site/decor";
 import { FaqSection } from "@/components/site/faq-section";
 import { HomeHero } from "@/components/site/home-hero";
 import { NewsSection } from "@/components/site/news-section";
@@ -78,28 +77,7 @@ export default async function HomePage() {
         <FaqSection content={home.faq} faqs={homeFaqs} helpHref={whatsappUrl(settings.whatsappNumber, settings.whatsappMessage)} />
       )}
 
-      {clients.length > 0 && (
-        <section className="border-t py-16 sm:py-20">
-          <div className="container-page flex flex-col items-center gap-4 text-center">
-            <LinedEyebrow>{home.clients.eyebrow}</LinedEyebrow>
-            <h2 className="max-w-2xl text-2xl leading-snug font-bold sm:text-3xl">{home.clients.title}</h2>
-            {home.clients.description && <p className="max-w-xl text-muted-foreground">{home.clients.description}</p>}
-          </div>
-          <div className="relative mt-10 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-            <ul className="flex w-max animate-marquee items-center gap-4 hover:[animation-play-state:paused] motion-reduce:animate-none">
-              {[...clients, ...clients].map((client, index) => (
-                <li
-                  key={`${client.id}-${index}`}
-                  aria-hidden={index >= clients.length}
-                  className="flex h-14 shrink-0 items-center rounded-2xl border bg-card px-6 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
-                >
-                  <ClientLogo name={client.name} logoUrl={client.logoUrl} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+      {clients.length > 0 && <ClientsSection content={home.clients} clients={clients} />}
 
       <CtaBand settings={settings} />
     </>

@@ -57,7 +57,7 @@ export type HomeContent = {
   };
   news: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string };
   faq: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string; helpTitle: string; helpDescription: string };
-  clients: SectionHead;
+  clients: SectionHead & { titleAccent: string };
 };
 
 export type CoverageContent = {
