@@ -320,7 +320,8 @@ export function AdminShell({ admin, brandName, newLeads, children }: ShellProps)
               </DropdownMenu>
             </div>
           </header>
-          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-8">{children}</div>
+          {/* Lebar isi mengikuti layar agar tabel berkolom banyak tidak terpotong; dibatasi supaya form tidak melar di monitor sangat lebar. */}
+          <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-6 p-4 md:p-8">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
