@@ -38,9 +38,9 @@ export function formatMonth(value: string) {
   return Number.isNaN(date.getTime()) ? value : monthFormat.format(date);
 }
 
-/** 450000 → "Rp450.000" */
+/** 450000 → "Rp450.000", -5000 → "-Rp5.000" */
 export function formatRupiah(value: number) {
-  return `Rp${numberFormat.format(value)}`;
+  return `${value < 0 ? "-" : ""}Rp${numberFormat.format(Math.abs(value))}`;
 }
 
 /** Menyisakan angka dan mengubah awalan 0 menjadi 62 agar cocok untuk wa.me. */

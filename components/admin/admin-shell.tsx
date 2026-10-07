@@ -59,10 +59,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { accurateFeatures, accurateWebUrl } from "@/lib/accurate-features";
+import { accurateModules } from "@/lib/accurate-features";
 
-/** `external`: tautan ke luar dashboard, dibuka di tab baru. */
-type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string; external?: boolean };
+/** `exact`: hanya aktif di alamat itu sendiri, bukan di sub-halamannya. */
+type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string; exact?: boolean };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
@@ -99,8 +99,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Accurate",
     items: [
-      { href: "/admin/accurate", label: "Pencatatan Accurate", icon: Calculator, keywords: "akuntansi pembukuan koneksi sinkron" },
-      ...accurateFeatures.map((feature) => ({ href: accurateWebUrl, label: feature.label, icon: feature.icon, keywords: "accurate", external: true })),
+      { href: "/admin/accurate", label: "Pencatatan Accurate", icon: Calculator, keywords: "akuntansi pembukuan koneksi impor", exact: true },
+      ...accurateModules.map((feature) => ({ href: `/admin/accurate/${feature.key}`, label: feature.label, icon: feature.icon, keywords: `accurate ${feature.resources.map((resource) => resource.label).join(" ")}` })),
     ],
   },
   {
@@ -112,7 +112,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 
-const isActive = (pathname: string, href: string) => (href === "/admin" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`));
+const isActive = (pathname: string, href: string, exact?: boolean) => pathname === href || (!exact && href !== "/admin" && pathname.startsWith(`${href}/`));
 
 function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: number }) {
   const pathname = usePathname();
@@ -135,26 +135,18 @@ function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: nu
             <SidebarGroupLabel className="text-[11px] font-medium tracking-wider uppercase">{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map(({ href, label, icon: Icon, external }) => (
-                  <SidebarMenuItem key={label}>
+                {group.items.map(({ href, label, icon: Icon, exact }) => (
+                  <SidebarMenuItem key={href}>
                     <SidebarMenuButton
                       asChild
                       tooltip={label}
-                      isActive={!external && isActive(pathname, href)}
+                      isActive={isActive(pathname, href, exact)}
                       className="data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground"
                     >
-                      {external ? (
-                        <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => setOpenMobile(false)}>
-                          <Icon />
-                          <span>{label}</span>
-                          <ExternalLink className="ml-auto size-3.5! text-muted-foreground" aria-label="Buka di tab baru" />
-                        </a>
-                      ) : (
-                        <Link href={href} onClick={() => setOpenMobile(false)}>
-                          <Icon />
-                          <span>{label}</span>
-                        </Link>
-                      )}
+                      <Link href={href} onClick={() => setOpenMobile(false)}>
+                        <Icon />
+                        <span>{label}</span>
+                      </Link>
                     </SidebarMenuButton>
                     {href === "/admin/data/leads" && newLeads > 0 && (
                       <SidebarMenuBadge className="rounded-full bg-brand px-1.5 text-brand-foreground peer-hover/menu-button:text-brand-foreground peer-data-active/menu-button:text-brand-foreground">
@@ -212,14 +204,13 @@ function CommandMenu() {
           <CommandEmpty>Menu tidak ditemukan.</CommandEmpty>
           {navGroups.map((group) => (
             <CommandGroup key={group.label} heading={group.label}>
-              {group.items.map(({ href, label, icon: Icon, keywords, external }) => (
+              {group.items.map(({ href, label, icon: Icon, keywords }) => (
                 <CommandItem
-                  key={label}
+                  key={href}
                   value={`${label} ${keywords ?? ""}`}
                   onSelect={() => {
                     setOpen(false);
-                    if (external) window.open(href, "_blank", "noopener,noreferrer");
-                    else router.push(href);
+                    router.push(href);
                   }}
                 >
                   <Icon />

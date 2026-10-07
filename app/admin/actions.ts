@@ -3,8 +3,10 @@
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { accurateMode } from "@/lib/accurate";
+import { accurateMode, accurateWriteEnabled, searchAccurate } from "@/lib/accurate";
+import { getAccurateForm, type LookupKind, type LookupOption } from "@/lib/accurate-forms";
 import { importAccurateCustomers } from "@/lib/accurate-import";
+import { saveAccurateForm } from "@/lib/accurate-save";
 import { createSession, credentialsConfigured, credentialsMatch, destroySession, getAdmin } from "@/lib/auth";
 import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
@@ -77,6 +79,20 @@ export async function importAccurateCustomersAction(): Promise<SaveResult> {
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Impor dari Accurate gagal." };
   }
+}
+
+/** Pilihan untuk field pencarian di form Accurate; kosong bila sesi habis atau Accurate gagal dijangkau. */
+export async function searchAccurateAction(kind: LookupKind, keywords: string, scope: string): Promise<LookupOption[]> {
+  if (!(await getAdmin()) || accurateMode !== "ready") return [];
+  return searchAccurate(kind, String(keywords).trim().slice(0, 80), String(scope).slice(0, 80)).catch(() => []);
+}
+
+export async function saveAccurateAction(path: string, data: unknown): Promise<SaveResult> {
+  if (!(await getAdmin())) return expired;
+  const form = getAccurateForm(path);
+  if (!form) return { ok: false, message: "Form tidak dikenal." };
+  if (!accurateWriteEnabled) return { ok: false, message: "Form input ke Accurate belum diaktifkan." };
+  return saveAccurateForm(form, data);
 }
 
 export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {
