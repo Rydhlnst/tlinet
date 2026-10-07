@@ -31,7 +31,7 @@ export async function importAccurateCustomers(): Promise<SaveResult> {
         phone: detail.phone.slice(0, 300),
         regency: detail.city.slice(0, 300),
         province: detail.province.slice(0, 300),
-        note: detail.street ? `Alamat: ${detail.street}`.slice(0, 2000) : "",
+        address: detail.street.slice(0, 2000),
         status: detail.suspended ? "suspended" : "active",
         accurateId: detail.id,
         accurateNo: detail.customerNo,

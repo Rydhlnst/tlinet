@@ -126,6 +126,7 @@ export const customers = pgTable(
     phone: text("phone").notNull().default(""),
     siteId: text("site_id").notNull().default(""),
     cid: text("cid").notNull().default(""),
+    address: text("address").notNull().default(""),
     district: text("district").notNull().default(""),
     regency: text("regency").notNull().default(""),
     province: text("province").notNull().default(""),

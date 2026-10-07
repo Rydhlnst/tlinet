@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Calculator, ChevronRight, ImagePlus, Images, LoaderCircle, Pencil, Plus, ReceiptText, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronRight, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ReactNode } from "react";
@@ -129,6 +129,9 @@ export function CustomerDetail({ customer, payments, ledger }: { customer: Custo
   const [uploading, setUploading] = useState(false);
   const [savingPhotos, startSavingPhotos] = useTransition();
 
+  // Kecamatan, kabupaten, dan provinsi melengkapi alamat jalan di panel alamat.
+  const wilayah = [customer.district && `Kec. ${customer.district}`, customer.regency, customer.province].filter(Boolean).join(", ");
+
   const statusPill = (
     <StatusPill tone={customerTones[customer.status] ?? "muted"}>{customerStatusLabels[customer.status] ?? customer.status}</StatusPill>
   );
@@ -254,6 +257,22 @@ export function CustomerDetail({ customer, payments, ledger }: { customer: Custo
           />
         </Panel>
       </div>
+
+      <Panel
+        icon={MapPin}
+        title="Alamat Lengkap"
+        action={
+          <Button variant="outline" onClick={() => setEditing({ ...customer })}>
+            <Pencil />
+            {customer.address ? "Ubah Alamat" : "Isi Alamat"}
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-1.5 p-5 text-sm leading-relaxed">
+          {customer.address ? <p className="whitespace-pre-line">{customer.address}</p> : <p className="text-muted-foreground">Alamat lengkap belum diisi.</p>}
+          {wilayah && <p className="text-muted-foreground">{wilayah}</p>}
+        </div>
+      </Panel>
 
       {customer.note && (
         <Panel icon={StickyNote} title="Keterangan">
