@@ -3,6 +3,7 @@
 import {
   BookOpenText,
   Calculator,
+  ChevronRight,
   CircleHelp,
   ClipboardList,
   ExternalLink,
@@ -51,18 +52,23 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { accurateModules } from "@/lib/accurate-features";
+import { cn } from "@/lib/utils";
 
-/** `exact`: hanya aktif di alamat itu sendiri, bukan di sub-halamannya. */
-type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string; exact?: boolean };
+/** `children`: submenu yang bisa dibuka-tutup; induknya sendiri tetap tautan ke halamannya. */
+type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string; children?: NavItem[] };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
@@ -89,18 +95,29 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/data/packages", label: "Paket Internet", icon: Package, keywords: "harga kecepatan produk" },
       { href: "/admin/data/package-categories", label: "Kategori Paket", icon: Tags, keywords: "rumah bisnis dedicated tab" },
       { href: "/admin/data/coverage-areas", label: "Titik Jangkauan", icon: MapPin, keywords: "peta koordinat area kota" },
-      { href: "/admin/data/customers", label: "Data Pelanggan", icon: Users, keywords: "customer site id cid foto detail" },
-      { href: "/admin/data/customer-payments", label: "History Pembayaran", icon: ReceiptText, keywords: "tagihan bayar lunas riwayat" },
       { href: "/admin/data/faqs", label: "FAQ", icon: CircleHelp, keywords: "pertanyaan jawaban" },
       { href: "/admin/data/articles", label: "Artikel Berita", icon: Newspaper, keywords: "blog tulisan" },
       { href: "/admin/data/clients", label: "Klien & Mitra", icon: Handshake, keywords: "logo marquee" },
     ],
   },
   {
-    label: "Accurate",
+    // Modul operasional internal: pelanggan dan pembukuan, terpisah dari pengelolaan isi situs.
+    label: "Operasional",
     items: [
-      { href: "/admin/accurate", label: "Pencatatan Accurate", icon: Calculator, keywords: "akuntansi pembukuan koneksi impor", exact: true },
-      ...accurateModules.map((feature) => ({ href: `/admin/accurate/${feature.key}`, label: feature.label, icon: feature.icon, keywords: `accurate ${feature.resources.map((resource) => resource.label).join(" ")}` })),
+      { href: "/admin/data/customers", label: "Data Pelanggan", icon: Users, keywords: "customer site id cid foto detail" },
+      { href: "/admin/data/customer-payments", label: "History Pembayaran", icon: ReceiptText, keywords: "tagihan bayar lunas riwayat" },
+      {
+        href: "/admin/accurate",
+        label: "Pencatatan Accurate",
+        icon: Calculator,
+        keywords: "akuntansi pembukuan koneksi impor",
+        children: accurateModules.map((feature) => ({
+          href: `/admin/accurate/${feature.key}`,
+          label: feature.label,
+          icon: feature.icon,
+          keywords: `accurate ${feature.resources.map((resource) => resource.label).join(" ")}`,
+        })),
+      },
     ],
   },
   {
@@ -114,9 +131,14 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 
 const isActive = (pathname: string, href: string, exact?: boolean) => pathname === href || (!exact && href !== "/admin" && pathname.startsWith(`${href}/`));
 
+const activeClass =
+  "data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground";
+
 function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: number }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  // Submenu terbuka sendiri saat salah satu halamannya dibuka; pilihan pengguna menimpa itu.
+  const [toggled, setToggled] = useState<Record<string, boolean>>({});
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -135,26 +157,50 @@ function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: nu
             <SidebarGroupLabel className="text-[11px] font-medium tracking-wider uppercase">{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map(({ href, label, icon: Icon, exact }) => (
-                  <SidebarMenuItem key={href}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={label}
-                      isActive={isActive(pathname, href, exact)}
-                      className="data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground"
-                    >
-                      <Link href={href} onClick={() => setOpenMobile(false)}>
-                        <Icon />
-                        <span>{label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    {href === "/admin/data/leads" && newLeads > 0 && (
-                      <SidebarMenuBadge className="rounded-full bg-brand px-1.5 text-brand-foreground peer-hover/menu-button:text-brand-foreground peer-data-active/menu-button:text-brand-foreground">
-                        {newLeads}
-                      </SidebarMenuBadge>
-                    )}
-                  </SidebarMenuItem>
-                ))}
+                {group.items.map(({ href, label, icon: Icon, children }) => {
+                  const expanded = Boolean(children) && (toggled[href] ?? isActive(pathname, href));
+                  return (
+                    <SidebarMenuItem key={href}>
+                      <SidebarMenuButton asChild tooltip={label} isActive={isActive(pathname, href, Boolean(children))} className={activeClass}>
+                        <Link href={href} onClick={() => setOpenMobile(false)}>
+                          <Icon />
+                          <span>{label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      {href === "/admin/data/leads" && newLeads > 0 && (
+                        <SidebarMenuBadge className="rounded-full bg-brand px-1.5 text-brand-foreground peer-hover/menu-button:text-brand-foreground peer-data-active/menu-button:text-brand-foreground">
+                          {newLeads}
+                        </SidebarMenuBadge>
+                      )}
+                      {children && (
+                        <>
+                          <SidebarMenuAction
+                            aria-expanded={expanded}
+                            aria-label={`${expanded ? "Tutup" : "Buka"} submenu ${label}`}
+                            onClick={() => setToggled((current) => ({ ...current, [href]: !expanded }))}
+                            className="peer-data-active/menu-button:text-sidebar-primary-foreground"
+                          >
+                            <ChevronRight className={cn("transition-transform", expanded && "rotate-90")} />
+                          </SidebarMenuAction>
+                          {expanded && (
+                            <SidebarMenuSub>
+                              {children.map((child) => (
+                                <SidebarMenuSubItem key={child.href}>
+                                  <SidebarMenuSubButton asChild isActive={isActive(pathname, child.href)} className="data-active:font-medium">
+                                    <Link href={child.href} onClick={() => setOpenMobile(false)}>
+                                      <child.icon />
+                                      <span>{child.label}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          )}
+                        </>
+                      )}
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -204,19 +250,21 @@ function CommandMenu() {
           <CommandEmpty>Menu tidak ditemukan.</CommandEmpty>
           {navGroups.map((group) => (
             <CommandGroup key={group.label} heading={group.label}>
-              {group.items.map(({ href, label, icon: Icon, keywords }) => (
-                <CommandItem
-                  key={href}
-                  value={`${label} ${keywords ?? ""}`}
-                  onSelect={() => {
-                    setOpen(false);
-                    router.push(href);
-                  }}
-                >
-                  <Icon />
-                  {label}
-                </CommandItem>
-              ))}
+              {group.items
+                .flatMap((item) => [item, ...(item.children ?? [])])
+                .map(({ href, label, icon: Icon, keywords }) => (
+                  <CommandItem
+                    key={href}
+                    value={`${label} ${keywords ?? ""}`}
+                    onSelect={() => {
+                      setOpen(false);
+                      router.push(href);
+                    }}
+                  >
+                    <Icon />
+                    {label}
+                  </CommandItem>
+                ))}
             </CommandGroup>
           ))}
         </CommandList>
