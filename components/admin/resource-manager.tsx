@@ -68,7 +68,8 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
     return rows.filter((row) => entity.searchKeys.some((key) => String(row[key] ?? "").toLowerCase().includes(term)));
   }, [entity.searchKeys, query, rows]);
 
-  const titleColumn = entity.columns.find((column) => !column.type || column.type === "text");
+  // Judul baris untuk dialog dan label tombol: kolom nama bila ada, kalau tidak kolom teks pertama.
+  const titleColumn = entity.columns.find((column) => column.key === "name") ?? entity.columns.find((column) => !column.type || column.type === "text");
   const titleOf = (row: Row) => {
     const text = String(row[titleColumn?.key ?? "name"] ?? "");
     return options[titleColumn?.labelsFrom ?? ""]?.find((option) => option.value === text)?.label ?? text;

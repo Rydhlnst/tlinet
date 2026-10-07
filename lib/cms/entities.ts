@@ -277,8 +277,8 @@ export const entityDefs: EntityDef[] = [
     detailPath: "/admin/data/customers",
     defaults: { status: "active", monthlyFee: "" },
     columns: [
-      { key: "name", label: "Nama" },
       { key: "company", label: "PT" },
+      { key: "name", label: "Nama" },
       { key: "siteId", label: "Site ID" },
       { key: "regency", label: "Kabupaten" },
       { key: "capacity", label: "Kapasitas" },
