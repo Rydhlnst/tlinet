@@ -32,8 +32,6 @@ type Payment = typeof customerPayments.$inferSelect;
 export type LedgerState = AccurateLedger | { error: string } | null;
 
 const listPath = "/admin/data/customers";
-/** Sisi terpanjang foto setelah diperkecil di peramban, agar foto kamera ponsel lolos batas unggah 4 MB. */
-const maxPhotoSide = 1920;
 
 /** Dua huruf awal nama ("Ahmad Rahman" → "AR"). */
 const initials = (name: string) =>
@@ -49,24 +47,6 @@ const initials = (name: string) =>
 function today() {
   const now = new Date();
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
-
-/** Memperkecil foto besar menjadi JPEG; bila gagal (format tak didukung peramban), berkas asli dipakai. */
-async function shrinkPhoto(file: File): Promise<File> {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, maxPhotoSide / Math.max(bitmap.width, bitmap.height));
-    if (scale === 1 && file.size < 1024 * 1024) return file;
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
-    return blob ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : file;
-  } catch {
-    return file;
-  }
 }
 
 const pillTones = {
@@ -151,7 +131,7 @@ export function CustomerDetail({ customer, payments, ledger }: { customer: Custo
     setUploading(true);
     const urls: string[] = [];
     for (const file of files) {
-      const url = await uploadImage(await shrinkPhoto(file));
+      const url = await uploadImage(file);
       if (url) urls.push(url);
     }
     if (urls.length) await savePhotos([...customer.photos, ...urls]);

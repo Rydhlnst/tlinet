@@ -9,15 +9,44 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. */
-export async function uploadImage(file: File): Promise<string | null> {
+/** Sisi terpanjang gambar setelah diperkecil, dan ukuran berkas yang masih dikirim apa adanya. */
+const maxImageSide = 1920;
+const keepAsIsBytes = 1024 * 1024;
+
+/**
+ * Memperkecil gambar besar di peramban agar foto kamera lolos batas unggah 4 MB. PNG dan WebP dijadikan WebP
+ * supaya latar transparan logo tidak hilang; lainnya dijadikan JPEG. Bila gagal, berkas asli yang dipakai.
+ */
+async function shrinkImage(file: File): Promise<File> {
+  if (file.size <= keepAsIsBytes) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxImageSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const type = file.type === "image/png" || file.type === "image/webp" ? "image/webp" : "image/jpeg";
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.85));
+    // Peramban yang tidak bisa menulis format itu mengembalikan PNG; hasil yang tidak lebih kecil juga tidak dipakai.
+    if (!blob || blob.type !== type || blob.size >= file.size) return file;
+    return new File([blob], `${file.name.replace(/\.\w+$/, "")}.${type === "image/webp" ? "webp" : "jpg"}`, { type });
+  } catch {
+    return file;
+  }
+}
+
+/** Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. Gambar besar diperkecil lebih dulu. */
+export async function uploadImage(original: File): Promise<string | null> {
   const body = new FormData();
-  body.append("file", file);
+  body.append("file", await shrinkImage(original));
   try {
     const response = await fetch("/api/upload", { method: "POST", body });
-    const result = (await response.json()) as { url?: string; error?: string };
-    if (!response.ok || !result.url) {
-      toast.error(result.error ?? "Unggahan gagal.");
+    // Penolakan dari server hosting (mis. 413 karena terlalu besar) tidak berbentuk JSON.
+    const result = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
+    if (!response.ok || !result?.url) {
+      toast.error(result?.error ?? (response.status === 413 ? "Gambar terlalu besar untuk diunggah. Ukuran maksimal 4 MB." : `Unggahan gagal (kode ${response.status}).`));
       return null;
     }
     return result.url;
