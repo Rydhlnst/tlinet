@@ -431,6 +431,9 @@ export const defaultContent: ContentMap = {
     bankAccountHolder: "PT Trans Link Internasional",
     qrUrl: "",
     qrCaption: "Scan QR untuk pembayaran",
+    signatureUrl: "",
+    signatureName: "",
+    signatureTitle: "Direktur",
     notes: [
       "Mohon lakukan pembayaran sebelum tanggal jatuh tempo untuk menghindari pemutusan layanan.",
       "Pembayaran dapat dilakukan melalui transfer bank ke rekening yang tertera.",

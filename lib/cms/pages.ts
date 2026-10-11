@@ -479,6 +479,16 @@ export const pageDefs: PageDef[] = [
       },
       {
         path: "",
+        title: "Tanda tangan",
+        description: "Tercetak di bawah Informasi Pembayaran. Kosongkan gambarnya bila invoice tidak perlu tanda tangan.",
+        fields: [
+          { name: "signatureUrl", label: "QR atau gambar tanda tangan", type: "image", help: "Mis. QR tanda tangan elektronik Direktur." },
+          { name: "signatureName", label: "Nama penanda tangan", type: "text", half: true, help: "Opsional." },
+          { name: "signatureTitle", label: "Jabatan", type: "text", half: true, placeholder: "Direktur" },
+        ],
+      },
+      {
+        path: "",
         title: "Catatan",
         fields: [{ name: "notes", label: "Catatan bawaan", type: "strings", itemLabel: "Catatan", help: "Tercetak bernomor di setiap invoice yang catatannya dikosongkan." }],
       },

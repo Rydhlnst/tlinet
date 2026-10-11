@@ -145,6 +145,10 @@ export type InvoiceSettings = {
   bankAccountHolder: string;
   qrUrl: string;
   qrCaption: string;
+  /** QR atau gambar tanda tangan pejabat yang mengesahkan invoice, tercetak di bawah informasi pembayaran. */
+  signatureUrl: string;
+  signatureName: string;
+  signatureTitle: string;
   notes: string[];
   footerTagline: string;
 };

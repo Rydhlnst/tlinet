@@ -33,7 +33,7 @@ function Panel({ title, rows }: { title: string; rows: [label: string, value: st
   return (
     <section className={`overflow-hidden rounded-[3px] border ${line}`}>
       <h2 className={`${panel} px-4 py-1.5 text-[13px] font-bold text-[#12305c]`}>{title}</h2>
-      <dl className="grid grid-cols-[31mm_3mm_minmax(0,1fr)] gap-y-[5px] px-4 py-2.5 text-[11px] leading-snug">
+      <dl className="grid grid-cols-[31mm_3mm_minmax(0,1fr)] gap-y-1 px-4 py-2 text-[11px] leading-snug">
         {rows.map(([label, value, strong]) => (
           <div key={label} className="contents">
             <dt>{label}</dt>
@@ -65,11 +65,13 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
   const notes = invoice.notes.length ? invoice.notes : settings.notes;
   const hasBank = Boolean(settings.bankName && settings.bankAccountNumber);
   const hasPayment = hasBank || Boolean(settings.qrUrl);
+  // Kolom kiri blok bawah: informasi pembayaran dan/atau tanda tangan.
+  const hasLeft = hasPayment || Boolean(settings.signatureUrl);
   const period = invoice.periodStart || invoice.periodEnd ? `${shortDate(invoice.periodStart)} – ${shortDate(invoice.periodEnd)}` : "";
 
   return (
     <article className="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white text-[#16243f] shadow-xl print:min-h-[296mm] print:shadow-none">
-      <div className="flex flex-1 flex-col px-[13mm] pt-[8mm] pb-[3mm]">
+      <div className="flex flex-1 flex-col px-[13mm] pt-[8mm] pb-[2mm]">
         <header className="grid grid-cols-[minmax(0,1fr)_90mm] gap-x-[8mm]">
           <div className="flex flex-col justify-between gap-[5mm]">
             {settings.logoUrl ? (
@@ -103,7 +105,7 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
                 {settings.website && <ContactLine icon={Globe}>{settings.website}</ContactLine>}
               </ul>
             </div>
-            <div className="mt-[4mm] overflow-hidden rounded-[3px]">
+            <div className="mt-[3mm] overflow-hidden rounded-[3px]">
               <p className={`${navy} grid grid-cols-[30mm_3mm_minmax(0,1fr)] px-4 py-1.5 text-[13px] font-bold text-white`}>
                 <span>No. Invoice</span>
                 <span aria-hidden="true">:</span>
@@ -121,7 +123,7 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
           </div>
         </header>
 
-        <div className="mt-[5mm] grid grid-cols-[1.18fr_1fr] items-start gap-[7mm]">
+        <div className="mt-[4mm] grid grid-cols-[1.18fr_1fr] items-start gap-[7mm]">
           <Panel
             title="Informasi Pelanggan"
             rows={[
@@ -146,18 +148,18 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
           />
         </div>
 
-        <table className={`mt-[5mm] w-full border-collapse border text-[11.5px] ${line}`}>
+        <table className={`mt-[4mm] w-full border-collapse border text-[11.5px] ${line}`}>
           <thead>
             <tr className={`${navy} text-left text-[12px] text-white`}>
-              <th className="w-[14mm] px-3 py-2 text-center font-bold">No.</th>
-              <th className="px-4 py-2 font-bold">Deskripsi</th>
-              <th className="w-[24mm] px-3 py-2 text-center font-bold">Qty</th>
-              <th className="w-[36mm] px-3 py-2 text-center leading-tight font-bold">
+              <th className="w-[14mm] px-3 py-1.5 text-center font-bold">No.</th>
+              <th className="px-4 py-1.5 font-bold">Deskripsi</th>
+              <th className="w-[24mm] px-3 py-1.5 text-center font-bold">Qty</th>
+              <th className="w-[36mm] px-3 py-1.5 text-center leading-tight font-bold">
                 Harga Satuan
                 <br />
                 (IDR)
               </th>
-              <th className="w-[36mm] px-3 py-2 text-center leading-tight font-bold">
+              <th className="w-[36mm] px-3 py-1.5 text-center leading-tight font-bold">
                 Jumlah
                 <br />
                 (IDR)
@@ -167,14 +169,14 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
           <tbody>
             {invoice.items.map((item, index) => (
               <tr key={index} className={`border-t align-top ${line}`}>
-                <td className={`border-r px-3 py-2 text-center ${line}`}>{index + 1}</td>
-                <td className={`border-r px-4 py-2 ${line}`}>
+                <td className={`border-r px-3 py-1.5 text-center ${line}`}>{index + 1}</td>
+                <td className={`border-r px-4 py-1.5 ${line}`}>
                   <span className="font-bold">{item.description}</span>
                   {item.note && <span className="mt-0.5 block text-[10.5px] text-[#4b5d7a]">({item.note})</span>}
                 </td>
-                <td className={`border-r px-3 py-2 text-center ${line}`}>{numberFormat.format(item.quantity)}</td>
-                <td className={`border-r px-3 py-2 text-right whitespace-nowrap ${line}`}>{money(item.unitPrice)}</td>
-                <td className="px-3 py-2 text-right whitespace-nowrap">{money(item.quantity * item.unitPrice)}</td>
+                <td className={`border-r px-3 py-1.5 text-center ${line}`}>{numberFormat.format(item.quantity)}</td>
+                <td className={`border-r px-3 py-1.5 text-right whitespace-nowrap ${line}`}>{money(item.unitPrice)}</td>
+                <td className="px-3 py-1.5 text-right whitespace-nowrap">{money(item.quantity * item.unitPrice)}</td>
               </tr>
             ))}
           </tbody>
@@ -197,33 +199,45 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
           </div>
         </div>
 
-        <div className={`mt-[5mm] grid items-start gap-[8mm] ${hasPayment ? "grid-cols-[0.9fr_1.1fr]" : ""}`}>
-          {hasPayment && (
-            <section className={`overflow-hidden rounded-[3px] border ${line} bg-[#f5f8fc]`}>
-              <h2 className={`${panel} flex items-center gap-2 px-4 py-1.5 text-[13px] font-bold text-[#12305c]`}>
-                <span className={`${navy} flex size-[15px] items-center justify-center rounded-full text-[9px] text-white`}>Rp</span>
-                Informasi Pembayaran
-              </h2>
-              <div className="flex items-center justify-between gap-3 px-4 py-3 text-[11px]">
-                {hasBank && (
-                  <div className="flex min-w-0 gap-2.5">
-                    <Landmark className="size-[20px] shrink-0 text-[#12356b]" strokeWidth={1.8} />
-                    <div className="leading-relaxed">
-                      <p className="font-bold">{settings.bankName}</p>
-                      <p className="whitespace-nowrap">No. Rekening&nbsp;&nbsp;:&nbsp;&nbsp;{settings.bankAccountNumber}</p>
-                      {settings.bankAccountHolder && <p>a.n. {settings.bankAccountHolder}</p>}
-                    </div>
+        <div className={`mt-[4mm] grid items-start gap-[8mm] ${hasLeft ? "grid-cols-[0.9fr_1.1fr]" : ""}`}>
+          {hasLeft && (
+            <div className="flex flex-col gap-[3mm]">
+              {hasPayment && (
+                <section className={`overflow-hidden rounded-[3px] border ${line} bg-[#f5f8fc]`}>
+                  <h2 className={`${panel} flex items-center gap-2 px-4 py-1.5 text-[13px] font-bold text-[#12305c]`}>
+                    <span className={`${navy} flex size-[15px] items-center justify-center rounded-full text-[9px] text-white`}>Rp</span>
+                    Informasi Pembayaran
+                  </h2>
+                  <div className="flex flex-col gap-3 px-4 py-2.5 text-[11px]">
+                    {hasBank && (
+                      <div className="flex gap-2.5">
+                        <Landmark className="size-[20px] shrink-0 text-[#12356b]" strokeWidth={1.8} />
+                        <div className="min-w-0 leading-relaxed">
+                          <p className="font-bold">{settings.bankName}</p>
+                          <p>No. Rekening&nbsp;&nbsp;:&nbsp;&nbsp;{settings.bankAccountNumber}</p>
+                          {settings.bankAccountHolder && <p>a.n. {settings.bankAccountHolder}</p>}
+                        </div>
+                      </div>
+                    )}
+                    {settings.qrUrl && (
+                      <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={settings.qrUrl} alt="QR pembayaran" className="size-[19mm] shrink-0 object-contain" />
+                        {settings.qrCaption && <p className="font-bold">{settings.qrCaption}</p>}
+                      </div>
+                    )}
                   </div>
-                )}
-                {settings.qrUrl && (
-                  <div className="flex shrink-0 flex-col items-center gap-1">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={settings.qrUrl} alt="QR pembayaran" className="size-[21mm] object-contain" />
-                    {settings.qrCaption && <p className="max-w-[30mm] text-center text-[9px] leading-tight font-bold">{settings.qrCaption}</p>}
-                  </div>
-                )}
-              </div>
-            </section>
+                </section>
+              )}
+              {settings.signatureUrl && (
+                <div className="flex flex-col items-center gap-1 text-center text-[10.5px] leading-tight">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={settings.signatureUrl} alt="Tanda tangan" className="size-[18mm] object-contain" />
+                  {settings.signatureName && <p className="font-bold">{settings.signatureName}</p>}
+                  {settings.signatureTitle && <p className={settings.signatureName ? "" : "font-bold tracking-wide uppercase"}>{settings.signatureTitle}</p>}
+                </div>
+              )}
+            </div>
           )}
           {notes.length > 0 && (
             <section className="text-[10.5px]">
@@ -242,7 +256,7 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
           )}
         </div>
 
-        <footer className={`mt-auto flex items-center gap-[8mm] border-t pt-[4mm] ${line}`}>
+        <footer className={`mt-auto flex items-center gap-[8mm] border-t pt-[3mm] ${line}`}>
           <div className="shrink-0 pr-[8mm]">
             <p className="text-[21px] leading-none text-[#12356b] italic" style={{ fontFamily: '"Segoe Script", "Brush Script MT", "Lucida Handwriting", cursive' }}>
               Terima Kasih
