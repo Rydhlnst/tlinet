@@ -72,7 +72,7 @@ export function MediaLibrary({ items, storageLabel }: { items: MediaItem[]; stor
           ref={input}
           type="file"
           multiple
-          accept="image/jpeg,image/png,image/webp,image/avif"
+          accept="image/*"
           className="hidden"
           onChange={(event) => {
             void onFiles(event.target.files);

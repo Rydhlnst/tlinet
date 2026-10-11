@@ -380,7 +380,7 @@ export function CustomerDetail({ customer, payments, purchases, ledger }: { cust
               ref={fileInput}
               type="file"
               multiple
-              accept="image/jpeg,image/png,image/webp,image/avif"
+              accept="image/*"
               className="hidden"
               onChange={(event) => {
                 // Disalin dulu: mengosongkan input ikut mengosongkan daftar berkasnya.

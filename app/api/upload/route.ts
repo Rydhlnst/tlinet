@@ -12,7 +12,20 @@ const allowed = new Map([
 ]);
 const maxFileSize = 4 * 1024 * 1024;
 
+/** Unggahan ke bucket di wilayah lain bisa makan beberapa detik; batas bawaan fungsi terlalu sempit untuk itu. */
+export const maxDuration = 30;
+
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
+
+/** Mencatat berkas di tabel media; gangguan sesaat ke database dicoba sekali lagi. */
+async function record(values: typeof mediaAssets.$inferInsert) {
+  try {
+    await db!.insert(mediaAssets).values(values);
+  } catch {
+    // Percobaan pertama bisa saja sudah tersimpan walau jawabannya hilang di jalan.
+    await db!.insert(mediaAssets).values(values).onConflictDoNothing();
+  }
+}
 
 export async function POST(request: Request) {
   if (!(await getAdmin())) return fail("Sesi berakhir. Silakan masuk kembali.", 401);
@@ -29,17 +42,21 @@ export async function POST(request: Request) {
   const body = await file.arrayBuffer();
   const base = { id, filename: file.name.slice(0, 160) || `gambar.${extension}`, mimeType: file.type, size: file.size };
 
-  try {
-    if (storageMode === "r2") {
-      const url = await putR2Object(`uploads/${Date.now()}-${id}.${extension}`, body, file.type);
-      await db.insert(mediaAssets).values({ ...base, url });
-      return NextResponse.json({ id, url });
+  // Tanpa R2, gambar disimpan di database dan disajikan lewat /media/<id>.
+  let url = `/media/${id}`;
+  if (storageMode === "r2") {
+    try {
+      url = await putR2Object(`uploads/${Date.now()}-${id}.${extension}`, body, file.type);
+    } catch (error) {
+      console.error("[upload] penyimpanan menolak", { size: file.size, type: file.type }, error);
+      return fail(`Gambar tidak dapat disimpan. ${error instanceof Error ? error.message : "Silakan coba lagi."}`, 502);
     }
-    // Tanpa R2, gambar disimpan di database dan disajikan lewat /media/<id>.
-    const url = `/media/${id}`;
-    await db.insert(mediaAssets).values({ ...base, url, data: Buffer.from(body).toString("base64") });
-    return NextResponse.json({ id, url });
-  } catch {
-    return fail("Unggahan gagal. Silakan coba lagi.", 502);
   }
+  try {
+    await record(storageMode === "r2" ? { ...base, url } : { ...base, url, data: Buffer.from(body).toString("base64") });
+  } catch (error) {
+    console.error("[upload] gagal mencatat media", { size: file.size, type: file.type }, error);
+    return fail("Gambar terunggah tetapi gagal dicatat di database. Silakan coba lagi.", 502);
+  }
+  return NextResponse.json({ id, url });
 }

@@ -9,47 +9,72 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Sisi terpanjang gambar setelah diperkecil, dan ukuran berkas yang masih dikirim apa adanya. */
-const maxImageSide = 1920;
+/** Jenis yang diterima server apa adanya; jenis gambar lain diubah dulu di peramban. */
+const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+/** Di bawah ukuran ini gambar dikirim tanpa diubah; di atasnya diperkecil sampai di bawah batas unggah. */
 const keepAsIsBytes = 1024 * 1024;
+const uploadLimitBytes = 3.5 * 1024 * 1024;
+/** Sisi terpanjang dan mutu yang dicoba berurutan sampai hasilnya muat. */
+const shrinkSteps: [side: number, quality: number][] = [
+  [1920, 0.85],
+  [1600, 0.75],
+  [1280, 0.7],
+  [1024, 0.6],
+];
+
+function render(bitmap: ImageBitmap, side: number, type: string, quality: number) {
+  const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+}
 
 /**
- * Memperkecil gambar besar di peramban agar foto kamera lolos batas unggah 4 MB. PNG dan WebP dijadikan WebP
- * supaya latar transparan logo tidak hilang; lainnya dijadikan JPEG. Bila gagal, berkas asli yang dipakai.
+ * Menyiapkan gambar untuk diunggah, berapa pun ukurannya: foto besar diperkecil bertahap sampai muat, dan
+ * jenis yang tidak diterima server (GIF, BMP, dan sebagainya) diubah ke JPEG atau WebP. PNG, WebP, dan GIF
+ * dijadikan WebP supaya latar transparan tidak hilang. Bila peramban tidak bisa membacanya, berkas asli dikirim
+ * dan server yang menjelaskan penolakannya.
  */
-async function shrinkImage(file: File): Promise<File> {
-  if (file.size <= keepAsIsBytes) return file;
+async function prepareImage(file: File): Promise<File> {
+  const accepted = acceptedTypes.includes(file.type);
+  if (accepted && file.size <= keepAsIsBytes) return file;
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, maxImageSide / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const wanted = ["image/png", "image/webp", "image/gif"].includes(file.type) ? "image/webp" : "image/jpeg";
+    let best: Blob | null = null;
+    for (const [side, quality] of shrinkSteps) {
+      let blob = await render(bitmap, side, wanted, quality);
+      // Peramban yang tidak bisa menulis WebP mengembalikan PNG; pakai JPEG sebagai gantinya.
+      if (blob && blob.type !== wanted) blob = await render(bitmap, side, "image/jpeg", quality);
+      if (blob) best = blob;
+      if (blob && blob.size <= uploadLimitBytes) break;
+    }
     bitmap.close();
-    const type = file.type === "image/png" || file.type === "image/webp" ? "image/webp" : "image/jpeg";
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.85));
-    // Peramban yang tidak bisa menulis format itu mengembalikan PNG; hasil yang tidak lebih kecil juga tidak dipakai.
-    if (!blob || blob.type !== type || blob.size >= file.size) return file;
-    return new File([blob], `${file.name.replace(/\.\w+$/, "")}.${type === "image/webp" ? "webp" : "jpg"}`, { type });
+    // Gambar yang sudah diterima server dan tidak jadi lebih kecil dikirim apa adanya.
+    if (!best || (accepted && best.size >= file.size && file.size <= uploadLimitBytes)) return file;
+    return new File([best], `${file.name.replace(/\.\w+$/, "")}.${best.type === "image/webp" ? "webp" : "jpg"}`, { type: best.type });
   } catch {
     return file;
   }
 }
 
-/** Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. Gambar besar diperkecil lebih dulu. */
+/** Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. Gangguan sementara di server dicoba sekali lagi. */
 export async function uploadImage(original: File): Promise<string | null> {
-  const body = new FormData();
-  body.append("file", await shrinkImage(original));
+  const prepared = await prepareImage(original);
   try {
-    const response = await fetch("/api/upload", { method: "POST", body });
-    // Penolakan dari server hosting (mis. 413 karena terlalu besar) tidak berbentuk JSON.
-    const result = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
-    if (!response.ok || !result?.url) {
-      toast.error(result?.error ?? (response.status === 413 ? "Gambar terlalu besar untuk diunggah. Ukuran maksimal 4 MB." : `Unggahan gagal (kode ${response.status}).`));
+    for (let attempt = 1; ; attempt++) {
+      const body = new FormData();
+      body.append("file", prepared);
+      const response = await fetch("/api/upload", { method: "POST", body });
+      // Penolakan dari server hosting (mis. 413 karena terlalu besar) tidak berbentuk JSON.
+      const result = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
+      if (response.ok && result?.url) return result.url;
+      if (response.status >= 500 && attempt < 2) continue;
+      toast.error(result?.error ?? (response.status === 413 ? "Gambar terlalu besar untuk diunggah." : `Unggahan gagal (kode ${response.status}).`));
       return null;
     }
-    return result.url;
   } catch {
     toast.error("Unggahan gagal. Periksa koneksi Anda.");
     return null;
@@ -91,7 +116,7 @@ export function ImageField({ value, onChange, id }: { value: string; onChange: (
           <input
             ref={input}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/avif"
+            accept="image/*"
             className="hidden"
             onChange={(event) => {
               void onFile(event.target.files?.[0]);

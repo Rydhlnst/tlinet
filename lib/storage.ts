@@ -26,15 +26,33 @@ const client =
 
 const objectUrl = (key: string) => `${endpoint}/${r2.bucket}/${key}`;
 
+const putAttempts = 3;
+
+/**
+ * Mengunggah satu objek ke R2. Permintaannya ditandatangani dulu lalu dikirim dengan body berupa buffer:
+ * bila `Request` bertanda tangan diserahkan langsung ke fetch milik Next, body-nya berubah jadi stream
+ * dan terkirim tanpa Content-Length (chunked), yang membuat unggahan di atas puluhan KB gagal di R2.
+ */
 export async function putR2Object(key: string, body: ArrayBuffer, contentType: string) {
   if (!client) throw new Error("R2 belum diatur.");
-  const response = await client.fetch(objectUrl(key), {
-    method: "PUT",
-    body,
-    headers: { "Content-Type": contentType, "Cache-Control": "public, max-age=31536000, immutable" },
-  });
-  if (!response.ok) throw new Error(`R2 menolak unggahan (${response.status}).`);
-  return `${r2.publicUrl}/${key}`;
+  let failure = "";
+  for (let attempt = 1; attempt <= putAttempts; attempt++) {
+    // Ditandatangani ulang tiap percobaan karena tanda tangannya memuat waktu.
+    const signed = await client.sign(objectUrl(key), {
+      method: "PUT",
+      headers: { "Content-Type": contentType, "Cache-Control": "public, max-age=31536000, immutable" },
+    });
+    try {
+      const response = await fetch(signed.url, { method: "PUT", headers: signed.headers, body: Buffer.from(body), cache: "no-store", signal: AbortSignal.timeout(20_000) });
+      if (response.ok) return `${r2.publicUrl}/${key}`;
+      failure = `R2 menolak unggahan (${response.status}).`;
+      // Penolakan selain gangguan sementara tidak akan berubah bila diulang.
+      if (response.status < 500 && response.status !== 429) break;
+    } catch (error) {
+      failure = `R2 tidak dapat dijangkau (${error instanceof Error ? error.message : "galat jaringan"}).`;
+    }
+  }
+  throw new Error(failure);
 }
 
 /** Apakah URL ini menunjuk ke berkas unggahan di bucket R2 kita. */
