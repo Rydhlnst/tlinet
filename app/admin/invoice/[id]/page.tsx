@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { InvoiceDocument } from "@/components/admin/invoice-document";
+import { InvoiceStatusButton } from "@/components/admin/invoice-status-button";
 import { PrintButton } from "@/components/admin/print-button";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth";
@@ -42,6 +43,7 @@ export default async function InvoicePage({ params }: PageProps<"/admin/invoice/
               Pengaturan Invoice
             </Link>
           </Button>
+          <InvoiceStatusButton id={invoice.id} paid={invoice.status === "paid"} />
           <PrintButton />
         </div>
       </div>

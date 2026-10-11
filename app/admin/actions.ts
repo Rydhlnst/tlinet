@@ -12,7 +12,7 @@ import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
 import { deleteRecord, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
-import { mediaAssets } from "@/lib/db/schema";
+import { invoices, mediaAssets } from "@/lib/db/schema";
 import { deleteR2Object } from "@/lib/storage";
 
 export type FormState = { error?: string };
@@ -93,6 +93,15 @@ export async function saveAccurateAction(path: string, data: unknown): Promise<S
   if (!form) return { ok: false, message: "Form tidak dikenal." };
   if (!accurateWriteEnabled) return { ok: false, message: "Form input ke Accurate belum diaktifkan." };
   return saveAccurateForm(form, data);
+}
+
+export async function setInvoiceStatusAction(id: string, status: "paid" | "unpaid"): Promise<SaveResult> {
+  if (!(await getAdmin())) return expired;
+  if (!db) return { ok: false, message: "Database belum diatur." };
+  if (status !== "paid" && status !== "unpaid") return { ok: false, message: "Status tidak valid." };
+  const updated = await db.update(invoices).set({ status, updatedAt: new Date() }).where(eq(invoices.id, id)).returning({ id: invoices.id });
+  if (!updated.length) return { ok: false, message: "Invoice tidak ditemukan." };
+  return { ok: true, message: status === "paid" ? "Invoice ditandai lunas." : "Invoice ditandai belum lunas." };
 }
 
 export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {

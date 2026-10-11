@@ -63,6 +63,7 @@ function Badge({ icon: Icon, lines }: { icon: LucideIcon; lines: [string, string
 export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; settings: InvoiceSettings }) {
   const { subtotal, tax, total } = invoiceTotals(invoice.items, invoice.taxRate);
   const notes = invoice.notes.length ? invoice.notes : settings.notes;
+  const paid = invoice.status === "paid";
   const hasBank = Boolean(settings.bankName && settings.bankAccountNumber);
   const hasPayment = hasBank || Boolean(settings.qrUrl);
   // Kolom kiri blok bawah: informasi pembayaran dan/atau tanda tangan.
@@ -182,24 +183,35 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
           </tbody>
         </table>
 
-        <div className="mt-[3mm] ml-auto w-[92mm] overflow-hidden rounded-[3px] text-[12px]">
-          <div className={`${panel} flex justify-between border-b border-white px-5 py-1`}>
-            <span>Subtotal</span>
-            <span>{money(subtotal)}</span>
+        <div className="mt-[3mm] flex items-center gap-[8mm]">
+          <div className="flex flex-1 justify-center">
+            <p
+              className={`-rotate-6 rounded-[5px] border-[2.5px] px-4 py-1 text-[18px] leading-none font-extrabold tracking-[0.2em] uppercase ${
+                paid ? "border-[#15803d] text-[#15803d]" : "border-[#b91c1c] text-[#b91c1c]"
+              }`}
+            >
+              {paid ? "Lunas" : "Belum Lunas"}
+            </p>
           </div>
-          {invoice.taxRate > 0 && (
-            <div className={`${panel} flex justify-between px-5 py-1`}>
-              <span>PPN {percent(invoice.taxRate)}%</span>
-              <span>{money(tax)}</span>
+          <div className="w-[92mm] shrink-0 overflow-hidden rounded-[3px] text-[12px]">
+            <div className={`${panel} flex justify-between border-b border-white px-5 py-1`}>
+              <span>Subtotal</span>
+              <span>{money(subtotal)}</span>
             </div>
-          )}
-          <div className={`${navy} flex items-center justify-between px-5 py-2 text-[15px] font-bold text-white`}>
-            <span>Total Tagihan</span>
-            <span>{money(total)}</span>
+            {invoice.taxRate > 0 && (
+              <div className={`${panel} flex justify-between px-5 py-1`}>
+                <span>PPN {percent(invoice.taxRate)}%</span>
+                <span>{money(tax)}</span>
+              </div>
+            )}
+            <div className={`${navy} flex items-center justify-between px-5 py-2 text-[15px] font-bold text-white`}>
+              <span>Total Tagihan</span>
+              <span>{money(total)}</span>
+            </div>
           </div>
         </div>
 
-        <div className={`mt-[4mm] grid items-start gap-[8mm] ${hasLeft ? "grid-cols-[0.9fr_1.1fr]" : ""}`}>
+        <div className={`mt-[4mm] grid flex-1 gap-[8mm] ${hasLeft ? "grid-cols-[0.9fr_1.1fr]" : ""}`}>
           {hasLeft && (
             <div className="flex flex-col gap-[3mm]">
               {hasPayment && (
@@ -230,7 +242,7 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
                 </section>
               )}
               {settings.signatureUrl && (
-                <div className="flex flex-col items-center gap-1 text-center text-[10.5px] leading-tight">
+                <div className="mt-auto flex flex-col items-center gap-1 pt-[2mm] text-center text-[10.5px] leading-tight">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={settings.signatureUrl} alt="Tanda tangan" className="size-[18mm] object-contain" />
                   {settings.signatureName && <p className="font-bold">{settings.signatureName}</p>}
@@ -256,7 +268,7 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
           )}
         </div>
 
-        <footer className={`mt-auto flex items-center gap-[8mm] border-t pt-[3mm] ${line}`}>
+        <footer className={`mt-[3mm] flex items-center gap-[8mm] border-t pt-[3mm] ${line}`}>
           <div className="shrink-0 pr-[8mm]">
             <p className="text-[21px] leading-none text-[#12356b] italic" style={{ fontFamily: '"Segoe Script", "Brush Script MT", "Lucida Handwriting", cursive' }}>
               Terima Kasih
