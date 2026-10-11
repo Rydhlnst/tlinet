@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Calculator, ChevronRight, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronRight, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ReactNode } from "react";
@@ -20,14 +20,16 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { AccurateLedger } from "@/lib/accurate";
 import { customerStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
-import type { customerPayments, customers } from "@/lib/db/schema";
+import type { customerPayments, customerPurchases, customers } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { uploadImage } from "./image-field";
 import { DeleteRecordDialog, RecordSheet, type Row } from "./record-dialogs";
 
 type Customer = typeof customers.$inferSelect;
-type Payment = typeof customerPayments.$inferSelect;
+/** Baris History Pembayaran Subnet; baris History Pembelian Perusahaan menambah pemasok dan layanannya. */
+type HistoryRow = typeof customerPayments.$inferSelect;
+type PurchaseRow = typeof customerPurchases.$inferSelect;
 /** Data Accurate pelanggan ini: null bila tidak tertaut, `error` bila Accurate gagal dijangkau. */
 export type LedgerState = AccurateLedger | { error: string } | null;
 
@@ -98,13 +100,115 @@ function InfoList({ items }: { items: [label: string, value: ReactNode][] }) {
   );
 }
 
-/** Halaman detail satu pelanggan: profil, layanan, foto, dan riwayat pembayaran. */
-export function CustomerDetail({ customer, payments, ledger }: { customer: Customer; payments: Payment[]; ledger: LedgerState }) {
+/** Panel riwayat bulanan (pembayaran atau pembelian) beserta form tambah/ubah dan konfirmasi hapusnya. */
+function HistoryPanel({
+  entityKey,
+  icon,
+  title,
+  noun,
+  rows,
+  customerId,
+  defaults,
+}: {
+  entityKey: string;
+  icon: LucideIcon;
+  title: string;
+  /** Kata benda untuk tombol dan label, mis. "Pembayaran". */
+  noun: string;
+  /** Baris pembelian membawa pemasok dan layanan; bila ada, keduanya ditampilkan sebagai kolom. */
+  rows: (HistoryRow & Partial<Pick<PurchaseRow, "supplierName" | "serviceName">>)[];
+  customerId: string;
+  /** Isian awal form tambah selain bulan, tanggal, dan status, mis. nominal dari biaya bulanan pelanggan. */
+  defaults: Row;
+}) {
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [removing, setRemoving] = useState<Row | null>(null);
+  const lower = noun.toLowerCase();
+  const withSupplier = entityKey === "customer-purchases";
+
+  return (
+    <>
+      <Panel
+        icon={icon}
+        title={title}
+        action={
+          <Button
+            variant="outline"
+            onClick={() => setEditing({ customerId, period: today().slice(0, 7), paidDate: today(), method: rows[0]?.method ?? "", status: "paid", ...defaults })}
+          >
+            <Plus />
+            Tambah {noun}
+          </Button>
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-12 pl-5">No</TableHead>
+              {withSupplier && <TableHead>Pemasok</TableHead>}
+              {withSupplier && <TableHead>Layanan</TableHead>}
+              <TableHead>Bulan</TableHead>
+              <TableHead>Tanggal Bayar</TableHead>
+              <TableHead>Nominal</TableHead>
+              <TableHead>Metode</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-24 pr-5 text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((item, index) => (
+              <TableRow key={item.id}>
+                <TableCell className="pl-5 text-muted-foreground tabular-nums">{index + 1}</TableCell>
+                {withSupplier && <TableCell className="font-medium">{item.supplierName || "—"}</TableCell>}
+                {withSupplier && <TableCell>{item.serviceName || "—"}</TableCell>}
+                <TableCell className="font-medium whitespace-nowrap">
+                  {formatMonth(item.period)}
+                  {item.note && <span className="block max-w-56 truncate text-xs font-normal text-muted-foreground">{item.note}</span>}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{item.paidDate ? formatDate(item.paidDate) : "—"}</TableCell>
+                <TableCell className="font-medium whitespace-nowrap tabular-nums">{formatRupiah(item.amount)}</TableCell>
+                <TableCell>{item.method || "—"}</TableCell>
+                <TableCell>
+                  <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
+                </TableCell>
+                <TableCell className="pr-4 text-right whitespace-nowrap">
+                  <Button variant="ghost" size="icon-sm" onClick={() => setEditing({ ...item })} aria-label={`Ubah ${lower} ${formatMonth(item.period)}`}>
+                    <Pencil />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setRemoving(item)}
+                    aria-label={`Hapus ${lower} ${formatMonth(item.period)}`}
+                  >
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {rows.length === 0 && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={withSupplier ? 9 : 7} className="h-28 text-center text-muted-foreground">
+                  Belum ada {lower} yang dicatat.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Panel>
+
+      <RecordSheet entityKey={entityKey} value={editing} setValue={setEditing} hiddenFields={["customerId"]} />
+      <DeleteRecordDialog entityKey={entityKey} row={removing} title={removing ? `${noun} ${formatMonth(String(removing.period))}` : ""} onClose={() => setRemoving(null)} />
+    </>
+  );
+}
+
+/** Halaman detail satu pelanggan: profil, layanan, foto, riwayat pembayaran, dan riwayat pembelian. */
+export function CustomerDetail({ customer, payments, purchases, ledger }: { customer: Customer; payments: HistoryRow[]; purchases: PurchaseRow[]; ledger: LedgerState }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState<Row | null>(null);
-  const [payment, setPayment] = useState<Row | null>(null);
-  const [removingPayment, setRemovingPayment] = useState<Row | null>(null);
   const [removingPhoto, setRemovingPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [savingPhotos, startSavingPhotos] = useTransition();
@@ -227,7 +331,9 @@ export function CustomerDetail({ customer, payments, ledger }: { customer: Custo
           <InfoList
             items={[
               ["Kapasitas", customer.capacity],
-              ["Biaya Bulanan", customer.monthlyFee ? formatRupiah(customer.monthlyFee) : ""],
+              ["Biaya Bulanan ke ISP", customer.monthlyFee ? formatRupiah(customer.monthlyFee) : ""],
+              ["Biaya Bulanan ke NAP", customer.napFee ? formatRupiah(customer.napFee) : ""],
+              ["Selisih Keuntungan", customer.monthlyFee || customer.napFee ? formatRupiah(customer.monthlyFee - customer.napFee) : ""],
               ["No. Pembayaran", customer.paymentNumber],
               ["Vendor", customer.vendor],
               ["IP Address", customer.ipAddress],
@@ -384,89 +490,34 @@ export function CustomerDetail({ customer, payments, ledger }: { customer: Custo
         </Panel>
       )}
 
-      <Panel
+      <HistoryPanel
+        entityKey="customer-payments"
         icon={ReceiptText}
-        title="History Pembayaran"
-        action={
-          <Button
-            variant="outline"
-            onClick={() =>
-              setPayment({
-                customerId: customer.id,
-                period: today().slice(0, 7),
-                paidDate: today(),
-                amount: customer.monthlyFee || "",
-                method: payments[0]?.method ?? "",
-                status: "paid",
-              })
-            }
-          >
-            <Plus />
-            Tambah Pembayaran
-          </Button>
-        }
-      >
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12 pl-5">No</TableHead>
-              <TableHead>Bulan</TableHead>
-              <TableHead>Tanggal Bayar</TableHead>
-              <TableHead>Nominal</TableHead>
-              <TableHead>Metode</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-24 pr-5 text-right">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {payments.map((item, index) => (
-              <TableRow key={item.id}>
-                <TableCell className="pl-5 text-muted-foreground tabular-nums">{index + 1}</TableCell>
-                <TableCell className="font-medium whitespace-nowrap">
-                  {formatMonth(item.period)}
-                  {item.note && <span className="block max-w-56 truncate text-xs font-normal text-muted-foreground">{item.note}</span>}
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">{item.paidDate ? formatDate(item.paidDate) : "—"}</TableCell>
-                <TableCell className="font-medium whitespace-nowrap tabular-nums">{formatRupiah(item.amount)}</TableCell>
-                <TableCell>{item.method || "—"}</TableCell>
-                <TableCell>
-                  <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
-                </TableCell>
-                <TableCell className="pr-4 text-right whitespace-nowrap">
-                  <Button variant="ghost" size="icon-sm" onClick={() => setPayment({ ...item })} aria-label={`Ubah pembayaran ${formatMonth(item.period)}`}>
-                    <Pencil />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => setRemovingPayment(item)}
-                    aria-label={`Hapus pembayaran ${formatMonth(item.period)}`}
-                  >
-                    <Trash2 />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {payments.length === 0 && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={7} className="h-28 text-center text-muted-foreground">
-                  Belum ada pembayaran yang dicatat.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Panel>
+        title="History Pembayaran Subnet"
+        noun="Pembayaran"
+        rows={payments}
+        customerId={customer.id}
+        defaults={{ amount: customer.monthlyFee || "" }}
+      />
+
+      <HistoryPanel
+        entityKey="customer-purchases"
+        icon={ShoppingBag}
+        title="History Pembelian Perusahaan"
+        noun="Pembelian"
+        rows={purchases}
+        customerId={customer.id}
+        // Pemasok biasanya sama dari bulan ke bulan: ambil dari pembelian terakhir, kalau belum ada dari vendor pelanggan.
+        defaults={{
+          amount: customer.napFee || "",
+          supplierName: purchases[0]?.supplierName || customer.vendor,
+          supplierAddress: purchases[0]?.supplierAddress ?? "",
+          supplierEmail: purchases[0]?.supplierEmail ?? "",
+          serviceName: purchases[0]?.serviceName ?? "",
+        }}
+      />
 
       <RecordSheet entityKey="customers" value={editing} setValue={setEditing} />
-      <RecordSheet entityKey="customer-payments" value={payment} setValue={setPayment} hiddenFields={["customerId"]} />
-      <DeleteRecordDialog
-        entityKey="customer-payments"
-        row={removingPayment}
-        title={removingPayment ? `Pembayaran ${formatMonth(String(removingPayment.period))}` : ""}
-        onClose={() => setRemovingPayment(null)}
-      />
 
       <AlertDialog open={removingPhoto !== null} onOpenChange={(open) => !open && !savingPhotos && setRemovingPhoto(null)}>
         <AlertDialogContent>

@@ -147,7 +147,9 @@ function Control({ field, value, onChange, options, id }: { field: Field; value:
     case "textarea":
       return <Textarea id={id} rows={field.rows ?? 3} value={text} placeholder={field.placeholder} onChange={(event) => onChange(event.target.value)} />;
     case "number":
-      return <Input id={id} type="number" step="any" value={text} onChange={(event) => onChange(event.target.value)} />;
+      return <Input id={id} type="number" step="any" min={field.min} value={text} onChange={(event) => onChange(event.target.value)} />;
+    case "email":
+      return <Input id={id} type="email" value={text} placeholder={field.placeholder} onChange={(event) => onChange(event.target.value)} />;
     case "date":
       return <Input id={id} type="date" value={text} onChange={(event) => onChange(event.target.value)} />;
     case "month":

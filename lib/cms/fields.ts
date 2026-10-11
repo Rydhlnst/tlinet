@@ -11,9 +11,10 @@ type FieldBase = {
 };
 
 export type Field =
-  | (FieldBase & { type: "text" | "url" | "image" | "icon" | "date" | "month" | "switch" })
+  | (FieldBase & { type: "text" | "email" | "url" | "image" | "icon" | "date" | "month" | "switch" })
   | (FieldBase & { type: "textarea"; rows?: number })
-  | (FieldBase & { type: "number"; integer?: boolean })
+  /** `min`: nilai terkecil yang diterima, mis. 1 untuk nominal yang tidak boleh nol atau negatif. */
+  | (FieldBase & { type: "number"; integer?: boolean; min?: number })
   /** `optionsFrom` diisi halaman admin dari data lain (mis. kategori paket). */
   | (FieldBase & { type: "select"; options?: Option[]; optionsFrom?: string })
   | (FieldBase & { type: "strings"; itemLabel: string })
@@ -50,6 +51,10 @@ function sanitizeValue(field: Field, value: unknown, errors: string[], label: st
         errors.push(`${label} harus berupa angka.`);
         return 0;
       }
+      if (field.min != null && number < field.min) {
+        errors.push(field.min > 0 ? `${label} harus lebih dari nol.` : `${label} tidak boleh kurang dari ${field.min}.`);
+        return 0;
+      }
       return field.integer ? Math.round(number) : number;
     }
     case "strings":
@@ -66,6 +71,10 @@ function sanitizeValue(field: Field, value: unknown, errors: string[], label: st
       if (field.required && !text) errors.push(`${label} wajib diisi.`);
       if ((field.type === "url" || field.type === "image") && !isSafeHref(text)) {
         errors.push(`${label} harus berupa tautan yang valid (diawali /, #, atau https://).`);
+        return "";
+      }
+      if (field.type === "email" && text && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) {
+        errors.push(`${label} bukan alamat email yang valid.`);
         return "";
       }
       if (field.type === "date" && text && !/^\d{4}-\d{2}-\d{2}$/.test(text)) {

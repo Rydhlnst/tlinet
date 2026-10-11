@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { DynamicOptions } from "@/components/admin/field-control";
 import { ResourceManager } from "@/components/admin/resource-manager";
 import { requireAdmin } from "@/lib/auth";
-import { getEntityDef } from "@/lib/cms/entities";
+import { customerHistoryKeys, getEntityDef } from "@/lib/cms/entities";
 import { listRecords } from "@/lib/cms/store";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
@@ -24,7 +24,7 @@ async function loadOptions(entityKey: string): Promise<DynamicOptions> {
     const help = await getContent("help");
     return { faqCategories: help.faq.categories.map((category) => ({ value: category, label: category })) };
   }
-  if (entityKey === "customer-payments") {
+  if (customerHistoryKeys.includes(entityKey)) {
     const rows = await requireDb().select({ id: customers.id, name: customers.name, siteId: customers.siteId }).from(customers).orderBy(asc(customers.name));
     return { customers: rows.map((customer) => ({ value: customer.id, label: customer.siteId ? `${customer.name} · ${customer.siteId}` : customer.name })) };
   }

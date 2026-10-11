@@ -131,7 +131,10 @@ export const customers = pgTable(
     regency: text("regency").notNull().default(""),
     province: text("province").notNull().default(""),
     capacity: text("capacity").notNull().default(""),
+    /** Tagihan bulanan pelanggan ke kita (ISP). Selisihnya dengan `napFee` adalah keuntungan per bulan. */
     monthlyFee: integer("monthly_fee").notNull().default(0),
+    /** Biaya bulanan yang kita bayar ke NAP untuk pelanggan ini. */
+    napFee: integer("nap_fee").notNull().default(0),
     paymentNumber: text("payment_number").notNull().default(""),
     vendor: text("vendor").notNull().default(""),
     ipAddress: text("ip_address").notNull().default(""),
@@ -148,20 +151,40 @@ export const customers = pgTable(
   (table) => [uniqueIndex("customers_accurate_id_idx").on(table.accurateId).where(sql`${table.accurateId} is not null`)],
 );
 
+/** Kolom tagihan bulanan yang sama-sama dipakai History Pembayaran Subnet dan History Pembelian Perusahaan. */
+const billingColumns = () => ({
+  period: text("period").notNull(),
+  paidDate: text("paid_date").notNull().default(""),
+  amount: integer("amount").notNull().default(0),
+  method: text("method").notNull().default(""),
+  status: text("status").notNull().default("paid"),
+  note: text("note").notNull().default(""),
+  ...timestamps,
+});
+
+/** Pembayaran dari pelanggan (subnet) ke kita. */
 export const customerPayments = pgTable(
   "customer_payments",
+  { id: text("id").primaryKey(), customerId: text("customer_id").notNull(), ...billingColumns() },
+  (table) => [index("customer_payments_customer_idx").on(table.customerId, table.period)],
+);
+
+/**
+ * Pembelian perusahaan ke pemasok. `customerId` kosong untuk pembelian umum; terisi bila pembelian itu
+ * dicatat dari halaman detail seorang pelanggan, sehingga ikut tampil di sana.
+ */
+export const customerPurchases = pgTable(
+  "customer_purchases",
   {
     id: text("id").primaryKey(),
-    customerId: text("customer_id").notNull(),
-    period: text("period").notNull(),
-    paidDate: text("paid_date").notNull().default(""),
-    amount: integer("amount").notNull().default(0),
-    method: text("method").notNull().default(""),
-    status: text("status").notNull().default("paid"),
-    note: text("note").notNull().default(""),
-    ...timestamps,
+    customerId: text("customer_id").notNull().default(""),
+    supplierName: text("supplier_name").notNull().default(""),
+    supplierAddress: text("supplier_address").notNull().default(""),
+    supplierEmail: text("supplier_email").notNull().default(""),
+    serviceName: text("service_name").notNull().default(""),
+    ...billingColumns(),
   },
-  (table) => [index("customer_payments_customer_idx").on(table.customerId, table.period)],
+  (table) => [index("customer_purchases_customer_idx").on(table.customerId, table.period)],
 );
 
 /** `data` hanya terisi (base64) bila R2 belum diatur; saat itu `url` menunjuk ke /media/<id>. */

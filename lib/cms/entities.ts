@@ -275,14 +275,14 @@ export const entityDefs: EntityDef[] = [
     searchKeys: ["name", "company", "phone", "siteId", "cid", "address", "regency", "ipAddress"],
     internal: true,
     detailPath: "/admin/data/customers",
-    defaults: { status: "active", monthlyFee: "" },
+    defaults: { status: "active", monthlyFee: "", napFee: "" },
     columns: [
       { key: "company", label: "PT" },
       { key: "name", label: "Nama" },
       { key: "siteId", label: "Site ID" },
       { key: "regency", label: "Kabupaten" },
       { key: "capacity", label: "Kapasitas" },
-      { key: "monthlyFee", label: "Biaya bulanan", type: "currency" },
+      { key: "monthlyFee", label: "Biaya ke ISP", type: "currency" },
       { key: "status", label: "Status", type: "badge", labels: customerStatusLabels },
     ],
     fields: [
@@ -297,7 +297,8 @@ export const entityDefs: EntityDef[] = [
       { name: "regency", label: "Kabupaten", type: "text", half: true },
       { name: "province", label: "Provinsi", type: "text", half: true },
       { name: "capacity", label: "Kapasitas", type: "text", half: true, placeholder: "50 Mbps" },
-      { name: "monthlyFee", label: "Biaya bulanan (Rp)", type: "number", integer: true, half: true, help: "Angka saja, tanpa titik. Mis. 450000." },
+      { name: "monthlyFee", label: "Biaya bulanan ke ISP (Rp)", type: "number", integer: true, half: true, help: "Yang dibayar pelanggan tiap bulan. Angka saja, tanpa titik." },
+      { name: "napFee", label: "Biaya bulanan ke NAP (Rp)", type: "number", integer: true, half: true, help: "Yang dibayar ke NAP tiap bulan. Selisihnya tercatat di menu Selisih Keuntungan." },
       { name: "paymentNumber", label: "No. pembayaran", type: "text", half: true },
       { name: "vendor", label: "Vendor", type: "text", half: true },
       { name: "ipAddress", label: "IP address", type: "text", half: true },
@@ -307,7 +308,7 @@ export const entityDefs: EntityDef[] = [
   },
   {
     key: "customer-payments",
-    label: "History Pembayaran",
+    label: "History Pembayaran Subnet",
     singular: "pembayaran",
     description: "Riwayat pembayaran semua pelanggan. Pembayaran juga bisa dicatat dari halaman detail pelanggan.",
     searchKeys: ["period", "method", "note"],
@@ -325,12 +326,46 @@ export const entityDefs: EntityDef[] = [
       { name: "customerId", label: "Pelanggan", type: "select", optionsFrom: "customers", required: true },
       { name: "period", label: "Bulan tagihan", type: "month", required: true, half: true },
       { name: "paidDate", label: "Tanggal bayar", type: "date", half: true },
-      { name: "amount", label: "Nominal (Rp)", type: "number", integer: true, required: true, half: true },
+      { name: "amount", label: "Nominal (Rp)", type: "number", integer: true, required: true, min: 1, half: true },
       { name: "method", label: "Metode", type: "text", half: true, placeholder: "Transfer BRI" },
       { name: "status", label: "Status", type: "select", half: true, options: toOptions(paymentStatusLabels) },
       { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
     ],
   },
+  {
+    key: "customer-purchases",
+    label: "History Pembelian Perusahaan",
+    singular: "pembelian",
+    description: "Riwayat pembelian perusahaan ke pemasok. Pembelian yang dicatat dari halaman detail pelanggan ikut tampil di sini.",
+    searchKeys: ["supplierName", "serviceName", "period", "method", "note"],
+    internal: true,
+    defaults: { status: "paid", amount: "" },
+    columns: [
+      { key: "supplierName", label: "Pemasok" },
+      { key: "serviceName", label: "Layanan" },
+      { key: "period", label: "Bulan", type: "month" },
+      { key: "paidDate", label: "Tanggal bayar", type: "date" },
+      { key: "amount", label: "Nominal", type: "currency" },
+      { key: "method", label: "Metode" },
+      { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
+    ],
+    fields: [
+      { name: "supplierName", label: "Nama pemasok", type: "text", required: true },
+      { name: "supplierAddress", label: "Alamat pemasok", type: "textarea", rows: 2 },
+      { name: "supplierEmail", label: "Email pemasok", type: "email", half: true, placeholder: "nama@perusahaan.com" },
+      { name: "serviceName", label: "Nama layanan", type: "text", half: true, placeholder: "IP Transit 100 Mbps" },
+      { name: "period", label: "Bulan tagihan", type: "month", required: true, half: true },
+      { name: "paidDate", label: "Tanggal bayar", type: "date", half: true, help: "Wajib diisi bila statusnya Lunas." },
+      { name: "amount", label: "Nominal (Rp)", type: "number", integer: true, required: true, min: 1, half: true },
+      { name: "method", label: "Metode pembayaran", type: "text", half: true, placeholder: "Transfer BRI" },
+      { name: "status", label: "Status", type: "select", half: true, options: toOptions(paymentStatusLabels) },
+      { name: "customerId", label: "Pelanggan terkait", type: "select", optionsFrom: "customers", half: true, help: "Opsional. Jika dipilih, pembelian ini juga tampil di halaman detail pelanggan itu." },
+      { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
+    ],
+  },
 ];
+
+/** Entitas yang barisnya bisa ditautkan ke seorang pelanggan lewat `customerId`. */
+export const customerHistoryKeys = ["customer-payments", "customer-purchases"];
 
 export const getEntityDef = (key: string) => entityDefs.find((entity) => entity.key === key);

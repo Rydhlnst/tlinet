@@ -2,9 +2,9 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
-import { articles, clients, coverageAreas, customerPayments, customers, faqs, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
+import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
-import type { EntityDef } from "./entities";
+import { customerHistoryKeys, type EntityDef } from "./entities";
 import { sanitizeDocument, sanitizeFields } from "./fields";
 import type { PageDef } from "./pages";
 
@@ -20,6 +20,7 @@ const tables: Record<string, EntityTable> = {
   leads,
   customers,
   "customer-payments": customerPayments,
+  "customer-purchases": customerPurchases,
 };
 
 export type SaveResult = { ok: true; message: string } | { ok: false; message: string };
@@ -37,6 +38,8 @@ export async function listRecords(entity: EntityDef): Promise<RecordRow[]> {
         ? [asc(customers.name)]
         : entity.key === "customer-payments"
         ? [desc(customerPayments.period), desc(customerPayments.createdAt)]
+        : entity.key === "customer-purchases"
+        ? [desc(customerPurchases.period), desc(customerPurchases.createdAt)]
         : table.sortOrder
         ? [asc(table.sortOrder), asc(table.createdAt)]
         : [desc(table.createdAt)];
@@ -62,10 +65,12 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
       if (clash.length) errors.push("Slug URL sudah dipakai artikel lain.");
     }
   }
-  if (entity.key === "customer-payments" && values.customerId) {
+  if (customerHistoryKeys.includes(entity.key) && values.customerId) {
     const owner = await db.select({ id: customers.id }).from(customers).where(eq(customers.id, String(values.customerId))).limit(1);
     if (!owner.length) errors.push("Pelanggan tidak ditemukan.");
   }
+  // Pembelian berstatus lunas harus punya tanggal bayarnya.
+  if (entity.key === "customer-purchases" && values.status === "paid" && !values.paidDate) errors.push("Tanggal bayar wajib diisi bila statusnya Lunas.");
   if (errors.length) return { ok: false, message: errors[0] };
 
   if (givenId) {
@@ -84,8 +89,11 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
     const used = await db.select({ id: packages.id }).from(packages).where(eq(packages.categoryId, id)).limit(1);
     if (used.length) return { ok: false, message: "Kategori masih dipakai paket. Pindahkan atau hapus paketnya terlebih dahulu." };
   }
-  // Riwayat pembayaran ikut terhapus bersama pelanggannya.
-  if (entity.key === "customers") await db.delete(customerPayments).where(eq(customerPayments.customerId, id));
+  // Riwayat pembayaran dan pembelian ikut terhapus bersama pelanggannya.
+  if (entity.key === "customers") {
+    await db.delete(customerPayments).where(eq(customerPayments.customerId, id));
+    await db.delete(customerPurchases).where(eq(customerPurchases.customerId, id));
+  }
   await db.delete(tables[entity.key]).where(eq(tables[entity.key].id, id));
   return { ok: true, message: "Data dihapus." };
 }

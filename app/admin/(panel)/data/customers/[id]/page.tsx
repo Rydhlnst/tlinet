@@ -5,7 +5,7 @@ import { CustomerDetail, type LedgerState } from "@/components/admin/customer-de
 import { accurateMode, getAccurateLedger } from "@/lib/accurate";
 import { requireAdmin } from "@/lib/auth";
 import { requireDb } from "@/lib/db";
-import { customerPayments, customers } from "@/lib/db/schema";
+import { customerPayments, customerPurchases, customers } from "@/lib/db/schema";
 
 export const metadata: Metadata = { title: "Detail Pelanggan" };
 
@@ -23,11 +23,12 @@ export default async function CustomerPage({ params }: PageProps<"/admin/data/cu
   await requireAdmin();
   const { id } = await params;
   const db = requireDb();
-  const [[customer], payments] = await Promise.all([
+  const [[customer], payments, purchases] = await Promise.all([
     db.select().from(customers).where(eq(customers.id, id)).limit(1),
     db.select().from(customerPayments).where(eq(customerPayments.customerId, id)).orderBy(desc(customerPayments.period), desc(customerPayments.createdAt)),
+    db.select().from(customerPurchases).where(eq(customerPurchases.customerId, id)).orderBy(desc(customerPurchases.period), desc(customerPurchases.createdAt)),
   ]);
   if (!customer) notFound();
 
-  return <CustomerDetail customer={customer} payments={payments} ledger={await loadLedger(customer.accurateId)} />;
+  return <CustomerDetail customer={customer} payments={payments} purchases={purchases} ledger={await loadLedger(customer.accurateId)} />;
 }
