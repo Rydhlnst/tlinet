@@ -27,6 +27,8 @@ export type EntityDef = {
   internal?: boolean;
   /** Bila diisi, baris tabel membuka halaman detail di `<detailPath>/<id>`. */
   detailPath?: string;
+  /** Menampilkan tombol tiga titik yang membuka dialog berisi semua isian baris itu. */
+  detailDialog?: boolean;
 };
 
 const ordering: Field[] = [
@@ -314,6 +316,7 @@ export const entityDefs: EntityDef[] = [
     description: "Riwayat pembayaran semua pelanggan. Pembayaran juga bisa dicatat dari halaman detail pelanggan.",
     searchKeys: ["period", "method", "note"],
     internal: true,
+    detailDialog: true,
     defaults: { status: "paid", amount: "" },
     columns: [
       { key: "customerId", label: "Pelanggan", labelsFrom: "customerNames" },
@@ -342,6 +345,7 @@ export const entityDefs: EntityDef[] = [
     description: "Riwayat pembelian perusahaan ke pemasok. Pembelian yang dicatat dari halaman detail pelanggan ikut tampil di sini.",
     searchKeys: ["supplierName", "serviceName", "period", "method", "note"],
     internal: true,
+    detailDialog: true,
     defaults: { status: "paid", amount: "" },
     columns: [
       { key: "supplierName", label: "Pemasok" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ExternalLink, Eye, Minus, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Check, Ellipsis, ExternalLink, Eye, Minus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -13,7 +13,7 @@ import { formatDate, formatDateTime, formatMonth, formatRupiah, whatsappUrl } fr
 import { cn } from "@/lib/utils";
 import type { DynamicOptions } from "./field-control";
 import { ProofViewer } from "./proof-viewer";
-import { DeleteRecordDialog, RecordSheet, type Row } from "./record-dialogs";
+import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
 
 function Cell({ column, row, options, entityKey }: { column: Column; row: Row; options: DynamicOptions; entityKey: string }) {
   const value = row[column.key];
@@ -63,6 +63,7 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Row | null>(null);
   const [removing, setRemoving] = useState<Row | null>(null);
+  const [viewing, setViewing] = useState<Row | null>(null);
   const canCreate = entity.canCreate !== false;
 
   const visible = useMemo(() => {
@@ -130,7 +131,7 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
                   {column.label}
                 </TableHead>
               ))}
-              <TableHead className={cn("pr-4 text-right", entity.detailPath ? "w-32" : "w-24")}>Aksi</TableHead>
+              <TableHead className={cn("pr-4 text-right", entity.detailPath || entity.detailDialog ? "w-32" : "w-24")}>Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -147,6 +148,11 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
                       <Link href={detailHref(row)}>
                         <Eye />
                       </Link>
+                    </Button>
+                  )}
+                  {entity.detailDialog && (
+                    <Button variant="ghost" size="icon-sm" onClick={() => setViewing(row)} aria-label={`Lihat detail ${titleOf(row)}`}>
+                      <Ellipsis />
                     </Button>
                   )}
                   <Button variant="ghost" size="icon-sm" onClick={() => setEditing({ ...row })} aria-label={`Ubah ${titleOf(row)}`}>
@@ -175,6 +181,7 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
         </Table>
       </div>
 
+      {entity.detailDialog && <RecordDetailDialog entityKey={entity.key} row={viewing} onClose={() => setViewing(null)} onEdit={(row) => setEditing({ ...row })} options={options} />}
       <RecordSheet entityKey={entity.key} value={editing} setValue={setEditing} options={options} />
       <DeleteRecordDialog entityKey={entity.key} row={removing} title={removing ? titleOf(removing) : ""} onClose={() => setRemoving(null)} />
     </div>
