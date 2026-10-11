@@ -158,6 +158,8 @@ const billingColumns = () => ({
   amount: integer("amount").notNull().default(0),
   method: text("method").notNull().default(""),
   status: text("status").notNull().default("paid"),
+  /** Gambar bukti transfer; kosong bila belum diunggah. */
+  proofUrl: text("proof_url").notNull().default(""),
   note: text("note").notNull().default(""),
   ...timestamps,
 });

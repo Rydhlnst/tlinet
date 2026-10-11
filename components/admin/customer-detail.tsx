@@ -152,6 +152,7 @@ function HistoryPanel({
               <TableHead>Nominal</TableHead>
               <TableHead>Metode</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Bukti</TableHead>
               <TableHead className="w-24 pr-5 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
@@ -171,6 +172,16 @@ function HistoryPanel({
                 <TableCell>
                   <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
                 </TableCell>
+                <TableCell>
+                  {item.proofUrl ? (
+                    <a href={item.proofUrl} target="_blank" rel="noopener noreferrer" aria-label={`Buka bukti transfer ${formatMonth(item.period)}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.proofUrl} alt="" loading="lazy" className="size-9 rounded-md border object-cover" />
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="pr-4 text-right whitespace-nowrap">
                   <Button variant="ghost" size="icon-sm" onClick={() => setEditing({ ...item })} aria-label={`Ubah ${lower} ${formatMonth(item.period)}`}>
                     <Pencil />
@@ -189,7 +200,7 @@ function HistoryPanel({
             ))}
             {rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={withSupplier ? 9 : 7} className="h-28 text-center text-muted-foreground">
+                <TableCell colSpan={withSupplier ? 10 : 8} className="h-28 text-center text-muted-foreground">
                   Belum ada {lower} yang dicatat.
                 </TableCell>
               </TableRow>

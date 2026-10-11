@@ -321,6 +321,7 @@ export const entityDefs: EntityDef[] = [
       { key: "amount", label: "Nominal", type: "currency" },
       { key: "method", label: "Metode" },
       { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
+      { key: "proofUrl", label: "Bukti", type: "image" },
     ],
     fields: [
       { name: "customerId", label: "Pelanggan", type: "select", optionsFrom: "customers", required: true },
@@ -329,6 +330,7 @@ export const entityDefs: EntityDef[] = [
       { name: "amount", label: "Nominal (Rp)", type: "number", integer: true, required: true, min: 1, half: true },
       { name: "method", label: "Metode", type: "text", half: true, placeholder: "Transfer BRI" },
       { name: "status", label: "Status", type: "select", half: true, options: toOptions(paymentStatusLabels) },
+      { name: "proofUrl", label: "Bukti transfer", type: "image", help: "Opsional. Unggah foto atau tangkapan layar bukti transfer." },
       { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
     ],
   },
@@ -348,6 +350,7 @@ export const entityDefs: EntityDef[] = [
       { key: "amount", label: "Nominal", type: "currency" },
       { key: "method", label: "Metode" },
       { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
+      { key: "proofUrl", label: "Bukti", type: "image" },
     ],
     fields: [
       { name: "supplierName", label: "Nama pemasok", type: "text", required: true },
@@ -360,6 +363,7 @@ export const entityDefs: EntityDef[] = [
       { name: "method", label: "Metode pembayaran", type: "text", half: true, placeholder: "Transfer BRI" },
       { name: "status", label: "Status", type: "select", half: true, options: toOptions(paymentStatusLabels) },
       { name: "customerId", label: "Pelanggan terkait", type: "select", optionsFrom: "customers", half: true, help: "Opsional. Jika dipilih, pembelian ini juga tampil di halaman detail pelanggan itu." },
+      { name: "proofUrl", label: "Bukti transfer", type: "image", help: "Opsional. Unggah foto atau tangkapan layar bukti transfer." },
       { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
     ],
   },
