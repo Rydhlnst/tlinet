@@ -3,7 +3,8 @@ import type { Field } from "./fields";
 export type Column = {
   key: string;
   label: string;
-  type?: "text" | "badge" | "boolean" | "image" | "date" | "datetime" | "month" | "currency" | "whatsapp";
+  /** `proof`: gambar bukti transfer yang bisa dibuka layar penuh dan diunduh. */
+  type?: "text" | "badge" | "boolean" | "image" | "proof" | "date" | "datetime" | "month" | "currency" | "whatsapp";
   /** Untuk `badge` dan teks: label per nilai. Untuk kolom yang nilainya id, halaman admin mengisinya dari data terkait. */
   labels?: Record<string, string>;
   labelsFrom?: string;
@@ -321,7 +322,7 @@ export const entityDefs: EntityDef[] = [
       { key: "amount", label: "Nominal", type: "currency" },
       { key: "method", label: "Metode" },
       { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
-      { key: "proofUrl", label: "Bukti", type: "image" },
+      { key: "proofUrl", label: "Bukti", type: "proof" },
     ],
     fields: [
       { name: "customerId", label: "Pelanggan", type: "select", optionsFrom: "customers", required: true },
@@ -350,7 +351,7 @@ export const entityDefs: EntityDef[] = [
       { key: "amount", label: "Nominal", type: "currency" },
       { key: "method", label: "Metode" },
       { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
-      { key: "proofUrl", label: "Bukti", type: "image" },
+      { key: "proofUrl", label: "Bukti", type: "proof" },
     ],
     fields: [
       { name: "supplierName", label: "Nama pemasok", type: "text", required: true },

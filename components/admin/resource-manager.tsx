@@ -12,9 +12,10 @@ import { getEntityDef, type Column } from "@/lib/cms/entities";
 import { formatDate, formatDateTime, formatMonth, formatRupiah, whatsappUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DynamicOptions } from "./field-control";
+import { ProofViewer } from "./proof-viewer";
 import { DeleteRecordDialog, RecordSheet, type Row } from "./record-dialogs";
 
-function Cell({ column, row, options }: { column: Column; row: Row; options: DynamicOptions }) {
+function Cell({ column, row, options, entityKey }: { column: Column; row: Row; options: DynamicOptions; entityKey: string }) {
   const value = row[column.key];
   const text = value == null ? "" : String(value);
   const label = column.labels?.[text] ?? options[column.labelsFrom ?? ""]?.find((option) => option.value === text)?.label ?? text;
@@ -29,6 +30,8 @@ function Cell({ column, row, options }: { column: Column; row: Row; options: Dyn
       ) : (
         <span className="block size-9 rounded-md border border-dashed bg-muted/50" />
       );
+    case "proof":
+      return text && row.id ? <ProofViewer entityKey={entityKey} id={row.id} label={formatMonth(String(row.period ?? ""))} /> : <span className="text-muted-foreground">—</span>;
     case "date":
       return <span className="whitespace-nowrap text-muted-foreground">{text ? formatDate(text) : "—"}</span>;
     case "datetime":
@@ -117,7 +120,7 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {entity.columns.map((column) => (
-                <TableHead key={column.key} className={cn("first:pl-4", column.type === "image" && "w-16")}>
+                <TableHead key={column.key} className={cn("first:pl-4", (column.type === "image" || column.type === "proof") && "w-16")}>
                   {column.label}
                 </TableHead>
               ))}
@@ -129,7 +132,7 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
               <TableRow key={row.id} className="cursor-pointer" onClick={() => openRow(row)}>
                 {entity.columns.map((column, index) => (
                   <TableCell key={column.key} className={cn("first:pl-4", index === 0 && column.type !== "image" && "font-medium")} onClick={column.type === "whatsapp" ? (event) => event.stopPropagation() : undefined}>
-                    <Cell column={column} row={row} options={options} />
+                    <Cell column={column} row={row} options={options} entityKey={entity.key} />
                   </TableCell>
                 ))}
                 <TableCell className="pr-3 text-right whitespace-nowrap" onClick={(event) => event.stopPropagation()}>

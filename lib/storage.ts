@@ -37,6 +37,11 @@ export async function putR2Object(key: string, body: ArrayBuffer, contentType: s
   return `${r2.publicUrl}/${key}`;
 }
 
+/** Apakah URL ini menunjuk ke berkas unggahan di bucket R2 kita. */
+export function isR2Url(url: string) {
+  return Boolean(r2.publicUrl) && url.startsWith(`${r2.publicUrl}/uploads/`);
+}
+
 /** Menghapus objek R2 dari URL publiknya. URL di luar bucket ini diabaikan. */
 export async function deleteR2Object(url: string) {
   if (!client || !r2.publicUrl || !url.startsWith(`${r2.publicUrl}/uploads/`)) return;

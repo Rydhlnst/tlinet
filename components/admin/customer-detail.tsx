@@ -24,6 +24,7 @@ import type { customerPayments, customerPurchases, customers } from "@/lib/db/sc
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { uploadImage } from "./image-field";
+import { ProofViewer } from "./proof-viewer";
 import { DeleteRecordDialog, RecordSheet, type Row } from "./record-dialogs";
 
 type Customer = typeof customers.$inferSelect;
@@ -173,14 +174,7 @@ function HistoryPanel({
                   <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
                 </TableCell>
                 <TableCell>
-                  {item.proofUrl ? (
-                    <a href={item.proofUrl} target="_blank" rel="noopener noreferrer" aria-label={`Buka bukti transfer ${formatMonth(item.period)}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.proofUrl} alt="" loading="lazy" className="size-9 rounded-md border object-cover" />
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  {item.proofUrl ? <ProofViewer entityKey={entityKey} id={item.id} label={formatMonth(item.period)} /> : <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell className="pr-4 text-right whitespace-nowrap">
                   <Button variant="ghost" size="icon-sm" onClick={() => setEditing({ ...item })} aria-label={`Ubah ${lower} ${formatMonth(item.period)}`}>
