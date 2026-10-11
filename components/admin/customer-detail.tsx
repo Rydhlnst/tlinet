@@ -524,6 +524,7 @@ export function CustomerDetail({ customer, payments, purchases, ledger }: { cust
           supplierAddress: purchases[0]?.supplierAddress ?? "",
           supplierEmail: purchases[0]?.supplierEmail ?? "",
           serviceName: purchases[0]?.serviceName ?? "",
+          cid: purchases[0]?.cid || customer.cid,
         }}
       />
 

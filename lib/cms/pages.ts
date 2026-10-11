@@ -436,6 +436,54 @@ export const pageDefs: PageDef[] = [
       },
     ],
   },
+  {
+    key: "invoice",
+    label: "Pengaturan Invoice",
+    description: "Identitas perusahaan, rekening pembayaran, dan catatan yang tercetak di setiap invoice.",
+    publicPath: "/admin/data/invoices",
+    sections: [
+      {
+        path: "",
+        title: "Perusahaan",
+        fields: [
+          { name: "companyName", label: "Nama perusahaan", type: "text", required: true },
+          { name: "companyTagline", label: "Keterangan di bawah nama", type: "text" },
+          { name: "logoUrl", label: "Logo", type: "image", help: "Tampil di pojok kiri atas invoice. Pakai gambar berlatar putih." },
+          { name: "address", label: "Alamat", type: "textarea", rows: 4, help: "Satu alamat per baris." },
+          { name: "phone", label: "Telepon", type: "text", half: true },
+          { name: "email", label: "Email", type: "email", half: true },
+          { name: "website", label: "Situs web", type: "text", half: true },
+        ],
+      },
+      {
+        path: "",
+        title: "Dokumen",
+        fields: [
+          { name: "title", label: "Judul dokumen", type: "text", required: true, half: true },
+          { name: "subtitle", label: "Keterangan di bawah judul", type: "text", half: true },
+          { name: "taxRate", label: "PPN bawaan (%)", type: "number", min: 0, half: true, help: "Dipakai invoice baru. Tiap invoice bisa mengubahnya; isi 0 bila tanpa PPN." },
+          { name: "footerTagline", label: "Slogan di baris paling bawah", type: "text", half: true },
+        ],
+      },
+      {
+        path: "",
+        title: "Pembayaran",
+        description: "Blok Informasi Pembayaran hanya tercetak bila nama bank dan nomor rekening diisi.",
+        fields: [
+          { name: "bankName", label: "Nama bank", type: "text", half: true, placeholder: "Bank BRI" },
+          { name: "bankAccountNumber", label: "No. rekening", type: "text", half: true },
+          { name: "bankAccountHolder", label: "Atas nama", type: "text" },
+          { name: "qrUrl", label: "Gambar QR pembayaran", type: "image", help: "Opsional, mis. QRIS. Jika kosong, QR tidak dicetak." },
+          { name: "qrCaption", label: "Keterangan QR", type: "text" },
+        ],
+      },
+      {
+        path: "",
+        title: "Catatan",
+        fields: [{ name: "notes", label: "Catatan bawaan", type: "strings", itemLabel: "Catatan", help: "Tercetak bernomor di setiap invoice yang catatannya dikosongkan." }],
+      },
+    ],
+  },
 ];
 
 export const getPageDef = (key: string) => pageDefs.find((page) => page.key === key);

@@ -126,8 +126,32 @@ export type RegisterContent = {
   form: { title: string; submitLabel: string; note: string; emailNote: string; sources: string[] };
 };
 
+/** Identitas perusahaan dan isi tetap yang tercetak di setiap invoice. */
+export type InvoiceSettings = {
+  companyName: string;
+  companyTagline: string;
+  logoUrl: string;
+  /** Satu alamat per baris. */
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  title: string;
+  subtitle: string;
+  /** Persentase PPN bawaan untuk invoice baru. */
+  taxRate: number;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountHolder: string;
+  qrUrl: string;
+  qrCaption: string;
+  notes: string[];
+  footerTagline: string;
+};
+
 export type ContentMap = {
   settings: SiteSettings;
+  invoice: InvoiceSettings;
   home: HomeContent;
   coverage: CoverageContent;
   help: HelpContent;

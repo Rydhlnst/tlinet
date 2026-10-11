@@ -201,6 +201,17 @@
   }
 }
 
+/* Lembar invoice dicetak tepat seukuran A4 tanpa tepi, lengkap dengan warna latarnya. */
+@page invoice {
+  size: A4;
+  margin: 0;
+}
+.invoice-sheet {
+  page: invoice;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
 /* Leaflet menumpuk di atas header lengket tanpa ini. */
 .leaflet-container {
   z-index: 0;

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, date, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, boolean, date, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 const timestamps = {
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -184,10 +184,45 @@ export const customerPurchases = pgTable(
     supplierAddress: text("supplier_address").notNull().default(""),
     supplierEmail: text("supplier_email").notNull().default(""),
     serviceName: text("service_name").notNull().default(""),
+    /** Circuit ID layanan dari pemasok. */
+    cid: text("cid").notNull().default(""),
     ...billingColumns(),
   },
   (table) => [index("customer_purchases_customer_idx").on(table.customerId, table.period)],
 );
+
+export type InvoiceItem = { description: string; note: string; quantity: number; unitPrice: number };
+
+/**
+ * Invoice yang dibuat dari dashboard. Data pelanggan disalin ke invoice saat dibuat, sehingga invoice lama
+ * tidak berubah ketika data pelanggannya diubah. `total` disimpan agar bisa ditampilkan di daftar.
+ */
+export const invoices = pgTable("invoices", {
+  id: text("id").primaryKey(),
+  number: text("number").notNull().unique(),
+  status: text("status").notNull().default("unpaid"),
+  issueDate: text("issue_date").notNull(),
+  dueDate: text("due_date").notNull(),
+  customerId: text("customer_id").notNull().default(""),
+  companyName: text("company_name").notNull(),
+  address: text("address").notNull().default(""),
+  npwp: text("npwp").notNull().default(""),
+  pic: text("pic").notNull().default(""),
+  email: text("email").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  customerCode: text("customer_code").notNull().default(""),
+  contractNo: text("contract_no").notNull().default(""),
+  serviceType: text("service_type").notNull().default(""),
+  bandwidth: text("bandwidth").notNull().default(""),
+  location: text("location").notNull().default(""),
+  periodStart: text("period_start").notNull().default(""),
+  periodEnd: text("period_end").notNull().default(""),
+  items: jsonb("items").$type<InvoiceItem[]>().notNull().default([]),
+  taxRate: doublePrecision("tax_rate").notNull().default(0),
+  total: bigint("total", { mode: "number" }).notNull().default(0),
+  notes: jsonb("notes").$type<string[]>().notNull().default([]),
+  ...timestamps,
+});
 
 /** `data` hanya terisi (base64) bila R2 belum diatur; saat itu `url` menunjuk ke /media/<id>. */
 export const mediaAssets = pgTable("media_assets", {

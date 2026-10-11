@@ -20,9 +20,11 @@ import {
   Newspaper,
   Package,
   ReceiptText,
+  ScrollText,
   Search,
   Settings,
   ShoppingBag,
+  Stamp,
   Tags,
   TrendingUp,
   Users,
@@ -110,6 +112,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/data/customer-payments", label: "History Pembayaran Subnet", icon: ReceiptText, keywords: "tagihan bayar lunas riwayat" },
       { href: "/admin/data/customer-purchases", label: "History Pembelian Perusahaan", icon: ShoppingBag, keywords: "beli nap pemasok biaya riwayat" },
       { href: "/admin/keuntungan", label: "Selisih Keuntungan", icon: TrendingUp, keywords: "profit margin laba biaya isp nap" },
+      { href: "/admin/data/invoices", label: "Invoice", icon: ScrollText, keywords: "tagihan faktur cetak pdf" },
       {
         href: "/admin/accurate",
         label: "Pencatatan Accurate",
@@ -129,6 +132,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/media", label: "Media", icon: FolderOpen, keywords: "gambar unggah foto r2" },
       { href: "/admin/pages/settings", label: "Pengaturan Situs", icon: Settings, keywords: "merek kontak whatsapp footer navigasi seo logo" },
+      { href: "/admin/pages/invoice", label: "Pengaturan Invoice", icon: Stamp, keywords: "rekening bank logo catatan ppn kop" },
     ],
   },
 ];

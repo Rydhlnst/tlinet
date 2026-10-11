@@ -2,8 +2,9 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
-import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
+import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, invoices, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
+import { prepareInvoice } from "@/lib/invoices";
 import { customerHistoryKeys, type EntityDef } from "./entities";
 import { sanitizeDocument, sanitizeFields } from "./fields";
 import type { PageDef } from "./pages";
@@ -21,6 +22,7 @@ const tables: Record<string, EntityTable> = {
   customers,
   "customer-payments": customerPayments,
   "customer-purchases": customerPurchases,
+  invoices,
 };
 
 export type SaveResult = { ok: true; message: string } | { ok: false; message: string };
@@ -40,6 +42,8 @@ export async function listRecords(entity: EntityDef): Promise<RecordRow[]> {
         ? [desc(customerPayments.period), desc(customerPayments.createdAt)]
         : entity.key === "customer-purchases"
         ? [desc(customerPurchases.period), desc(customerPurchases.createdAt)]
+        : entity.key === "invoices"
+        ? [desc(invoices.issueDate), desc(invoices.createdAt)]
         : table.sortOrder
         ? [asc(table.sortOrder), asc(table.createdAt)]
         : [desc(table.createdAt)];
@@ -69,6 +73,7 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
     const owner = await db.select({ id: customers.id }).from(customers).where(eq(customers.id, String(values.customerId))).limit(1);
     if (!owner.length) errors.push("Pelanggan tidak ditemukan.");
   }
+  if (entity.key === "invoices") await prepareInvoice(values, (input ?? {}) as Record<string, unknown>, givenId, errors);
   // Pembelian berstatus lunas harus punya tanggal bayarnya.
   if (entity.key === "customer-purchases" && values.status === "paid" && !values.paidDate) errors.push("Tanggal bayar wajib diisi bila statusnya Lunas.");
   if (errors.length) return { ok: false, message: errors[0] };

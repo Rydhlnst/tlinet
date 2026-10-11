@@ -412,4 +412,31 @@ export const defaultContent: ContentMap = {
       ],
     },
   },
+
+  invoice: {
+    companyName: "PT Trans Link Internasional (TLINET)",
+    companyTagline: "Internet Service Provider (ISP)",
+    logoUrl: "/images/invoice/tlinet-logo.webp",
+    address:
+      "Gedung Cyber APJII Lantai 11, Jl. Kuningan Barat No. 8, RT.1/RW.3, Kuningan Barat, Kec. Mampang Prapatan, Kota Jakarta Selatan, DKI Jakarta 12710\nADM: BTN Rindra 4, Alya 01 / No. 4, Kel. Paenre Lompoe, Kec. Gantarang, Kab. Bulukumba, Sulawesi Selatan",
+    phone: "082320003007",
+    email: "finace@translinkinternasional.com",
+    website: "www.translinkinternasional.com",
+    title: "INVOICE",
+    subtitle: "Layanan Internet & Konektivitas",
+    taxRate: 11,
+    // Rekening dan QR belum diberikan; bloknya baru tercetak setelah diisi di Pengaturan Invoice.
+    bankName: "",
+    bankAccountNumber: "",
+    bankAccountHolder: "PT Trans Link Internasional",
+    qrUrl: "",
+    qrCaption: "Scan QR untuk pembayaran",
+    notes: [
+      "Mohon lakukan pembayaran sebelum tanggal jatuh tempo untuk menghindari pemutusan layanan.",
+      "Pembayaran dapat dilakukan melalui transfer bank ke rekening yang tertera.",
+      "Setelah pembayaran, mohon konfirmasi melalui email finace@translinkinternasional.com atau WhatsApp 082320003007 dengan menyertakan nomor invoice.",
+      "Terima kasih atas kepercayaan Anda menggunakan layanan dari PT Trans Link Internasional.",
+    ],
+    footerTagline: "Internet Cepat, Tanpa Batas",
+  },
 };
