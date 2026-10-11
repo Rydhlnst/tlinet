@@ -101,7 +101,7 @@ export async function setInvoiceStatusAction(id: string, status: "paid" | "unpai
   if (status !== "paid" && status !== "unpaid") return { ok: false, message: "Status tidak valid." };
   const updated = await db.update(invoices).set({ status, updatedAt: new Date() }).where(eq(invoices.id, id)).returning({ id: invoices.id });
   if (!updated.length) return { ok: false, message: "Invoice tidak ditemukan." };
-  return { ok: true, message: status === "paid" ? "Invoice ditandai lunas." : "Invoice ditandai belum lunas." };
+  return { ok: true, message: status === "paid" ? "Invoice ditandai Paid." : "Invoice ditandai Unpaid." };
 }
 
 export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {

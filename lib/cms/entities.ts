@@ -42,6 +42,8 @@ export const leadStatusLabels = { new: "Baru", contacted: "Dihubungi", done: "Se
 export const leadTypeLabels = { registration: "Pendaftaran", coverage: "Cek area" };
 export const customerStatusLabels: Record<string, string> = { active: "Aktif", inactive: "Belum aktif", suspended: "Suspend", relocation: "Relokasi" };
 export const paymentStatusLabels: Record<string, string> = { paid: "Lunas", unpaid: "Belum lunas" };
+/** Invoice memakai istilah yang tercetak di lembarnya. */
+export const invoiceStatusLabels: Record<string, string> = { unpaid: "Unpaid", paid: "Paid" };
 
 const toOptions = (labels: Record<string, string>) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 
@@ -388,7 +390,7 @@ export const entityDefs: EntityDef[] = [
       { key: "issueDate", label: "Tanggal terbit", type: "date" },
       { key: "dueDate", label: "Jatuh tempo", type: "date" },
       { key: "total", label: "Total tagihan", type: "currency" },
-      { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
+      { key: "status", label: "Status", type: "badge", labels: invoiceStatusLabels },
     ],
     fields: [
       {
@@ -399,7 +401,7 @@ export const entityDefs: EntityDef[] = [
         help: "Opsional. Isian pelanggan dan layanan di bawah yang dikosongkan akan diisi dari data pelanggan ini saat disimpan.",
       },
       { name: "number", label: "No. invoice", type: "text", half: true, help: "Kosongkan agar dibuat otomatis." },
-      { name: "status", label: "Status", type: "select", half: true, options: toOptions({ unpaid: "Belum lunas", paid: "Lunas" }) },
+      { name: "status", label: "Status", type: "select", half: true, options: toOptions(invoiceStatusLabels) },
       { name: "issueDate", label: "Tanggal terbit", type: "date", half: true, help: "Kosong berarti hari ini." },
       { name: "dueDate", label: "Jatuh tempo", type: "date", half: true, help: "Kosong berarti 14 hari setelah terbit." },
       { name: "companyName", label: "Nama perusahaan", type: "text" },

@@ -190,7 +190,7 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
                 paid ? "border-[#15803d] text-[#15803d]" : "border-[#b91c1c] text-[#b91c1c]"
               }`}
             >
-              {paid ? "Lunas" : "Belum Lunas"}
+              {paid ? "Paid" : "Unpaid"}
             </p>
           </div>
           <div className="w-[92mm] shrink-0 overflow-hidden rounded-[3px] text-[12px]">
@@ -242,9 +242,9 @@ export function InvoiceDocument({ invoice, settings }: { invoice: Invoice; setti
                 </section>
               )}
               {settings.signatureUrl && (
-                <div className="mt-auto flex flex-col items-center gap-1 pt-[2mm] text-center text-[10.5px] leading-tight">
+                <div className="flex min-h-0 flex-1 flex-col items-center justify-end gap-1 pt-[2mm] text-center text-[10.5px] leading-tight">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={settings.signatureUrl} alt="Tanda tangan" className="size-[18mm] object-contain" />
+                  <img src={settings.signatureUrl} alt="Tanda tangan" className="aspect-square max-h-[30mm] min-h-[18mm] w-auto flex-1 basis-0 object-contain" />
                   {settings.signatureName && <p className="font-bold">{settings.signatureName}</p>}
                   {settings.signatureTitle && <p className={settings.signatureName ? "" : "font-bold tracking-wide uppercase"}>{settings.signatureTitle}</p>}
                 </div>
