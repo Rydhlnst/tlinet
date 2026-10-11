@@ -68,8 +68,14 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return rows;
-    return rows.filter((row) => entity.searchKeys.some((key) => String(row[key] ?? "").toLowerCase().includes(term)));
-  }, [entity.searchKeys, query, rows]);
+    // Kolom yang isinya id (mis. pelanggan) dicari lewat label yang tampil di tabel.
+    const labelled = entity.columns.filter((column) => column.labelsFrom);
+    const labelOf = (row: Row, column: Column) => options[column.labelsFrom!]?.find((option) => option.value === row[column.key])?.label ?? "";
+    return rows.filter(
+      (row) =>
+        entity.searchKeys.some((key) => String(row[key] ?? "").toLowerCase().includes(term)) || labelled.some((column) => labelOf(row, column).toLowerCase().includes(term)),
+    );
+  }, [entity.columns, entity.searchKeys, options, query, rows]);
 
   // Judul baris untuk dialog dan label tombol: kolom nama bila ada, kalau tidak kolom teks pertama.
   const titleColumn = entity.columns.find((column) => column.key === "name") ?? entity.columns.find((column) => !column.type || column.type === "text");

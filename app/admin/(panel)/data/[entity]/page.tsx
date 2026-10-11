@@ -25,8 +25,15 @@ async function loadOptions(entityKey: string): Promise<DynamicOptions> {
     return { faqCategories: help.faq.categories.map((category) => ({ value: category, label: category })) };
   }
   if (customerHistoryKeys.includes(entityKey)) {
-    const rows = await requireDb().select({ id: customers.id, name: customers.name, siteId: customers.siteId }).from(customers).orderBy(asc(customers.name));
-    return { customers: rows.map((customer) => ({ value: customer.id, label: customer.siteId ? `${customer.name} · ${customer.siteId}` : customer.name })) };
+    const rows = await requireDb().select({ id: customers.id, name: customers.name, company: customers.company, siteId: customers.siteId }).from(customers);
+    // Pelanggan dikenali lewat PT-nya; nama orang hanya dipakai bila PT kosong.
+    const sorted = rows.map((customer) => ({ ...customer, title: customer.company || customer.name })).sort((a, b) => a.title.localeCompare(b.title, "id"));
+    return {
+      // Untuk tabel: PT saja.
+      customerNames: sorted.map((customer) => ({ value: customer.id, label: customer.title })),
+      // Untuk pilihan di form: ditambah nama dan Site ID agar pelanggan ber-PT sama bisa dibedakan.
+      customers: sorted.map((customer) => ({ value: customer.id, label: [customer.title, customer.company && customer.name, customer.siteId].filter(Boolean).join(" · ") })),
+    };
   }
   return {};
 }

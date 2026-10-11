@@ -316,7 +316,7 @@ export const entityDefs: EntityDef[] = [
     internal: true,
     defaults: { status: "paid", amount: "" },
     columns: [
-      { key: "customerId", label: "Pelanggan", labelsFrom: "customers" },
+      { key: "customerId", label: "Pelanggan", labelsFrom: "customerNames" },
       { key: "period", label: "Bulan", type: "month" },
       { key: "paidDate", label: "Tanggal bayar", type: "date" },
       { key: "amount", label: "Nominal", type: "currency" },
