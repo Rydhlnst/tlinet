@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Calculator, ChevronRight, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronRight, Ellipsis, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ReactNode } from "react";
@@ -25,7 +25,7 @@ import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { uploadImage } from "./image-field";
 import { ProofViewer } from "./proof-viewer";
-import { DeleteRecordDialog, RecordSheet, type Row } from "./record-dialogs";
+import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
 
 type Customer = typeof customers.$inferSelect;
 /** Baris History Pembayaran Subnet; baris History Pembelian Perusahaan menambah pemasok dan layanannya. */
@@ -124,6 +124,7 @@ function HistoryPanel({
 }) {
   const [editing, setEditing] = useState<Row | null>(null);
   const [removing, setRemoving] = useState<Row | null>(null);
+  const [viewing, setViewing] = useState<Row | null>(null);
   const lower = noun.toLowerCase();
   const withSupplier = entityKey === "customer-purchases";
 
@@ -154,7 +155,7 @@ function HistoryPanel({
               <TableHead>Metode</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Bukti</TableHead>
-              <TableHead className="w-24 pr-5 text-right">Aksi</TableHead>
+              <TableHead className="w-32 pr-5 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -177,6 +178,9 @@ function HistoryPanel({
                   {item.proofUrl ? <ProofViewer entityKey={entityKey} id={item.id} label={formatMonth(item.period)} /> : <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell className="pr-4 text-right whitespace-nowrap">
+                  <Button variant="ghost" size="icon-sm" onClick={() => setViewing(item)} aria-label={`Lihat detail ${lower} ${formatMonth(item.period)}`}>
+                    <Ellipsis />
+                  </Button>
                   <Button variant="ghost" size="icon-sm" onClick={() => setEditing({ ...item })} aria-label={`Ubah ${lower} ${formatMonth(item.period)}`}>
                     <Pencil />
                   </Button>
@@ -203,6 +207,7 @@ function HistoryPanel({
         </Table>
       </Panel>
 
+      <RecordDetailDialog entityKey={entityKey} row={viewing} onClose={() => setViewing(null)} onEdit={(row) => setEditing({ ...row })} hiddenFields={["customerId"]} />
       <RecordSheet entityKey={entityKey} value={editing} setValue={setEditing} hiddenFields={["customerId"]} />
       <DeleteRecordDialog entityKey={entityKey} row={removing} title={removing ? `${noun} ${formatMonth(String(removing.period))}` : ""} onClose={() => setRemoving(null)} />
     </>

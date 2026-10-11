@@ -3,6 +3,7 @@
 import { Download, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const barButton =
   "inline-flex h-9 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 text-sm font-medium text-white outline-none transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/60 [&_svg]:size-4";
@@ -11,7 +12,7 @@ const barButton =
  * Gambar kecil bukti transfer yang membuka tampilan layar penuh dengan tombol unduh. Gambarnya diambil
  * lewat /api/bukti di situs sendiri, jadi melihat dan mengunduhnya tidak berpindah ke alamat penyimpanan.
  */
-export function ProofViewer({ entityKey, id, label }: { entityKey: string; id: string; label: string }) {
+export function ProofViewer({ entityKey, id, label, thumbClassName = "size-9 object-cover" }: { entityKey: string; id: string; label: string; thumbClassName?: string }) {
   const [open, setOpen] = useState(false);
   const src = `/api/bukti/${entityKey}/${id}`;
 
@@ -28,7 +29,7 @@ export function ProofViewer({ entityKey, id, label }: { entityKey: string; id: s
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" loading="lazy" className="size-9 rounded-md border object-cover" />
+        <img src={src} alt="" loading="lazy" className={cn("rounded-md border", thumbClassName)} />
       </button>
 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
