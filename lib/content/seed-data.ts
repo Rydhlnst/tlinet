@@ -287,4 +287,4 @@ export const seedClients = [
   "Celebes Media Tower",
   "Toraja Highlands",
   "Sam Ratulangi Airport",
-].map((name, index) => ({ id: `client-${index + 1}`, name, logoUrl: "", sortOrder: index + 1, active: true }));
+].map((name, index) => ({ id: `client-${index + 1}`, name, type: "client", logoUrl: "", sortOrder: index + 1, active: true }));

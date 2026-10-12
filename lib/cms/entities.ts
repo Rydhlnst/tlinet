@@ -42,6 +42,7 @@ export const leadStatusLabels = { new: "Baru", contacted: "Dihubungi", done: "Se
 export const leadTypeLabels = { registration: "Pendaftaran", coverage: "Cek area" };
 export const customerStatusLabels: Record<string, string> = { active: "Aktif", inactive: "Belum aktif", suspended: "Suspend", relocation: "Relokasi" };
 export const paymentStatusLabels: Record<string, string> = { paid: "Lunas", unpaid: "Belum lunas" };
+export const clientTypeLabels: Record<string, string> = { client: "Klien", partner: "Mitra" };
 /** Invoice memakai istilah yang tercetak di lembarnya. */
 export const invoiceStatusLabels: Record<string, string> = { unpaid: "Unpaid", paid: "Paid" };
 
@@ -213,13 +214,19 @@ export const entityDefs: EntityDef[] = [
     key: "clients",
     label: "Klien & Mitra",
     singular: "klien",
-    description: "Nama atau logo yang berjalan di bagian klien pada beranda.",
+    description: "Logo di beranda. Jenis Mitra tampil di bagian mitra, jenis Klien di bagian klien.",
     publicPath: "/",
     searchKeys: ["name"],
-    defaults: { active: true, sortOrder: 0 },
-    columns: [{ key: "logoUrl", label: "", type: "image" }, { key: "name", label: "Nama" }, activeColumn],
+    defaults: { type: "client", active: true, sortOrder: 0 },
+    columns: [
+      { key: "logoUrl", label: "", type: "image" },
+      { key: "name", label: "Nama" },
+      { key: "type", label: "Jenis", type: "badge", labels: clientTypeLabels },
+      activeColumn,
+    ],
     fields: [
       { name: "name", label: "Nama", type: "text", required: true },
+      { name: "type", label: "Jenis", type: "select", required: true, options: toOptions(clientTypeLabels), help: "Menentukan logo ini tampil di bagian mitra atau bagian klien." },
       { name: "logoUrl", label: "Logo", type: "image", help: "Opsional. Jika kosong, nama ditampilkan sebagai teks." },
       ...ordering,
     ],

@@ -48,6 +48,12 @@ const iconCards = (name: string, label: string, itemLabel: string, extra: Field[
   ],
 });
 
+/** Tombol pembuka kisi logo; hanya muncul bila logonya cukup banyak untuk berjalan. */
+const logoButtons: Field[] = [
+  { name: "moreLabel", label: "Teks tombol lihat semua", type: "text", half: true },
+  { name: "lessLabel", label: "Teks tombol tutup", type: "text", half: true },
+];
+
 const accent: Field = {
   name: "titleAccent",
   label: "Bagian judul yang diberi gradasi biru",
@@ -177,10 +183,16 @@ export const pageDefs: PageDef[] = [
         ],
       },
       {
+        path: "partners",
+        title: "Bagian mitra",
+        description: "Logo mitra diatur di menu Klien & Mitra (jenis Mitra).",
+        fields: [...head, accent, ...logoButtons],
+      },
+      {
         path: "clients",
         title: "Bagian klien",
-        description: "Daftar klien diatur di menu Klien & Mitra.",
-        fields: [...head, accent],
+        description: "Logo klien diatur di menu Klien & Mitra (jenis Klien).",
+        fields: [...head, accent, ...logoButtons],
       },
     ],
   },

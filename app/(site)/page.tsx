@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AboutSection } from "@/components/site/about-section";
-import { ClientsSection } from "@/components/site/clients-section";
+import { LogoSection } from "@/components/site/clients-section";
 import { CtaBand } from "@/components/site/cta-band";
 import { FaqSection } from "@/components/site/faq-section";
 import { HomeHero } from "@/components/site/home-hero";
@@ -33,6 +33,8 @@ export default async function HomePage() {
   ]);
   const { hero, features, steps } = home;
   const homeFaqs = faqs.filter((faq) => faq.showOnHome);
+  const partnerLogos = clients.filter((item) => item.type === "partner");
+  const clientLogos = clients.filter((item) => item.type !== "partner");
   // Ilustrasi langkah "pilih paket" memakai kecepatan tiga paket pertama dari kategori pertama.
   const stepSpeeds = packages.filter((item) => item.categoryId === categories[0]?.id).slice(0, 3).map((item) => item.speed);
 
@@ -77,7 +79,9 @@ export default async function HomePage() {
         <FaqSection content={home.faq} faqs={homeFaqs} helpHref={whatsappUrl(settings.whatsappNumber, settings.whatsappMessage)} />
       )}
 
-      {clients.length > 0 && <ClientsSection content={home.clients} clients={clients} />}
+      {partnerLogos.length > 0 && <LogoSection content={home.partners} items={partnerLogos} />}
+
+      {clientLogos.length > 0 && <LogoSection content={home.clients} items={clientLogos} muted />}
 
       <CtaBand settings={settings} />
     </>

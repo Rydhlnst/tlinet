@@ -1,6 +1,8 @@
 export type LinkItem = { label: string; href: string };
 export type SectionHead = { eyebrow: string; title: string; description: string };
 export type IconCard = { icon: string; title: string; description: string };
+/** Bagian logo beranda; tombolnya muncul bila logonya cukup banyak untuk berjalan. */
+export type LogoSectionContent = SectionHead & { titleAccent: string; moreLabel: string; lessLabel: string };
 
 export type SiteSettings = {
   brandName: string;
@@ -57,7 +59,8 @@ export type HomeContent = {
   };
   news: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string };
   faq: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string; helpTitle: string; helpDescription: string };
-  clients: SectionHead & { titleAccent: string };
+  partners: LogoSectionContent;
+  clients: LogoSectionContent;
 };
 
 export type CoverageContent = {

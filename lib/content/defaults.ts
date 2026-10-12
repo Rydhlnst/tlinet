@@ -198,11 +198,21 @@ export const defaultContent: ContentMap = {
       ctaLabel: "Lihat Semua Pertanyaan di Bantuan",
       ctaHref: "/bantuan",
     },
-    clients: {
-      eyebrow: "Klien & Mitra Strategis",
-      title: "Dipercaya untuk Kebutuhan Koneksi Digital di Sulawesi",
-      titleAccent: "Koneksi Digital",
+    partners: {
+      eyebrow: "",
+      title: "Our Partnership",
+      titleAccent: "Partnership",
       description: "",
+      moreLabel: "See More",
+      lessLabel: "Show Less",
+    },
+    clients: {
+      eyebrow: "",
+      title: "Our Clients",
+      titleAccent: "Clients",
+      description: "",
+      moreLabel: "See More",
+      lessLabel: "Show Less",
     },
   },
 
