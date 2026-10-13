@@ -39,7 +39,7 @@ export function NetworkSection({
   cdnLogos: Client[];
 }) {
   const rows = [
-    { content: partners, items: partnerLogos, stat: "Mitra terhubung" },
+    { content: partners, items: partnerLogos, stat: "Internet Exchange" },
     { content: clients, items: clientLogos, stat: "Klien dilayani" },
     { content: cdn, items: cdnLogos, stat: "Cloud & CDN" },
   ].filter((row) => row.items.length > 0);
