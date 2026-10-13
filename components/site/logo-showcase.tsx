@@ -7,24 +7,24 @@ import { cn } from "@/lib/utils";
 import { ClientLogo } from "./client-logo";
 import { linkButtonClass } from "./ui";
 
-/** Sampai jumlah ini logo tampil diam di tengah; lebih dari itu berjalan sebagai marquee. */
-const STATIC_UP_TO = 5;
+/** Tombol pembuka kisi baru muncul bila logonya lebih dari ini; di bawahnya semua logo sudah terlihat sekaligus. */
+const GRID_FROM = 5;
 /** Jumlah kartu minimum per putaran, supaya satu putaran selalu lebih lebar dari layar. */
 const MIN_PER_LOOP = 8;
 
-const card =
-  "flex h-24 w-40 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border bg-card px-4 shadow-sm shadow-primary/5 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 sm:h-32 sm:w-60 sm:px-6";
+const chip =
+  "flex h-16 shrink-0 items-center gap-3 rounded-2xl border bg-card pr-5 pl-3 shadow-sm shadow-primary/5 transition-colors hover:border-primary/40";
 
 function Marquee({ items }: { items: Client[] }) {
   const repeats = Math.ceil(MIN_PER_LOOP / items.length);
   // Dua putaran identik: animasi menggeser tepat satu putaran lalu mengulang tanpa loncatan.
   const loop = Array.from({ length: repeats * 2 }, () => items).flat();
   return (
-    <div className="overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-      <ul className="flex w-max animate-marquee py-2 hover:[animation-play-state:paused] motion-reduce:animate-none">
+    <div className="overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+      <ul className="flex w-max animate-marquee hover:[animation-play-state:paused] motion-reduce:[animation-duration:90s]">
         {loop.map((item, index) => (
-          <li key={`${item.id}-${index}`} aria-hidden={index >= items.length} className={cn(card, "mr-4 sm:mr-7")}>
-            <ClientLogo name={item.name} logoUrl={item.logoUrl} variant="card" />
+          <li key={`${item.id}-${index}`} aria-hidden={index >= items.length} className={cn(chip, "mr-3")}>
+            <ClientLogo name={item.name} logoUrl={item.logoUrl} />
           </li>
         ))}
       </ul>
@@ -32,27 +32,27 @@ function Marquee({ items }: { items: Client[] }) {
   );
 }
 
-/** Deretan kartu logo: berjalan bila banyak, dan bisa dibuka menjadi kisi berisi semua logo. */
+/** Deretan logo yang berjalan; bila logonya banyak, bisa dibuka menjadi kisi berisi semuanya. */
 export function LogoShowcase({ items, moreLabel, lessLabel }: { items: Client[]; moreLabel: string; lessLabel: string }) {
   const [open, setOpen] = useState(false);
-  const moving = items.length > STATIC_UP_TO;
+  const expandable = items.length > GRID_FROM && Boolean(moreLabel || lessLabel);
 
   return (
     <>
-      {moving && !open ? (
+      {!open ? (
         <Marquee items={items} />
       ) : (
-        <ul className="container-page flex flex-wrap justify-center gap-4 py-2 sm:gap-7">
+        <ul className="flex flex-wrap gap-3">
           {items.map((item) => (
-            <li key={item.id} className={card}>
-              <ClientLogo name={item.name} logoUrl={item.logoUrl} variant="card" />
+            <li key={item.id} className={chip}>
+              <ClientLogo name={item.name} logoUrl={item.logoUrl} />
             </li>
           ))}
         </ul>
       )}
-      {moving && (moreLabel || lessLabel) && (
-        <div className="mt-8 flex justify-center">
-          <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className={linkButtonClass("outline")}>
+      {expandable && (
+        <div className="mt-6 flex">
+          <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className={linkButtonClass("outline", "h-10 px-5")}>
             {open ? lessLabel || moreLabel : moreLabel || lessLabel}
             {open ? <ArrowUp /> : <ArrowDown />}
           </button>

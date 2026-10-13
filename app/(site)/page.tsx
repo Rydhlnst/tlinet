@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AboutSection } from "@/components/site/about-section";
-import { LogoSection } from "@/components/site/clients-section";
+import { NetworkSection } from "@/components/site/clients-section";
 import { CtaBand } from "@/components/site/cta-band";
 import { FaqSection } from "@/components/site/faq-section";
 import { HomeHero } from "@/components/site/home-hero";
@@ -79,9 +79,7 @@ export default async function HomePage() {
         <FaqSection content={home.faq} faqs={homeFaqs} helpHref={whatsappUrl(settings.whatsappNumber, settings.whatsappMessage)} />
       )}
 
-      {partnerLogos.length > 0 && <LogoSection content={home.partners} items={partnerLogos} />}
-
-      {clientLogos.length > 0 && <LogoSection content={home.clients} items={clientLogos} muted />}
+      <NetworkSection partners={home.partners} clients={home.clients} partnerLogos={partnerLogos} clientLogos={clientLogos} />
 
       <CtaBand settings={settings} />
     </>

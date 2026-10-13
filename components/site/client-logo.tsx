@@ -13,8 +13,11 @@ const initials = (name: string) =>
     .join("")
     .toUpperCase();
 
-/** Logo klien; tanpa logo (atau bila gambarnya gagal dimuat) tampil monogram dan nama klien agar tidak muncul ikon gambar rusak. */
-export function ClientLogo({ name, logoUrl, variant = "inline" }: { name: string; logoUrl: string; variant?: "inline" | "card" }) {
+/**
+ * Isi kartu logo: logo lalu namanya.
+ * Tanpa logo, atau bila gambarnya gagal dimuat, tampil monogram agar tidak muncul ikon gambar rusak.
+ */
+export function ClientLogo({ name, logoUrl }: { name: string; logoUrl: string }) {
   const [failed, setFailed] = useState(false);
   const image = useRef<HTMLImageElement>(null);
 
@@ -23,27 +26,20 @@ export function ClientLogo({ name, logoUrl, variant = "inline" }: { name: string
     if (image.current?.complete && image.current.naturalWidth === 0) setFailed(true);
   }, []);
 
-  if ((!logoUrl || failed) && variant === "card") {
-    return (
-      <>
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-brand-ink sm:size-11 sm:text-sm" aria-hidden="true">
+  return (
+    <>
+      {!logoUrl || failed ? (
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-xs font-bold text-brand-ink" aria-hidden="true">
           {initials(name)}
         </span>
-        <span className="line-clamp-2 text-center text-xs leading-tight font-semibold text-foreground/80 sm:text-sm">{name}</span>
-      </>
-    );
-  }
-  if (!logoUrl || failed) {
-    return (
-      <>
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-brand-ink" aria-hidden="true">
-          {initials(name)}
+      ) : (
+        <span className="flex h-10 w-20 shrink-0 items-center justify-center">
+          {/* Tanpa loading="lazy": salinan logo di luar layar harus sudah berukuran agar putaran marquee tidak meloncat. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img ref={image} src={logoUrl} alt="" decoding="async" onError={() => setFailed(true)} className="max-h-full max-w-full object-contain" />
         </span>
-        <span className="text-sm font-semibold whitespace-nowrap text-foreground/80">{name}</span>
-      </>
-    );
-  }
-  // Tanpa loading="lazy": salinan logo di luar layar harus sudah berukuran agar putaran marquee tidak meloncat.
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img ref={image} src={logoUrl} alt={name} decoding="async" onError={() => setFailed(true)} className={variant === "card" ? "max-h-14 w-auto max-w-full object-contain sm:max-h-20" : "h-9 w-auto max-w-40 object-contain"} />;
+      )}
+      <span className="max-w-56 truncate text-sm font-medium text-foreground/80">{name}</span>
+    </>
+  );
 }
