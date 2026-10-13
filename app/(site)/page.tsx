@@ -33,8 +33,7 @@ export default async function HomePage() {
   ]);
   const { hero, features, steps } = home;
   const homeFaqs = faqs.filter((faq) => faq.showOnHome);
-  const partnerLogos = clients.filter((item) => item.type === "partner");
-  const clientLogos = clients.filter((item) => item.type !== "partner");
+  const logosOf = (type: string) => clients.filter((item) => item.type === type);
   // Ilustrasi langkah "pilih paket" memakai kecepatan tiga paket pertama dari kategori pertama.
   const stepSpeeds = packages.filter((item) => item.categoryId === categories[0]?.id).slice(0, 3).map((item) => item.speed);
 
@@ -79,7 +78,14 @@ export default async function HomePage() {
         <FaqSection content={home.faq} faqs={homeFaqs} helpHref={whatsappUrl(settings.whatsappNumber, settings.whatsappMessage)} />
       )}
 
-      <NetworkSection partners={home.partners} clients={home.clients} partnerLogos={partnerLogos} clientLogos={clientLogos} />
+      <NetworkSection
+        partners={home.partners}
+        clients={home.clients}
+        cdn={home.cdn}
+        partnerLogos={logosOf("partner")}
+        clientLogos={logosOf("client")}
+        cdnLogos={logosOf("cdn")}
+      />
 
       <CtaBand settings={settings} />
     </>

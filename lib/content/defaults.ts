@@ -212,6 +212,13 @@ export const defaultContent: ContentMap = {
       moreLabel: "See More",
       lessLabel: "Show Less",
     },
+    cdn: {
+      eyebrow: "",
+      title: "Cloud & CDN Terhubung",
+      description: "",
+      moreLabel: "See More",
+      lessLabel: "Show Less",
+    },
   },
 
   coverage: {

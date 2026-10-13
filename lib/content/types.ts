@@ -61,6 +61,7 @@ export type HomeContent = {
   faq: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string; helpTitle: string; helpDescription: string };
   partners: LogoSectionContent;
   clients: LogoSectionContent;
+  cdn: LogoSectionContent;
 };
 
 export type CoverageContent = {

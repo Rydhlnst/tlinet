@@ -101,7 +101,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/data/coverage-areas", label: "Titik Jangkauan", icon: MapPin, keywords: "peta koordinat area kota" },
       { href: "/admin/data/faqs", label: "FAQ", icon: CircleHelp, keywords: "pertanyaan jawaban" },
       { href: "/admin/data/articles", label: "Artikel Berita", icon: Newspaper, keywords: "blog tulisan" },
-      { href: "/admin/data/clients", label: "Klien & Mitra", icon: Handshake, keywords: "logo marquee" },
+      { href: "/admin/data/clients", label: "Klien & Mitra", icon: Handshake, keywords: "logo marquee cloud cdn" },
     ],
   },
   {

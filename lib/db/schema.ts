@@ -89,7 +89,7 @@ export const articles = pgTable("articles", {
 export const clients = pgTable("clients", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  /** "client" tampil di bagian klien beranda, "partner" di bagian mitra. */
+  /** Deretan logo beranda tempat entri ini tampil: "partner", "client", atau "cdn". */
   type: text("type").notNull().default("client"),
   logoUrl: text("logo_url").notNull().default(""),
   ...ordering,

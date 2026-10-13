@@ -194,6 +194,12 @@ export const pageDefs: PageDef[] = [
         description: "Judul ini menjadi baris kedua judul besar dan label deretan logo klien (menu Klien & Mitra, jenis Klien).",
         fields: [head[1], ...logoButtons],
       },
+      {
+        path: "cdn",
+        title: "Deretan Cloud & CDN",
+        description: "Judul ini menjadi label deretan logo ketiga (menu Klien & Mitra, jenis Cloud & CDN).",
+        fields: [head[1], ...logoButtons],
+      },
     ],
   },
   {

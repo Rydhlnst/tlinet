@@ -16,23 +16,36 @@ const shortName = (name: string) => {
     .toUpperCase();
 };
 
-/** Bagian mitra dan klien beranda: judul dan angka di kiri, bola jaring di kanan, lalu deretan logo per jenis. */
+/** Label bola diambil bergiliran dari tiap deretan, supaya semua jenis terwakili walau jumlahnya dibatasi. */
+const takeTurns = (lists: string[][]) => {
+  const longest = Math.max(...lists.map((list) => list.length));
+  return Array.from({ length: longest }, (_, index) => lists.flatMap((list) => list.slice(index, index + 1))).flat();
+};
+
+/** Bagian mitra, klien, dan Cloud & CDN beranda: judul dan angka di kiri, bola jaring di kanan, lalu deretan logo per jenis. */
 export function NetworkSection({
   partners,
   clients,
+  cdn,
   partnerLogos,
   clientLogos,
+  cdnLogos,
 }: {
   partners: HomeContent["partners"];
   clients: HomeContent["clients"];
+  cdn: HomeContent["cdn"];
   partnerLogos: Client[];
   clientLogos: Client[];
+  cdnLogos: Client[];
 }) {
   const rows = [
-    { content: partners, items: partnerLogos, stat: "Mitra terhubung" },
-    { content: clients, items: clientLogos, stat: "Klien dilayani" },
+    { content: partners, items: partnerLogos, stat: "Mitra terhubung", heading: true },
+    { content: clients, items: clientLogos, stat: "Klien dilayani", heading: true },
+    { content: cdn, items: cdnLogos, stat: "Cloud & CDN", heading: false },
   ].filter((row) => row.items.length > 0);
   if (rows.length === 0) return null;
+  // Judul besar hanya menyebut mitra dan klien; Cloud & CDN cukup sebagai deretan dan angka.
+  const headings = rows.some((row) => row.heading) ? rows.filter((row) => row.heading) : rows;
 
   return (
     <section className="relative isolate overflow-hidden border-t">
@@ -42,8 +55,8 @@ export function NetworkSection({
           <div>
             {partners.eyebrow && <p className={smallLabel}>{partners.eyebrow}</p>}
             <h2 className="mt-6 text-4xl leading-[1.05] font-extrabold sm:text-5xl lg:text-6xl">
-              {rows.map((row, index) => (
-                <span key={row.stat} className={index === rows.length - 1 ? "block w-fit bg-gradient-to-r from-primary to-sky-500 bg-clip-text pb-1 text-transparent" : "block"}>
+              {headings.map((row, index) => (
+                <span key={row.stat} className={index === headings.length - 1 ? "block w-fit bg-gradient-to-r from-primary to-sky-500 bg-clip-text pb-1 text-transparent" : "block"}>
                   {row.content.title}
                 </span>
               ))}
@@ -59,7 +72,7 @@ export function NetworkSection({
             </dl>
           </div>
           <div className="mx-auto aspect-square w-full max-w-sm lg:max-w-none">
-            <NetworkGlobe labels={rows.flatMap((row) => row.items.map((item) => shortName(item.name)))} />
+            <NetworkGlobe labels={takeTurns(rows.map((row) => row.items.map((item) => shortName(item.name))))} />
           </div>
         </div>
 
