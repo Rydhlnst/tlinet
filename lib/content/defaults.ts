@@ -200,6 +200,8 @@ export const defaultContent: ContentMap = {
     },
     partners: {
       eyebrow: "Partnership & Clients",
+      headline: "TLINETWORK",
+      headlineAccent: "Internet Exchange",
       title: "Our Partnership",
       description: "TLINET terhubung dengan mitra jaringan nasional dan dipercaya instansi serta perusahaan di Sulawesi.",
       moreLabel: "See More",

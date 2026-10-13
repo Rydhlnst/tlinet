@@ -185,13 +185,18 @@ export const pageDefs: PageDef[] = [
       {
         path: "partners",
         title: "Bagian mitra & klien",
-        description: "Label kecil dan deskripsi tampil di samping bola jaring. Judul ini menjadi baris pertama judul besar dan label deretan logo mitra (menu Klien & Mitra, jenis Mitra).",
-        fields: [...head, ...logoButtons],
+        description: "Judul besar, label kecil, dan deskripsi tampil di samping bola jaring. Kolom Judul menjadi label deretan logo mitra (menu Klien & Mitra, jenis Mitra).",
+        fields: [
+          { name: "headline", label: "Judul besar, baris pertama", type: "text", half: true },
+          { name: "headlineAccent", label: "Judul besar, baris kedua (biru)", type: "text", half: true },
+          ...head,
+          ...logoButtons,
+        ],
       },
       {
         path: "clients",
         title: "Deretan klien",
-        description: "Judul ini menjadi baris kedua judul besar dan label deretan logo klien (menu Klien & Mitra, jenis Klien).",
+        description: "Judul ini menjadi label deretan logo klien (menu Klien & Mitra, jenis Klien).",
         fields: [head[1], ...logoButtons],
       },
       {

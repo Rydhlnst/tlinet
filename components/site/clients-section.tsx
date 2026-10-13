@@ -39,13 +39,12 @@ export function NetworkSection({
   cdnLogos: Client[];
 }) {
   const rows = [
-    { content: partners, items: partnerLogos, stat: "Mitra terhubung", heading: true },
-    { content: clients, items: clientLogos, stat: "Klien dilayani", heading: true },
-    { content: cdn, items: cdnLogos, stat: "Cloud & CDN", heading: false },
+    { content: partners, items: partnerLogos, stat: "Mitra terhubung" },
+    { content: clients, items: clientLogos, stat: "Klien dilayani" },
+    { content: cdn, items: cdnLogos, stat: "Cloud & CDN" },
   ].filter((row) => row.items.length > 0);
   if (rows.length === 0) return null;
-  // Judul besar hanya menyebut mitra dan klien; Cloud & CDN cukup sebagai deretan dan angka.
-  const headings = rows.some((row) => row.heading) ? rows.filter((row) => row.heading) : rows;
+  const headings = [partners.headline, partners.headlineAccent].filter(Boolean);
 
   return (
     <section className="relative isolate overflow-hidden border-t">
@@ -54,13 +53,15 @@ export function NetworkSection({
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
           <div>
             {partners.eyebrow && <p className={smallLabel}>{partners.eyebrow}</p>}
-            <h2 className="mt-6 text-4xl leading-[1.05] font-extrabold sm:text-5xl lg:text-6xl">
-              {headings.map((row, index) => (
-                <span key={row.stat} className={index === headings.length - 1 ? "block w-fit bg-gradient-to-r from-primary to-sky-500 bg-clip-text pb-1 text-transparent" : "block"}>
-                  {row.content.title}
-                </span>
-              ))}
-            </h2>
+            {headings.length > 0 && (
+              <h2 className="mt-6 text-4xl leading-[1.05] font-extrabold sm:text-5xl lg:text-6xl">
+                {headings.map((line, index) => (
+                  <span key={index} className={index === headings.length - 1 ? "block w-fit bg-gradient-to-r from-primary to-sky-500 bg-clip-text pb-1 text-transparent" : "block"}>
+                    {line}
+                  </span>
+                ))}
+              </h2>
+            )}
             {partners.description && <p className="mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">{partners.description}</p>}
             <dl className="mt-10 flex flex-wrap gap-x-14 gap-y-6">
               {rows.map((row) => (

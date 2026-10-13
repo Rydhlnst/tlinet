@@ -59,7 +59,8 @@ export type HomeContent = {
   };
   news: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string };
   faq: SectionHead & { titleAccent: string; ctaLabel: string; ctaHref: string; helpTitle: string; helpDescription: string };
-  partners: LogoSectionContent;
+  /** Juga kepala seluruh bagian logo: label kecil, deskripsi, dan dua baris judul besarnya. */
+  partners: LogoSectionContent & { headline: string; headlineAccent: string };
   clients: LogoSectionContent;
   cdn: LogoSectionContent;
 };
