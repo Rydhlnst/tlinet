@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Images, LoaderCircle, Trash2 } from "lucide-react";
+import { FileText, ImagePlus, Images, LoaderCircle, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { listMediaAction, type MediaItem } from "@/app/admin/actions";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isPdfUrl } from "@/lib/format";
 
 /** Jenis yang diterima server apa adanya; jenis gambar lain diubah dulu di peramban. */
 const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -60,13 +61,24 @@ async function prepareImage(file: File): Promise<File> {
   }
 }
 
-/** Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. Gangguan sementara di server dicoba sekali lagi. */
-export async function uploadImage(original: File): Promise<string | null> {
-  const prepared = await prepareImage(original);
+const pdfLimitBytes = 4 * 1024 * 1024;
+
+/**
+ * Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. Gangguan sementara di server dicoba sekali lagi.
+ * Dengan `allowPdf`, berkas PDF ikut diterima dan dikirim apa adanya (PDF tidak bisa diperkecil di peramban).
+ */
+export async function uploadImage(original: File, { allowPdf = false } = {}): Promise<string | null> {
+  const pdf = allowPdf && original.type === "application/pdf";
+  if (pdf && original.size > pdfLimitBytes) {
+    toast.error("Ukuran PDF maksimal 4 MB.");
+    return null;
+  }
+  const prepared = pdf ? original : await prepareImage(original);
   try {
     for (let attempt = 1; ; attempt++) {
       const body = new FormData();
       body.append("file", prepared);
+      if (allowPdf) body.append("allowPdf", "1");
       const response = await fetch("/api/upload", { method: "POST", body });
       // Penolakan dari server hosting (mis. 413 karena terlalu besar) tidak berbentuk JSON.
       const result = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
@@ -81,7 +93,7 @@ export async function uploadImage(original: File): Promise<string | null> {
   }
 }
 
-export function ImageField({ value, onChange, id }: { value: string; onChange: (value: string) => void; id?: string }) {
+export function ImageField({ value, onChange, id, allowPdf = false }: { value: string; onChange: (value: string) => void; id?: string; allowPdf?: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [library, setLibrary] = useState<MediaItem[] | null>(null);
@@ -90,7 +102,7 @@ export function ImageField({ value, onChange, id }: { value: string; onChange: (
   async function onFile(file: File | undefined) {
     if (!file) return;
     setUploading(true);
-    const url = await uploadImage(file);
+    const url = await uploadImage(file, { allowPdf });
     setUploading(false);
     if (url) onChange(url);
   }
@@ -103,7 +115,12 @@ export function ImageField({ value, onChange, id }: { value: string; onChange: (
   return (
     <div className="flex gap-3">
       <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
-        {value ? (
+        {value && isPdfUrl(value) ? (
+          <span className="flex flex-col items-center gap-1 text-xs font-semibold text-brand-ink">
+            <FileText className="size-6" />
+            PDF
+          </span>
+        ) : value ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={value} alt="" className="size-full object-cover" />
         ) : (
@@ -111,12 +128,12 @@ export function ImageField({ value, onChange, id }: { value: string; onChange: (
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder="https://… atau unggah gambar" />
+        <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder={allowPdf ? "https://… atau unggah gambar/PDF" : "https://… atau unggah gambar"} />
         <div className="flex flex-wrap gap-2">
           <input
             ref={input}
             type="file"
-            accept="image/*"
+            accept={allowPdf ? "image/*,application/pdf" : "image/*"}
             className="hidden"
             onChange={(event) => {
               void onFile(event.target.files?.[0]);
@@ -156,7 +173,7 @@ export function ImageField({ value, onChange, id }: { value: string; onChange: (
             <p className="py-12 text-center text-sm text-muted-foreground">Belum ada gambar. Unggah gambar terlebih dahulu.</p>
           ) : (
             <div className="grid max-h-[60vh] grid-cols-3 gap-3 overflow-y-auto p-0.5 sm:grid-cols-4">
-              {library.map((item) => (
+              {library.filter((item) => allowPdf || !isPdfUrl(item.url)).map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -167,8 +184,15 @@ export function ImageField({ value, onChange, id }: { value: string; onChange: (
                   }}
                   className="aspect-square overflow-hidden rounded-lg border bg-muted outline-none hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.url} alt={item.filename} loading="lazy" className="size-full object-cover" />
+                  {isPdfUrl(item.url) ? (
+                    <span className="flex size-full flex-col items-center justify-center gap-1 p-2 text-xs font-semibold text-brand-ink">
+                      <FileText className="size-6" />
+                      <span className="w-full truncate text-center font-normal text-muted-foreground">{item.filename}</span>
+                    </span>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.url} alt={item.filename} loading="lazy" className="size-full object-cover" />
+                  )}
                 </button>
               ))}
             </div>

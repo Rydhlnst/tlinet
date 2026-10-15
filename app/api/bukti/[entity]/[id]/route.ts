@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { customerPayments, customerPurchases, mediaAssets } from "@/lib/db/schema";
 import { isR2Url } from "@/lib/storage";
 
-const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
+const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif", "application/pdf": "pdf" };
 
 /** Bukti transfer sebuah baris pembayaran atau pembelian: tautan gambarnya dan bulan tagihannya. */
 async function findProof(entity: string, id: string) {
@@ -18,15 +18,15 @@ async function findProof(entity: string, id: string) {
   return undefined;
 }
 
-/** Isi gambar dari penyimpanan kita sendiri: database (/media/…) atau bucket R2. */
+/** Isi gambar atau PDF dari penyimpanan kita sendiri: database (/media/…) atau bucket R2. */
 async function loadImage(url: string): Promise<{ body: BodyInit; type: string } | null> {
   if (url.startsWith("/media/")) {
-    const [asset] = await db!.select({ data: mediaAssets.data, mimeType: mediaAssets.mimeType }).from(mediaAssets).where(eq(mediaAssets.id, url.slice("/media/".length))).limit(1);
+    const [asset] = await db!.select({ data: mediaAssets.data, mimeType: mediaAssets.mimeType }).from(mediaAssets).where(eq(mediaAssets.id, url.slice("/media/".length).replace(/\.pdf$/i, ""))).limit(1);
     return asset?.data ? { body: Buffer.from(asset.data, "base64"), type: asset.mimeType } : null;
   }
   const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
   const type = response.headers.get("content-type") ?? "";
-  return response.ok && response.body && type.startsWith("image/") ? { body: response.body, type } : null;
+  return response.ok && response.body && (type.startsWith("image/") || type === "application/pdf") ? { body: response.body, type } : null;
 }
 
 /**

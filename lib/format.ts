@@ -1,3 +1,6 @@
+/** Berkas PDF dikenali dari akhiran alamatnya (kunci R2 dan /media/<id>.pdf sama-sama berakhiran .pdf). */
+export const isPdfUrl = (url: string) => /\.pdf(?:$|[?#])/i.test(url);
+
 export function slugify(value: string) {
   return value
     .toLowerCase()

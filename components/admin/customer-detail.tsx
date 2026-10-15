@@ -182,7 +182,7 @@ function HistoryPanel({
                   <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
                 </TableCell>
                 <TableCell>
-                  {item.proofUrl ? <ProofViewer entityKey={entityKey} id={item.id} label={formatMonth(item.period)} /> : <span className="text-muted-foreground">—</span>}
+                  {item.proofUrl ? <ProofViewer entityKey={entityKey} id={item.id} url={item.proofUrl} label={formatMonth(item.period)} /> : <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell className="pr-4 text-right whitespace-nowrap">
                   <Button variant="ghost" size="icon-sm" onClick={() => setViewing(item)} aria-label={`Lihat detail ${lower} ${formatMonth(item.period)}`}>

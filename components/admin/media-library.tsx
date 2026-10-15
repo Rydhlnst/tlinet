@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, LoaderCircle, Trash2, Upload } from "lucide-react";
+import { Copy, FileText, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { isPdfUrl } from "@/lib/format";
 import { uploadImage } from "./image-field";
 
 const formatSize = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
@@ -90,8 +91,15 @@ export function MediaLibrary({ items, storageLabel }: { items: MediaItem[]; stor
           {items.map((item) => (
             <li key={item.id} className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
               <div className="aspect-[4/3] bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.url} alt={item.filename} loading="lazy" className="size-full object-cover" />
+                {isPdfUrl(item.url) ? (
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex size-full flex-col items-center justify-center gap-1 text-sm font-semibold text-brand-ink">
+                    <FileText className="size-8" />
+                    PDF
+                  </a>
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.url} alt={item.filename} loading="lazy" className="size-full object-cover" />
+                )}
               </div>
               <div className="flex items-center gap-1 p-2 pl-3">
                 <div className="min-w-0 flex-1">

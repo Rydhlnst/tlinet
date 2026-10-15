@@ -11,6 +11,8 @@ const allowed = new Map([
   ["image/avif", "avif"],
 ]);
 const maxFileSize = 4 * 1024 * 1024;
+/** PDF hanya untuk isian yang memintanya (bukti transfer), supaya tidak terpilih sebagai gambar sampul atau logo. */
+const pdfType = "application/pdf";
 
 /** Unggahan ke bucket di wilayah lain bisa makan beberapa detik; batas bawaan fungsi terlalu sempit untuk itu. */
 export const maxDuration = 30;
@@ -32,18 +34,21 @@ export async function POST(request: Request) {
   if (!db) return fail("Database belum diatur.", 500);
   if (storageMode === "incomplete") return fail("Konfigurasi Cloudflare R2 belum lengkap. Lengkapi semua variabel R2_* atau kosongkan semuanya.", 500);
 
-  const file = (await request.formData()).get("file");
+  const form = await request.formData();
+  const file = form.get("file");
+  const allowPdf = form.get("allowPdf") === "1";
   if (!(file instanceof File)) return fail("File wajib dipilih.", 400);
-  const extension = allowed.get(file.type);
-  if (!extension) return fail("Gunakan gambar JPG, PNG, WebP, atau AVIF.", 400);
-  if (file.size > maxFileSize) return fail("Ukuran gambar maksimal 4 MB.", 400);
+  const isPdf = allowPdf && file.type === pdfType;
+  const extension = isPdf ? "pdf" : allowed.get(file.type);
+  if (!extension) return fail(allowPdf ? "Gunakan gambar JPG, PNG, WebP, AVIF, atau berkas PDF." : "Gunakan gambar JPG, PNG, WebP, atau AVIF.", 400);
+  if (file.size > maxFileSize) return fail(isPdf ? "Ukuran PDF maksimal 4 MB." : "Ukuran gambar maksimal 4 MB.", 400);
 
   const id = crypto.randomUUID();
   const body = await file.arrayBuffer();
   const base = { id, filename: file.name.slice(0, 160) || `gambar.${extension}`, mimeType: file.type, size: file.size };
 
   // Tanpa R2, gambar disimpan di database dan disajikan lewat /media/<id>.
-  let url = `/media/${id}`;
+  let url = isPdf ? `/media/${id}.pdf` : `/media/${id}`;
   if (storageMode === "r2") {
     try {
       url = await putR2Object(`uploads/${Date.now()}-${id}.${extension}`, body, file.type);

@@ -1,8 +1,9 @@
 "use client";
 
-import { Download, X } from "lucide-react";
+import { Download, FileText, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useState } from "react";
+import { isPdfUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const barButton =
@@ -12,9 +13,23 @@ const barButton =
  * Gambar kecil bukti transfer yang membuka tampilan layar penuh dengan tombol unduh. Gambarnya diambil
  * lewat /api/bukti di situs sendiri, jadi melihat dan mengunduhnya tidak berpindah ke alamat penyimpanan.
  */
-export function ProofViewer({ entityKey, id, label, thumbClassName = "size-9 object-cover" }: { entityKey: string; id: string; label: string; thumbClassName?: string }) {
+export function ProofViewer({
+  entityKey,
+  id,
+  label,
+  url = "",
+  thumbClassName = "size-9 object-cover",
+}: {
+  entityKey: string;
+  id: string;
+  label: string;
+  /** Alamat asli bukti, untuk mengenali PDF. */
+  url?: string;
+  thumbClassName?: string;
+}) {
   const [open, setOpen] = useState(false);
   const src = `/api/bukti/${entityKey}/${id}`;
+  const pdf = isPdfUrl(url);
 
   return (
     <>
@@ -28,8 +43,15 @@ export function ProofViewer({ entityKey, id, label, thumbClassName = "size-9 obj
           setOpen(true);
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" loading="lazy" className={cn("rounded-md border", thumbClassName)} />
+        {pdf ? (
+          <span className="flex h-9 items-center gap-1 rounded-md border bg-brand-soft px-2 text-[11px] font-bold text-brand-ink">
+            <FileText className="size-4" />
+            PDF
+          </span>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt="" loading="lazy" className={cn("rounded-md border", thumbClassName)} />
+        )}
       </button>
 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
@@ -50,8 +72,12 @@ export function ProofViewer({ entityKey, id, label, thumbClassName = "size-9 obj
               </div>
             </div>
             <div className="flex min-h-0 flex-1 items-center justify-center p-4 pt-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt={`Bukti transfer ${label}`} className="max-h-full max-w-full rounded-lg object-contain" />
+              {pdf ? (
+                <iframe src={src} title={`Bukti transfer ${label}`} className="size-full rounded-lg bg-white" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={src} alt={`Bukti transfer ${label}`} className="max-h-full max-w-full rounded-lg object-contain" />
+              )}
             </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>

@@ -157,7 +157,7 @@ function Control({ field, value, onChange, options, id }: { field: Field; value:
     case "switch":
       return <Switch id={id} checked={value === true} onCheckedChange={onChange} />;
     case "image":
-      return <ImageField id={id} value={text} onChange={onChange} />;
+      return <ImageField id={id} value={text} onChange={onChange} allowPdf={field.allowPdf} />;
     case "strings":
       return <StringsControl field={field} value={Array.isArray(value) ? (value as string[]) : []} onChange={onChange} />;
     case "list":

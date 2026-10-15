@@ -32,7 +32,7 @@ function Cell({ column, row, options, entityKey }: { column: Column; row: Row; o
         <span className="block size-9 rounded-md border border-dashed bg-muted/50" />
       );
     case "proof":
-      return text && row.id ? <ProofViewer entityKey={entityKey} id={row.id} label={formatMonth(String(row.period ?? ""))} /> : <span className="text-muted-foreground">—</span>;
+      return text && row.id ? <ProofViewer entityKey={entityKey} id={row.id} url={text} label={formatMonth(String(row.period ?? ""))} /> : <span className="text-muted-foreground">—</span>;
     case "date":
       return <span className="whitespace-nowrap text-muted-foreground">{text ? formatDate(text) : "—"}</span>;
     case "datetime":

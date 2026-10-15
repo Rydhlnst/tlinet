@@ -4,7 +4,8 @@ import { mediaAssets } from "@/lib/db/schema";
 
 /** Menyajikan gambar yang disimpan di database (dipakai selama Cloudflare R2 belum diatur). */
 export async function GET(_request: Request, { params }: RouteContext<"/media/[id]">) {
-  const { id } = await params;
+  // PDF disimpan dengan alamat /media/<id>.pdf agar dikenali dari alamatnya.
+  const id = (await params).id.replace(/\.pdf$/i, "");
   const [asset] = db
     ? await db.select({ data: mediaAssets.data, mimeType: mediaAssets.mimeType }).from(mediaAssets).where(eq(mediaAssets.id, id)).limit(1)
     : [];
