@@ -21,8 +21,23 @@ import { planNextMonth } from "@/lib/cms/monthly";
 import { formatMonth } from "@/lib/format";
 import type { Row } from "./record-dialogs";
 
-/** Tombol "Generate Tagihan <bulan>": menyalin tagihan bulan terakhir ke bulan berikutnya setelah dikonfirmasi. */
-export function MonthlyGenerate({ entityKey, monthly, rows }: { entityKey: string; monthly: NonNullable<EntityDef["monthly"]>; rows: Row[] }) {
+/**
+ * Tombol "Generate Tagihan <bulan>": menyalin tagihan bulan terakhir ke bulan berikutnya setelah dikonfirmasi.
+ * Dengan `customerId`, `rows` berisi tagihan satu pelanggan saja dan hanya tagihan pelanggan itu yang dibuat.
+ */
+export function MonthlyGenerate({
+  entityKey,
+  monthly,
+  rows,
+  customerId = "",
+  size = "lg",
+}: {
+  entityKey: string;
+  monthly: NonNullable<EntityDef["monthly"]>;
+  rows: Row[];
+  customerId?: string;
+  size?: "default" | "lg";
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -33,7 +48,7 @@ export function MonthlyGenerate({ entityKey, monthly, rows }: { entityKey: strin
 
   function generate() {
     startTransition(async () => {
-      const result = await generateNextMonthAction(entityKey, plan!.source);
+      const result = await generateNextMonthAction(entityKey, plan!.source, customerId);
       if (result.ok) {
         toast.success(result.message);
         setOpen(false);
@@ -44,7 +59,7 @@ export function MonthlyGenerate({ entityKey, monthly, rows }: { entityKey: strin
 
   return (
     <>
-      <Button variant="outline" size="lg" onClick={() => setOpen(true)}>
+      <Button variant="outline" size={size} onClick={() => setOpen(true)}>
         <CalendarPlus />
         Generate Tagihan {target}
       </Button>

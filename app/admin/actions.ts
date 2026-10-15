@@ -62,11 +62,11 @@ export async function saveRecordAction(entityKey: string, data: unknown): Promis
   return result;
 }
 
-export async function generateNextMonthAction(entityKey: string, source: string): Promise<SaveResult> {
+export async function generateNextMonthAction(entityKey: string, source: string, customerId = ""): Promise<SaveResult> {
   if (!(await getAdmin())) return expired;
   const entity = getEntityDef(entityKey);
   if (!entity?.monthly) return { ok: false, message: "Jenis data tidak dikenal." };
-  return generateNextMonth(entity, source);
+  return generateNextMonth(entity, source, customerId);
 }
 
 export async function deleteRecordAction(entityKey: string, id: string): Promise<SaveResult> {

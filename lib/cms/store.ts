@@ -105,10 +105,14 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
   return { ok: true, message: `${entity.label} tersimpan.` };
 }
 
-/** Membuat tagihan bulan sesudah `source` dari tagihan bulan itu; yang sudah ada di bulan tujuan dilewati. */
-export async function generateNextMonth(entity: EntityDef, source: string): Promise<SaveResult> {
+/**
+ * Membuat tagihan bulan sesudah `source` dari tagihan bulan itu; yang sudah ada di bulan tujuan dilewati.
+ * Dengan `customerId`, hanya tagihan pelanggan itu (dipakai di halaman detail pelanggan).
+ */
+export async function generateNextMonth(entity: EntityDef, source: string, customerId = ""): Promise<SaveResult> {
   if (!entity.monthly || !/^\d{4}-\d{2}$/.test(source)) return { ok: false, message: "Bulan tagihan tidak valid." };
-  const plan = planNextMonth(entity.monthly, await listRecords(entity), source);
+  const rows = await listRecords(entity);
+  const plan = planNextMonth(entity.monthly, customerId ? rows.filter((row) => row.customerId === customerId) : rows, source);
   if (!plan?.toCreate.length) return { ok: false, message: "Tidak ada tagihan yang perlu dibuat." };
   let created = 0;
   const failures: string[] = [];

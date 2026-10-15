@@ -24,6 +24,7 @@ import type { customerPayments, customerPurchases, customers, invoices as invoic
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AmountSummary } from "./amount-summary";
+import { MonthlyGenerate } from "./monthly-generate";
 import { uploadImage } from "./image-field";
 import { ProofViewer } from "./proof-viewer";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
@@ -131,6 +132,7 @@ function HistoryPanel({
   const lower = noun.toLowerCase();
   const withSupplier = entityKey === "customer-purchases";
   const summary = getEntityDef(entityKey)?.summary;
+  const monthly = getEntityDef(entityKey)?.monthly;
 
   return (
     <>
@@ -138,13 +140,16 @@ function HistoryPanel({
         icon={icon}
         title={title}
         action={
-          <Button
-            variant="outline"
-            onClick={() => setEditing({ customerId, period: today().slice(0, 7), paidDate: today(), method: rows[0]?.method ?? "", status: "paid", ...defaults })}
-          >
-            <Plus />
-            Tambah {noun}
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            {monthly && <MonthlyGenerate entityKey={entityKey} monthly={monthly} rows={rows} customerId={customerId} size="default" />}
+            <Button
+              variant="outline"
+              onClick={() => setEditing({ customerId, period: today().slice(0, 7), paidDate: today(), method: rows[0]?.method ?? "", status: "paid", ...defaults })}
+            >
+              <Plus />
+              Tambah {noun}
+            </Button>
+          </div>
         }
       >
         {summary && rows.length > 0 && <AmountSummary summary={summary} rows={rows} variant="strip" />}
@@ -233,10 +238,13 @@ function InvoicePanel({ rows, customerId }: { rows: InvoiceRow[]; customerId: st
         icon={ScrollText}
         title="Invoice"
         action={
-          <Button variant="outline" onClick={() => setEditing({ ...entity?.defaults, customerId })}>
-            <Plus />
-            Buat invoice
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            {entity?.monthly && <MonthlyGenerate entityKey="invoices" monthly={entity.monthly} rows={rows} customerId={customerId} size="default" />}
+            <Button variant="outline" onClick={() => setEditing({ ...entity?.defaults, customerId })}>
+              <Plus />
+              Buat invoice
+            </Button>
+          </div>
         }
       >
         {entity?.summary && rows.length > 0 && <AmountSummary summary={entity.summary} rows={rows} variant="strip" />}
