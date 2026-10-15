@@ -373,7 +373,7 @@ export const entityDefs: EntityDef[] = [
     key: "customer-purchases",
     label: "History Pembelian Perusahaan",
     singular: "pembelian",
-    description: "Riwayat pembelian perusahaan ke pemasok. Pembelian yang dicatat dari halaman detail pelanggan ikut tampil di sini.",
+    description: "Riwayat pembelian perusahaan ke pemasok. Setiap invoice pelanggan otomatis membuat tagihan pemasoknya di bulan yang sama, disalin dari pembelian terakhir pelanggan itu.",
     searchKeys: ["supplierName", "serviceName", "siteId", "cid", "ba", "paymentNumber", "period", "method", "note"],
     internal: true,
     detailDialog: true,

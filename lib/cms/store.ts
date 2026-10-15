@@ -4,7 +4,7 @@ import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
 import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, invoices, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
-import { deleteInvoicePayment, syncInvoicePayment, syncPaymentInvoice } from "@/lib/invoice-payments";
+import { deleteInvoicePayment, deleteInvoicePurchase, syncInvoicePayment, syncInvoicePurchase, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { prepareInvoice } from "@/lib/invoices";
 import { customerHistoryKeys, type EntityDef } from "./entities";
 import { customerLinkedFields } from "./linked";
@@ -105,8 +105,11 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
     savedId = crypto.randomUUID();
     await db.insert(table).values({ ...values, id: savedId });
   }
-  // Invoice dan History Pembayaran Subnet saling mengikuti.
-  if (entity.key === "invoices") await syncInvoicePayment(savedId);
+  // Invoice tercatat di History Pembayaran Subnet (saling mengikuti) dan memicu tagihan pemasoknya.
+  if (entity.key === "invoices") {
+    await syncInvoicePayment(savedId);
+    await syncInvoicePurchase(savedId);
+  }
   if (entity.key === "customer-payments") await syncPaymentInvoice(savedId);
   return { ok: true, message: `${entity.label} tersimpan.` };
 }
@@ -137,7 +140,10 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
     const used = await db.select({ id: packages.id }).from(packages).where(eq(packages.categoryId, id)).limit(1);
     if (used.length) return { ok: false, message: "Kategori masih dipakai paket. Pindahkan atau hapus paketnya terlebih dahulu." };
   }
-  if (entity.key === "invoices") await deleteInvoicePayment(id);
+  if (entity.key === "invoices") {
+    await deleteInvoicePayment(id);
+    await deleteInvoicePurchase(id);
+  }
   // Riwayat pembayaran dan pembelian ikut terhapus bersama pelanggannya.
   if (entity.key === "customers") {
     await db.delete(customerPayments).where(eq(customerPayments.customerId, id));

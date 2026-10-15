@@ -201,6 +201,8 @@ export const customerPurchases = pgTable(
     siteId: text("site_id").notNull().default(""),
     paymentNumber: text("payment_number").notNull().default(""),
     ba: text("ba").notNull().default(""),
+    /** Invoice pelanggan yang memicu tagihan pemasok ini; kosong untuk pembelian yang dicatat langsung. */
+    invoiceId: text("invoice_id").notNull().default(""),
     ...billingColumns(),
   },
   (table) => [index("customer_purchases_customer_idx").on(table.customerId, table.period)],
