@@ -37,9 +37,10 @@ export type EntityDef = {
   /**
    * Tombol "Generate Tagihan <bulan>": baris bulan tagihan terakhir disalin ke bulan berikutnya. `copyKeys` ikut disalin
    * (isian yang tertaut ke Data Pelanggan tidak perlu, karena diisi dari pelanggannya), `matchKeys` menandai tagihan yang
-   * sama sehingga yang sudah ada di bulan tujuan dilewati. `copied` dan `cleared` menjelaskannya di dialog konfirmasi.
+   * sama sehingga yang sudah ada di bulan tujuan dilewati. `periodKey` kolom bulan/tanggal tagihannya (bawaan `period`),
+   * `kind: "invoice"` memajukan tanggal invoice sebulan, dan `note` menjelaskan hasilnya di dialog konfirmasi.
    */
-  monthly?: { copyKeys: string[]; matchKeys: string[]; copied: string; cleared: string };
+  monthly?: { copyKeys: string[]; matchKeys: string[]; periodKey?: string; kind?: "billing" | "invoice"; note: string };
 };
 
 const ordering: Field[] = [
@@ -342,8 +343,7 @@ export const entityDefs: EntityDef[] = [
     monthly: {
       copyKeys: ["customerId", "amount", "method"],
       matchKeys: ["customerId"],
-      copied: "Pelanggan, metode, dan nominal",
-      cleared: "tanggal bayar, bukti transfer, dan keterangan",
+      note: "Pelanggan, metode, dan nominal disalin dan tetap bisa diubah; statusnya Belum lunas, sedangkan tanggal bayar, bukti transfer, dan keterangan dikosongkan.",
     },
     defaults: { status: "paid", amount: "" },
     columns: [
@@ -380,8 +380,7 @@ export const entityDefs: EntityDef[] = [
     monthly: {
       copyKeys: ["customerId", "supplierName", "supplierAddress", "supplierEmail", "serviceName", "amount", "method"],
       matchKeys: ["customerId", "supplierName", "serviceName"],
-      copied: "Pemasok, layanan, dan nominal",
-      cleared: "tanggal bayar, BA, bukti transfer, dan keterangan",
+      note: "Pemasok, layanan, dan nominal disalin dan tetap bisa diubah; statusnya Belum lunas, sedangkan tanggal bayar, BA, bukti transfer, dan keterangan dikosongkan.",
     },
     defaults: { status: "paid", amount: "" },
     columns: [
@@ -432,6 +431,14 @@ export const entityDefs: EntityDef[] = [
     internal: true,
     detailPath: "/admin/invoice",
     summary: { amountKey: "total", statusKey: "status", periodKey: "issueDate", paidLabel: "Paid", unpaidLabel: "Unpaid", periodLabel: "Terbit" },
+    // Data pelanggan (nama, PIC, alamat, telepon, ID, bandwidth, lokasi) sengaja tidak disalin: diisi ulang dari Data Pelanggan.
+    monthly: {
+      kind: "invoice",
+      periodKey: "issueDate",
+      copyKeys: ["customerId", "npwp", "email", "contractNo", "serviceType", "items", "taxRate", "notes"],
+      matchKeys: ["customerId"],
+      note: "Item tagihan, PPN, dan catatan disalin (nama bulan di item ikut berganti) dan tetap bisa diubah. Tanggal terbit, jatuh tempo, dan periode maju satu bulan, nomor invoice dibuat otomatis, data pelanggan diambil dari Data Pelanggan, dan statusnya Unpaid.",
+    },
     defaults: { status: "unpaid", items: [], notes: [], taxRate: "" },
     columns: [
       { key: "number", label: "No. Invoice" },

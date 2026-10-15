@@ -54,7 +54,7 @@ export function MonthlyGenerate({ entityKey, monthly, rows }: { entityKey: strin
             <AlertDialogTitle>Generate tagihan {target}?</AlertDialogTitle>
             <AlertDialogDescription>
               {count > 0
-                ? `${count} tagihan ${target} akan dibuat dari tagihan ${formatMonth(plan.source)}. ${monthly.copied} disalin dan tetap bisa diubah; statusnya Belum lunas, sedangkan ${monthly.cleared} dikosongkan.`
+                ? `${count} tagihan ${target} akan dibuat dari tagihan ${formatMonth(plan.source)}. ${monthly.note}`
                 : `Semua tagihan ${formatMonth(plan.source)} sudah punya tagihan ${target}. Tidak ada yang perlu dibuat.`}
               {plan.skipped > 0 && count > 0 && ` ${plan.skipped} tagihan yang sudah ada di ${target} dilewati.`}
             </AlertDialogDescription>

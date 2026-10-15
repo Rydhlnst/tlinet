@@ -115,7 +115,7 @@ export async function generateNextMonth(entity: EntityDef, source: string): Prom
   for (const row of plan.toCreate) {
     const result = await saveRecord(entity, nextMonthValues(entity.monthly, row, plan.target));
     if (result.ok) created += 1;
-    else failures.push(`${String(row.supplierName ?? "")}: ${result.message}`);
+    else failures.push(`${String(row.supplierName ?? row.companyName ?? "")}: ${result.message}`);
   }
   if (!created) return { ok: false, message: failures[0] ?? "Tagihan gagal dibuat." };
   return { ok: true, message: `${created} tagihan dibuat.${failures.length ? ` ${failures.length} gagal: ${failures[0]}` : ""}` };
