@@ -82,7 +82,7 @@ export function NetworkSection({
             <div key={row.stat}>
               <h3 className={smallLabel}>{row.content.title}</h3>
               <div className="mt-5">
-                <LogoShowcase items={row.items} moreLabel={row.content.moreLabel} lessLabel={row.content.lessLabel} />
+                <LogoShowcase items={row.items.map(({ id, name, logoUrl }) => ({ id, name, logoUrl }))} moreLabel={row.content.moreLabel} lessLabel={row.content.lessLabel} />
               </div>
             </div>
           ))}

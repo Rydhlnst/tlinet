@@ -21,33 +21,6 @@ export function PageHeroSkeleton() {
   );
 }
 
-/** Kerangka hero beranda: teks rata kiri, dua tombol, lalu deretan angka. */
-export function HomeHeroSkeleton() {
-  return (
-    <section className="hero-under-header relative overflow-hidden bg-ink">
-      <div className="container-page flex flex-col gap-6 py-24 sm:py-32">
-        <DarkBlock className="h-7 w-48 rounded-full" />
-        <div className="flex flex-col gap-3">
-          <DarkBlock className="h-12 w-full max-w-md" />
-          <DarkBlock className="h-12 w-4/5 max-w-sm" />
-          <DarkBlock className="h-12 w-3/5 max-w-xs" />
-        </div>
-        <DarkBlock className="h-4 w-full max-w-lg" />
-        <DarkBlock className="h-4 w-3/4 max-w-md" />
-        <div className="flex gap-3">
-          <DarkBlock className="h-11 w-40 rounded-full" />
-          <DarkBlock className="h-11 w-36 rounded-full" />
-        </div>
-        <div className="mt-6 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-          {[0, 1, 2, 3].map((item) => (
-            <DarkBlock key={item} className="h-16 rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /** Kerangka judul bagian di tengah (label, judul, deskripsi). */
 export function SectionHeadingSkeleton() {
   return (

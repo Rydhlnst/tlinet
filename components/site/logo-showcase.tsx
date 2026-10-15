@@ -3,6 +3,9 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useState } from "react";
 import type { Client } from "@/lib/data";
+
+/** Hanya yang dibutuhkan kartu logo, supaya data yang dikirim ke peramban tetap kecil. */
+export type LogoItem = Pick<Client, "id" | "name" | "logoUrl">;
 import { cn } from "@/lib/utils";
 import { ClientLogo } from "./client-logo";
 import { linkButtonClass } from "./ui";
@@ -15,7 +18,7 @@ const MIN_PER_LOOP = 8;
 const chip =
   "flex h-16 shrink-0 items-center gap-3 rounded-2xl border bg-card pr-5 pl-3 shadow-sm shadow-primary/5 transition-colors hover:border-primary/40";
 
-function Marquee({ items }: { items: Client[] }) {
+function Marquee({ items }: { items: LogoItem[] }) {
   const repeats = Math.ceil(MIN_PER_LOOP / items.length);
   // Dua putaran identik: animasi menggeser tepat satu putaran lalu mengulang tanpa loncatan.
   const loop = Array.from({ length: repeats * 2 }, () => items).flat();
@@ -33,7 +36,7 @@ function Marquee({ items }: { items: Client[] }) {
 }
 
 /** Deretan logo yang berjalan; bila logonya banyak, bisa dibuka menjadi kisi berisi semuanya. */
-export function LogoShowcase({ items, moreLabel, lessLabel }: { items: Client[]; moreLabel: string; lessLabel: string }) {
+export function LogoShowcase({ items, moreLabel, lessLabel }: { items: LogoItem[]; moreLabel: string; lessLabel: string }) {
   const [open, setOpen] = useState(false);
   const expandable = items.length > GRID_FROM && Boolean(moreLabel || lessLabel);
 
