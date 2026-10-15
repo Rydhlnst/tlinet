@@ -31,7 +31,7 @@ type BrandProps = {
 
 /** Logo dari CMS bila ada; jika tidak, lambang dan nama merek. */
 export function Brand({ name, logoUrl, highlight = "", inverted = false, className, highlightClassName }: BrandProps) {
-  if (logoUrl) return <CmsImage src={logoUrl} alt={name} loading="eager" sizes="160px" className={cn("h-8 w-auto", className)} />;
+  if (logoUrl) return <CmsImage src={logoUrl} alt={name} loading="eager" sizes={160} className={cn("h-8 w-auto", className)} />;
 
   const cut = highlight && name.toLowerCase().endsWith(highlight.toLowerCase()) ? name.length - highlight.length : name.length;
   return (

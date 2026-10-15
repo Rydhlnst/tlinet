@@ -20,7 +20,7 @@ const initials = (name: string) =>
  */
 export function ClientLogo({ name, logoUrl }: { name: string; logoUrl: string }) {
   const [failed, setFailed] = useState(false);
-  const optimized = logoUrl ? optimizedImage(logoUrl, "80px") : null;
+  const optimized = logoUrl ? optimizedImage(logoUrl, 80) : null;
   const image = useRef<HTMLImageElement>(null);
 
   // Gambar bisa gagal sebelum hidrasi selesai, saat onError belum terpasang.

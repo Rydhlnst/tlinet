@@ -14,11 +14,15 @@ export function canOptimize(src: string) {
 
 /**
  * `src`, `srcSet`, dan `sizes` versi teroptimasi untuk sebuah gambar CMS, atau `null` bila tidak bisa dioptimalkan.
- * `sizes` menentukan lebar yang dipilih peramban, jadi isi sesuai lebar tampil gambarnya.
+ * - `sizes` (teks): gambar selebar tata letak; srcset memuat semua lebar perangkat dan peramban memilih sesuai `sizes`.
+ * - `sizes` (angka): gambar kecil berukuran tetap, lebarnya dalam piksel CSS; srcset cukup 1x dan 2x, jauh lebih pendek.
  */
-export function optimizedImage(src: string, sizes: string) {
+export function optimizedImage(src: string, sizes: string | number) {
   if (!canOptimize(src)) return null;
   // Lebar dan tinggi hanya untuk membangun srcset; ukuran tampil tetap diatur CSS.
-  const { props } = getImageProps({ src, alt: "", width: 1920, height: 1080, sizes, quality: 75 });
+  const { props } =
+    typeof sizes === "number"
+      ? getImageProps({ src, alt: "", width: sizes, height: sizes, quality: 75 })
+      : getImageProps({ src, alt: "", width: 1920, height: 1080, sizes, quality: 75 });
   return { src: props.src, srcSet: props.srcSet, sizes: props.sizes };
 }

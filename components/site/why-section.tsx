@@ -34,7 +34,7 @@ export function WhySection({ why }: { why: HomeContent["why"] }) {
               <CmsImage
                 src={item.imageUrl || fallbackImages[index % fallbackImages.length]}
                 alt=""
-                sizes="160px"
+                sizes={160}
                 className="pointer-events-none absolute top-3 right-1 -z-10 h-auto max-h-[70%] w-[44%] max-w-40 object-contain mix-blend-multiply [mask-image:radial-gradient(closest-side,black_62%,transparent)]"
               />
               <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-primary ring-1 ring-primary/10">

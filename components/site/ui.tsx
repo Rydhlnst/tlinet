@@ -126,7 +126,7 @@ export function CmsImage({
   sizes = "100vw",
   preload: preloadImage = false,
   ...props
-}: Omit<ComponentProps<"img">, "src"> & { src?: string; preload?: boolean }) {
+}: Omit<ComponentProps<"img">, "src" | "sizes"> & { src?: string; preload?: boolean; /** Teks `sizes`, atau lebar tetap dalam px untuk gambar kecil. */ sizes?: string | number }) {
   const optimized = src ? optimizedImage(src, sizes) : null;
   if (optimized && preloadImage) preload(optimized.src, { as: "image", imageSrcSet: optimized.srcSet, imageSizes: optimized.sizes, fetchPriority: "high" });
   // eslint-disable-next-line @next/next/no-img-element
