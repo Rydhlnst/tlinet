@@ -4,6 +4,7 @@ import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
 import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, invoices, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
+import { deleteInvoicePayment, syncInvoicePayment, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { prepareInvoice } from "@/lib/invoices";
 import { customerHistoryKeys, type EntityDef } from "./entities";
 import { customerLinkedFields } from "./linked";
@@ -95,13 +96,18 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
   if (ownerChanges && Object.keys(ownerChanges.values).length) {
     await db.update(customers).set({ ...ownerChanges.values, updatedAt: new Date() }).where(eq(customers.id, ownerChanges.id));
   }
+  let savedId = givenId;
   if (givenId) {
     const updated = await db.update(table).set({ ...values, updatedAt: new Date() }).where(eq(table.id, givenId)).returning({ id: table.id });
     if (!updated.length) return { ok: false, message: "Data tidak ditemukan. Muat ulang halaman lalu coba lagi." };
   } else {
     if (entity.canCreate === false) return { ok: false, message: "Data ini tidak bisa ditambahkan dari dashboard." };
-    await db.insert(table).values({ ...values, id: crypto.randomUUID() });
+    savedId = crypto.randomUUID();
+    await db.insert(table).values({ ...values, id: savedId });
   }
+  // Invoice dan History Pembayaran Subnet saling mengikuti.
+  if (entity.key === "invoices") await syncInvoicePayment(savedId);
+  if (entity.key === "customer-payments") await syncPaymentInvoice(savedId);
   return { ok: true, message: `${entity.label} tersimpan.` };
 }
 
@@ -131,6 +137,7 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
     const used = await db.select({ id: packages.id }).from(packages).where(eq(packages.categoryId, id)).limit(1);
     if (used.length) return { ok: false, message: "Kategori masih dipakai paket. Pindahkan atau hapus paketnya terlebih dahulu." };
   }
+  if (entity.key === "invoices") await deleteInvoicePayment(id);
   // Riwayat pembayaran dan pembelian ikut terhapus bersama pelanggannya.
   if (entity.key === "customers") {
     await db.delete(customerPayments).where(eq(customerPayments.customerId, id));

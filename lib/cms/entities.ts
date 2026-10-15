@@ -335,7 +335,7 @@ export const entityDefs: EntityDef[] = [
     key: "customer-payments",
     label: "History Pembayaran Subnet",
     singular: "pembayaran",
-    description: "Riwayat pembayaran semua pelanggan. Pembayaran juga bisa dicatat dari halaman detail pelanggan.",
+    description: "Riwayat pembayaran semua pelanggan. Setiap invoice otomatis tercatat di sini, dan status lunasnya saling mengikuti dengan invoice.",
     searchKeys: ["pic", "period", "method", "note"],
     internal: true,
     detailDialog: true,
@@ -349,6 +349,7 @@ export const entityDefs: EntityDef[] = [
     columns: [
       { key: "customerId", label: "PT", labelsFrom: "customerNames" },
       { key: "pic", label: "PIC" },
+      { key: "invoiceId", label: "Invoice", labelsFrom: "invoiceNumbers" },
       { key: "period", label: "Bulan", type: "month" },
       { key: "paidDate", label: "Tanggal bayar", type: "date" },
       { key: "amount", label: "Nominal", type: "currency" },

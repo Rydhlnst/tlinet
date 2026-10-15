@@ -9,7 +9,7 @@ import { withCustomerData } from "@/lib/cms/linked";
 import { listRecords } from "@/lib/cms/store";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
-import { customers, packageCategories } from "@/lib/db/schema";
+import { customers, invoices, packageCategories } from "@/lib/db/schema";
 
 export async function generateMetadata({ params }: PageProps<"/admin/data/[entity]">): Promise<Metadata> {
   return { title: getEntityDef((await params).entity)?.label };
@@ -29,7 +29,10 @@ async function loadOptions(entityKey: string): Promise<DynamicOptions> {
     const rows = await requireDb().select({ id: customers.id, name: customers.name, company: customers.company, siteId: customers.siteId }).from(customers);
     // Pelanggan dikenali lewat PT-nya; nama orang hanya dipakai bila PT kosong.
     const sorted = rows.map((customer) => ({ ...customer, title: customer.company || customer.name })).sort((a, b) => a.title.localeCompare(b.title, "id"));
+    const invoiceNumbers =
+      entityKey === "customer-payments" ? (await requireDb().select({ id: invoices.id, number: invoices.number }).from(invoices)).map((invoice) => ({ value: invoice.id, label: invoice.number })) : [];
     return {
+      invoiceNumbers,
       // Untuk tabel: PT saja.
       customerNames: sorted.map((customer) => ({ value: customer.id, label: customer.title })),
       // Untuk pilihan di form: ditambah nama dan Site ID agar pelanggan ber-PT sama bisa dibedakan.

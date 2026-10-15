@@ -175,6 +175,8 @@ export const customerPayments = pgTable(
     customerId: text("customer_id").notNull(),
     /** Penanggung jawab pembayaran; diisi dari nama pelanggan bila dikosongkan. */
     pic: text("pic").notNull().default(""),
+    /** Invoice asal pembayaran ini; kosong untuk pembayaran yang dicatat langsung. */
+    invoiceId: text("invoice_id").notNull().default(""),
     ...billingColumns(),
   },
   (table) => [index("customer_payments_customer_idx").on(table.customerId, table.period)],

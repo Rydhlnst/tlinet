@@ -13,6 +13,7 @@ import { getPageDef } from "@/lib/cms/pages";
 import { deleteRecord, generateNextMonth, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
 import { invoices, mediaAssets } from "@/lib/db/schema";
+import { syncInvoicePayment } from "@/lib/invoice-payments";
 import { deleteR2Object } from "@/lib/storage";
 
 export type FormState = { error?: string };
@@ -108,6 +109,7 @@ export async function setInvoiceStatusAction(id: string, status: "paid" | "unpai
   if (status !== "paid" && status !== "unpaid") return { ok: false, message: "Status tidak valid." };
   const updated = await db.update(invoices).set({ status, updatedAt: new Date() }).where(eq(invoices.id, id)).returning({ id: invoices.id });
   if (!updated.length) return { ok: false, message: "Invoice tidak ditemukan." };
+  await syncInvoicePayment(id);
   return { ok: true, message: status === "paid" ? "Invoice ditandai Paid." : "Invoice ditandai Unpaid." };
 }
 
