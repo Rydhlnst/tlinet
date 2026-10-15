@@ -21,23 +21,8 @@ const WIDTH = 345;
 const HEIGHT = 395;
 const project = ([lng, lat]: [number, number]): [number, number] => [(lng - 118.6) * SCALE, (1.95 - lat) * SCALE];
 
-function inside(x: number, y: number, polygon: [number, number][]) {
-  let hit = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) hit = !hit;
-  }
-  return hit;
-}
-
 const outline = coast.map(project);
-const dots: [number, number][] = [];
-for (let y = 3; y < HEIGHT; y += 6) {
-  for (let x = 3; x < WIDTH; x += 6) {
-    if (inside(x, y, outline)) dots.push([x, y]);
-  }
-}
+const outlinePath = `M${outline.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join("L")}Z`;
 
 const cities = [
   { name: "Makassar", at: [119.41, -5.14], label: "left" },
@@ -69,28 +54,39 @@ const links = [
 ];
 
 /**
- * Titik-titik peta digambar sebagai lima path (satu per tingkat keterangan), bukan ratusan elemen <circle>:
- * hasilnya sama, tetapi halaman jauh lebih ringan untuk diurai, ditata, dan digambar peramban.
+ * Titik-titik peta: kisi titik tiap 6 px yang dipotong garis pantai. Keterangan titik ((7x + 13y) mod 5) berulang tiap
+ * 5 titik ke kanan dan ke bawah, jadi cukup satu ubin pola 30 px berisi 25 titik. Dulu ~900 elemen dan ~90 KB markup
+ * per peta (dua kali lipat di data React); sekarang beberapa elemen saja.
  */
+const DOT_STEP = 6;
 const DOT_RADIUS = 1.9;
-const dotLevels = Array.from({ length: 5 }, (_, level) =>
-  dots
-    .filter(([x, y]) => (x * 7 + y * 13) % 5 === level)
-    .map(([x, y]) => `M${x - DOT_RADIUS} ${y}a${DOT_RADIUS} ${DOT_RADIUS} 0 1 0 ${DOT_RADIUS * 2} 0a${DOT_RADIUS} ${DOT_RADIUS} 0 1 0 -${DOT_RADIUS * 2} 0`)
-    .join(""),
-);
+const TILE = DOT_STEP * 5;
+const tileDots = Array.from({ length: 25 }, (_, index) => {
+  const x = 3 + (index % 5) * DOT_STEP;
+  const y = 3 + Math.floor(index / 5) * DOT_STEP;
+  return { x, y, level: (x * 7 + y * 13) % 5 };
+});
 
-type Props = { className?: string; labels?: boolean; tone?: "dark" | "light" };
+/** `id` membedakan pola titik bila ada lebih dari satu peta di halaman yang sama. */
+type Props = { id: string; className?: string; labels?: boolean; tone?: "dark" | "light" };
 
-export function SulawesiMap({ className, labels = false, tone = "dark" }: Props) {
+export function SulawesiMap({ id, className, labels = false, tone = "dark" }: Props) {
   const dark = tone === "dark";
+  const pattern = `sulawesi-dots-${id}`;
+  const clip = `sulawesi-coast-${id}`;
   return (
     <svg viewBox={`-40 -10 ${WIDTH + 90} ${HEIGHT + 20}`} fill="none" aria-hidden="true" className={cn("overflow-visible", className)}>
-      <g fill={dark ? "#60a5fa" : "#3b82f6"}>
-        {dotLevels.map((d, level) => (
-          <path key={level} d={d} opacity={dark ? 0.35 + level * 0.12 : 0.22 + level * 0.08} />
-        ))}
-      </g>
+      <defs>
+        <pattern id={pattern} width={TILE} height={TILE} patternUnits="userSpaceOnUse">
+          {tileDots.map((dot) => (
+            <circle key={`${dot.x}-${dot.y}`} cx={dot.x} cy={dot.y} r={DOT_RADIUS} fill={dark ? "#60a5fa" : "#3b82f6"} opacity={dark ? 0.35 + dot.level * 0.12 : 0.22 + dot.level * 0.08} />
+          ))}
+        </pattern>
+        <clipPath id={clip}>
+          <path d={outlinePath} />
+        </clipPath>
+      </defs>
+      <rect width={WIDTH} height={HEIGHT} fill={`url(#${pattern})`} clipPath={`url(#${clip})`} />
       {links.map((link) => (
         <g key={link.d}>
           <path d={link.d} stroke={dark ? "rgb(147 207 255 / 0.4)" : "rgb(59 130 246 / 0.35)"} strokeWidth="1" />

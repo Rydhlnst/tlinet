@@ -67,7 +67,7 @@ export function AboutSection({ who }: { who: AboutContent["who"] }) {
             ) : (
               <>
                 <div className="bg-grid-dark absolute inset-0 -z-10" aria-hidden="true" />
-                <SulawesiMap labels className="absolute top-[7%] right-[-5%] -z-10 h-[82%] w-[72%]" />
+                <SulawesiMap id="about" labels className="absolute top-[7%] right-[-5%] -z-10 h-[82%] w-[72%]" />
               </>
             )}
             <div className="w-full max-w-[13.5rem] rounded-2xl border border-white/15 bg-ink/40 p-5 backdrop-blur-md">

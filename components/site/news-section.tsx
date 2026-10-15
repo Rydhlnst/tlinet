@@ -17,7 +17,7 @@ export function NewsSection({ content, articles, readMoreLabel }: Props) {
     <section className="relative">
       <div className="surface-ink relative overflow-hidden pt-20 pb-48 text-white sm:pt-24">
         <NodeField tone="dark" className="opacity-80" />
-        <SulawesiMap className="absolute -top-6 -right-10 hidden h-[130%] w-72 opacity-70 md:block" />
+        <SulawesiMap id="news" className="absolute -top-6 -right-10 hidden h-[130%] w-72 opacity-70 md:block" />
         <div className="container-page relative flex flex-col items-center gap-4 text-center">
           <LinedEyebrow tone="dark">{content.eyebrow}</LinedEyebrow>
           <h2 className="max-w-3xl text-3xl leading-[1.12] font-bold sm:text-4xl lg:text-[2.75rem]">
