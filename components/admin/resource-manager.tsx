@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getEntityDef, type Column } from "@/lib/cms/entities";
 import { formatDate, formatDateTime, formatMonth, formatRupiah, whatsappUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -86,6 +86,9 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
     return options[titleColumn?.labelsFrom ?? ""]?.find((option) => option.value === text)?.label ?? text;
   };
   const detailHref = (row: Row) => `${entity.detailPath}/${row.id}`;
+  // Baris jumlah di bawah kolom nominal, untuk koleksi yang punya rangkuman.
+  const amountKey = entity.summary?.amountKey;
+  const amountTotal = amountKey ? visible.reduce((total, row) => total + (Number(row[amountKey]) || 0), 0) : 0;
   // Koleksi berhalaman detail membuka detailnya saat baris diklik; yang lain langsung membuka form ubah.
   const openRow = (row: Row) => (entity.detailPath ? router.push(detailHref(row)) : setEditing({ ...row }));
 
@@ -181,6 +184,18 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
               </TableRow>
             )}
           </TableBody>
+          {amountKey && visible.length > 0 && (
+            <TableFooter>
+              <TableRow className="hover:bg-transparent">
+                {entity.columns.map((column, index) => (
+                  <TableCell key={column.key} className={cn("first:pl-4", column.key === amountKey && "font-semibold whitespace-nowrap tabular-nums")}>
+                    {column.key === amountKey ? formatRupiah(amountTotal) : index === 0 ? <span className="font-semibold">Jumlah ({visible.length})</span> : null}
+                  </TableCell>
+                ))}
+                <TableCell />
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </div>
 
