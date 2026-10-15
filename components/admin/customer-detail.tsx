@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Calculator, ChevronRight, Ellipsis, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronRight, Ellipsis, Eye, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ScrollText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ReactNode } from "react";
@@ -19,8 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { AccurateLedger } from "@/lib/accurate";
-import { customerStatusLabels, getEntityDef, paymentStatusLabels } from "@/lib/cms/entities";
-import type { customerPayments, customerPurchases, customers } from "@/lib/db/schema";
+import { customerStatusLabels, getEntityDef, invoiceStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
+import type { customerPayments, customerPurchases, customers, invoices as invoiceTable } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AmountSummary } from "./amount-summary";
@@ -33,6 +33,7 @@ type Customer = typeof customers.$inferSelect;
 // Kolom bersama pembayaran dan pembelian; PIC hanya ada di pembayaran.
 type HistoryRow = Omit<typeof customerPayments.$inferSelect, "pic">;
 type PurchaseRow = typeof customerPurchases.$inferSelect;
+type InvoiceRow = typeof invoiceTable.$inferSelect;
 /** Data Accurate pelanggan ini: null bila tidak tertaut, `error` bila Accurate gagal dijangkau. */
 export type LedgerState = AccurateLedger | { error: string } | null;
 
@@ -220,8 +221,102 @@ function HistoryPanel({
   );
 }
 
-/** Halaman detail satu pelanggan: profil, layanan, foto, riwayat pembayaran, dan riwayat pembelian. */
-export function CustomerDetail({ customer, payments, purchases, ledger }: { customer: Customer; payments: HistoryRow[]; purchases: PurchaseRow[]; ledger: LedgerState }) {
+/** Panel invoice milik pelanggan ini: buka untuk dicetak, ubah, hapus, atau buat invoice baru yang langsung tertaut. */
+function InvoicePanel({ rows, customerId }: { rows: InvoiceRow[]; customerId: string }) {
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [removing, setRemoving] = useState<Row | null>(null);
+  const entity = getEntityDef("invoices");
+
+  return (
+    <>
+      <Panel
+        icon={ScrollText}
+        title="Invoice"
+        action={
+          <Button variant="outline" onClick={() => setEditing({ ...entity?.defaults, customerId })}>
+            <Plus />
+            Buat invoice
+          </Button>
+        }
+      >
+        {entity?.summary && rows.length > 0 && <AmountSummary summary={entity.summary} rows={rows} variant="strip" />}
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="pl-5">No. Invoice</TableHead>
+              <TableHead>Tanggal terbit</TableHead>
+              <TableHead>Jatuh tempo</TableHead>
+              <TableHead>Total tagihan</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-32 pr-5 text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((invoice) => (
+              <TableRow key={invoice.id}>
+                <TableCell className="pl-5 font-medium whitespace-nowrap">
+                  <Link href={`/admin/invoice/${invoice.id}`} className="underline-offset-4 hover:text-brand-ink hover:underline">
+                    {invoice.number}
+                  </Link>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(invoice.issueDate)}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(invoice.dueDate)}</TableCell>
+                <TableCell className="font-medium whitespace-nowrap tabular-nums">{formatRupiah(invoice.total)}</TableCell>
+                <TableCell>
+                  <StatusPill tone={invoice.status === "paid" ? "good" : "warn"}>{invoiceStatusLabels[invoice.status] ?? invoice.status}</StatusPill>
+                </TableCell>
+                <TableCell className="pr-4 text-right whitespace-nowrap">
+                  <Button asChild variant="ghost" size="icon-sm" aria-label={`Buka invoice ${invoice.number}`}>
+                    <Link href={`/admin/invoice/${invoice.id}`}>
+                      <Eye />
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="icon-sm" onClick={() => setEditing({ ...invoice })} aria-label={`Ubah invoice ${invoice.number}`}>
+                    <Pencil />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setRemoving({ ...invoice })}
+                    aria-label={`Hapus invoice ${invoice.number}`}
+                  >
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {rows.length === 0 && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="h-28 text-center text-muted-foreground">
+                  Belum ada invoice untuk pelanggan ini.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Panel>
+
+      <RecordSheet entityKey="invoices" value={editing} setValue={setEditing} hiddenFields={["customerId"]} />
+      <DeleteRecordDialog entityKey="invoices" row={removing} title={removing ? `invoice ${String(removing.number)}` : ""} onClose={() => setRemoving(null)} />
+    </>
+  );
+}
+
+/** Halaman detail satu pelanggan: profil, layanan, foto, invoice, riwayat pembayaran, dan riwayat pembelian. */
+export function CustomerDetail({
+  customer,
+  invoices,
+  payments,
+  purchases,
+  ledger,
+}: {
+  customer: Customer;
+  invoices: InvoiceRow[];
+  payments: HistoryRow[];
+  purchases: PurchaseRow[];
+  ledger: LedgerState;
+}) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -505,6 +600,8 @@ export function CustomerDetail({ customer, payments, purchases, ledger }: { cust
           )}
         </Panel>
       )}
+
+      <InvoicePanel rows={invoices} customerId={customer.id} />
 
       <HistoryPanel
         entityKey="customer-payments"

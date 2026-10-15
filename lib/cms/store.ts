@@ -6,6 +6,7 @@ import { articles, clients, coverageAreas, customerPayments, customerPurchases, 
 import { slugify } from "@/lib/format";
 import { prepareInvoice } from "@/lib/invoices";
 import { customerHistoryKeys, type EntityDef } from "./entities";
+import { customerLinkedFields } from "./linked";
 import { sanitizeDocument, sanitizeFields } from "./fields";
 import type { PageDef } from "./pages";
 
@@ -69,24 +70,30 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
       if (clash.length) errors.push("Slug URL sudah dipakai artikel lain.");
     }
   }
+  // Perubahan isian tertaut yang nanti ditulis ke Data Pelanggan, sumber tunggalnya.
+  let ownerChanges: { id: string; values: Record<string, string> } | null = null;
   if (customerHistoryKeys.includes(entity.key) && values.customerId) {
-    const [owner] = await db
-      .select({ name: customers.name, siteId: customers.siteId, paymentNumber: customers.paymentNumber })
-      .from(customers)
-      .where(eq(customers.id, String(values.customerId)))
-      .limit(1);
+    const [owner] = await db.select().from(customers).where(eq(customers.id, String(values.customerId))).limit(1);
     if (!owner) errors.push("Pelanggan tidak ditemukan.");
-    // Isian yang dikosongkan diambil dari pelanggan terkait: site dan nomor pembayaran pembelian, PIC pembayaran.
-    else if (entity.key === "customer-purchases") {
-      values.siteId ||= owner.siteId;
-      values.paymentNumber ||= owner.paymentNumber;
-    } else if (entity.key === "customer-payments") values.pic ||= owner.name;
+    else {
+      ownerChanges = { id: owner.id, values: {} };
+      for (const [key, source] of Object.entries(customerLinkedFields[entity.key] ?? {})) {
+        const value = String(values[key] ?? "").trim();
+        const current = String(owner[source] ?? "");
+        // Isian yang diubah memperbarui pelanggannya; yang dikosongkan mengikuti nilai pelanggan.
+        if (value && value !== current) ownerChanges.values[source] = value;
+        values[key] = value || current;
+      }
+    }
   }
   if (entity.key === "invoices") await prepareInvoice(values, (input ?? {}) as Record<string, unknown>, givenId, errors);
   // Pembelian berstatus lunas harus punya tanggal bayarnya.
   if (entity.key === "customer-purchases" && values.status === "paid" && !values.paidDate) errors.push("Tanggal bayar wajib diisi bila statusnya Lunas.");
   if (errors.length) return { ok: false, message: errors[0] };
 
+  if (ownerChanges && Object.keys(ownerChanges.values).length) {
+    await db.update(customers).set({ ...ownerChanges.values, updatedAt: new Date() }).where(eq(customers.id, ownerChanges.id));
+  }
   if (givenId) {
     const updated = await db.update(table).set({ ...values, updatedAt: new Date() }).where(eq(table.id, givenId)).returning({ id: table.id });
     if (!updated.length) return { ok: false, message: "Data tidak ditemukan. Muat ulang halaman lalu coba lagi." };

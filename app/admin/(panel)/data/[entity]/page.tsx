@@ -5,6 +5,7 @@ import type { DynamicOptions } from "@/components/admin/field-control";
 import { ResourceManager } from "@/components/admin/resource-manager";
 import { requireAdmin } from "@/lib/auth";
 import { customerHistoryKeys, getEntityDef } from "@/lib/cms/entities";
+import { withCustomerData } from "@/lib/cms/linked";
 import { listRecords } from "@/lib/cms/store";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
@@ -42,7 +43,7 @@ export default async function DataPage({ params }: PageProps<"/admin/data/[entit
   await requireAdmin();
   const entity = getEntityDef((await params).entity);
   if (!entity) notFound();
-  const [rows, options] = await Promise.all([listRecords(entity), loadOptions(entity.key)]);
+  const [rows, options] = await Promise.all([listRecords(entity).then((list) => withCustomerData(entity.key, list)), loadOptions(entity.key)]);
 
   return <ResourceManager key={entity.key} entityKey={entity.key} rows={rows} options={options} />;
 }
