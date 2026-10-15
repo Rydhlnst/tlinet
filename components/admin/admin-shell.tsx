@@ -34,6 +34,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { logoutAction } from "@/app/admin/actions";
+import { NavPending } from "./nav-pending";
+import { RouteFade } from "@/components/route-fade";
 import { BrandMark } from "@/components/site/brand";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -173,6 +175,7 @@ function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: nu
                         <Link href={href} onClick={() => setOpenMobile(false)}>
                           <Icon />
                           <span>{label}</span>
+                          <NavPending />
                         </Link>
                       </SidebarMenuButton>
                       {href === "/admin/data/leads" && newLeads > 0 && (
@@ -198,6 +201,7 @@ function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: nu
                                     <Link href={child.href} onClick={() => setOpenMobile(false)}>
                                       <child.icon />
                                       <span>{child.label}</span>
+                                      <NavPending />
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
@@ -329,7 +333,9 @@ export function AdminShell({ admin, brandName, newLeads, children }: ShellProps)
             </div>
           </header>
           {/* Lebar isi mengikuti layar agar tabel berkolom banyak tidak terpotong; dibatasi supaya form tidak melar di monitor sangat lebar. */}
-          <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-6 p-4 md:p-8">{children}</div>
+          <RouteFade lift className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-6 p-4 md:p-8">
+            {children}
+          </RouteFade>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

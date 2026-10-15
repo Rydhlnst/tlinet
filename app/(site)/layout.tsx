@@ -1,3 +1,4 @@
+import { RouteFade } from "@/components/route-fade";
 import { JsonLd } from "@/components/site/json-ld";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -43,7 +44,9 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
         ctaLabel={settings.navCtaLabel}
         ctaHref={settings.navCtaHref}
       />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <RouteFade>{children}</RouteFade>
+      </main>
       <SiteFooter settings={settings} />
       <WhatsAppFloat href={whatsappUrl(settings.whatsappNumber, settings.whatsappMessage)} />
     </>

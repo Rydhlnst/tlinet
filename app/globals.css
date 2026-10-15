@@ -201,6 +201,30 @@
   }
 }
 
+/* Kilau kerangka muat: cahaya tipis yang menyapu dari kiri ke kanan, menggantikan kedip animate-pulse. */
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--background) 65%, transparent), transparent);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation-duration: 3s;
+  }
+}
+
 /* Lembar invoice dicetak tepat seukuran A4 tanpa tepi, lengkap dengan warna latarnya. */
 @page invoice {
   size: A4;
