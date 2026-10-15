@@ -378,8 +378,8 @@ export const entityDefs: EntityDef[] = [
     fields: [
       { name: "supplierName", label: "Nama pemasok", type: "text", required: true },
       { name: "supplierAddress", label: "Alamat pemasok", type: "textarea", rows: 2 },
-      // Kolomnya tetap supplier_email, tapi sekarang diisi PICM dan tidak lagi harus berupa alamat email.
-      { name: "supplierEmail", label: "PICM", type: "text", half: true },
+      // Kolomnya tetap supplier_email, tapi sekarang diisi PIC dan tidak lagi harus berupa alamat email.
+      { name: "supplierEmail", label: "PIC", type: "text", half: true },
       { name: "serviceName", label: "Nama layanan", type: "text", half: true, placeholder: "IP Transit 100 Mbps" },
       { name: "siteId", label: "Site", type: "text", half: true, help: "Kosongkan agar diisi dari Site ID pelanggan terkait." },
       { name: "cid", label: "CID", type: "text", half: true, help: "Circuit ID layanan dari pemasok." },
