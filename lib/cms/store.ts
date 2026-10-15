@@ -7,6 +7,7 @@ import { slugify } from "@/lib/format";
 import { prepareInvoice } from "@/lib/invoices";
 import { customerHistoryKeys, type EntityDef } from "./entities";
 import { customerLinkedFields } from "./linked";
+import { nextMonthValues, planNextMonth } from "./monthly";
 import { sanitizeDocument, sanitizeFields } from "./fields";
 import type { PageDef } from "./pages";
 
@@ -102,6 +103,22 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
     await db.insert(table).values({ ...values, id: crypto.randomUUID() });
   }
   return { ok: true, message: `${entity.label} tersimpan.` };
+}
+
+/** Membuat tagihan bulan sesudah `source` dari tagihan bulan itu; yang sudah ada di bulan tujuan dilewati. */
+export async function generateNextMonth(entity: EntityDef, source: string): Promise<SaveResult> {
+  if (!entity.monthly || !/^\d{4}-\d{2}$/.test(source)) return { ok: false, message: "Bulan tagihan tidak valid." };
+  const plan = planNextMonth(entity.monthly, await listRecords(entity), source);
+  if (!plan?.toCreate.length) return { ok: false, message: "Tidak ada tagihan yang perlu dibuat." };
+  let created = 0;
+  const failures: string[] = [];
+  for (const row of plan.toCreate) {
+    const result = await saveRecord(entity, nextMonthValues(entity.monthly, row, plan.target));
+    if (result.ok) created += 1;
+    else failures.push(`${String(row.supplierName ?? "")}: ${result.message}`);
+  }
+  if (!created) return { ok: false, message: failures[0] ?? "Tagihan gagal dibuat." };
+  return { ok: true, message: `${created} tagihan dibuat.${failures.length ? ` ${failures.length} gagal: ${failures[0]}` : ""}` };
 }
 
 export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveResult> {

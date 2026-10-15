@@ -10,7 +10,7 @@ import { saveAccurateForm } from "@/lib/accurate-save";
 import { createSession, credentialsConfigured, credentialsMatch, destroySession, getAdmin } from "@/lib/auth";
 import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
-import { deleteRecord, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
+import { deleteRecord, generateNextMonth, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
 import { invoices, mediaAssets } from "@/lib/db/schema";
 import { deleteR2Object } from "@/lib/storage";
@@ -60,6 +60,13 @@ export async function saveRecordAction(entityKey: string, data: unknown): Promis
   const result = await saveRecord(entity, data);
   if (result.ok && !entity.internal) refreshSite();
   return result;
+}
+
+export async function generateNextMonthAction(entityKey: string, source: string): Promise<SaveResult> {
+  if (!(await getAdmin())) return expired;
+  const entity = getEntityDef(entityKey);
+  if (!entity?.monthly) return { ok: false, message: "Jenis data tidak dikenal." };
+  return generateNextMonth(entity, source);
 }
 
 export async function deleteRecordAction(entityKey: string, id: string): Promise<SaveResult> {

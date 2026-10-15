@@ -34,6 +34,11 @@ export type EntityDef = {
    * Label bawaannya "Sudah lunas", "Belum lunas", dan "Tagihan".
    */
   summary?: { amountKey: string; statusKey: string; periodKey: string; paidLabel?: string; unpaidLabel?: string; periodLabel?: string };
+  /**
+   * Tombol "Generate Tagihan <bulan>": baris bulan tagihan terakhir disalin ke bulan berikutnya. `copyKeys` ikut disalin,
+   * `matchKeys` menandai tagihan yang sama sehingga yang sudah ada di bulan tujuan dilewati.
+   */
+  monthly?: { copyKeys: string[]; matchKeys: string[] };
 };
 
 const ordering: Field[] = [
@@ -365,6 +370,10 @@ export const entityDefs: EntityDef[] = [
     internal: true,
     detailDialog: true,
     summary: { amountKey: "amount", statusKey: "status", periodKey: "period" },
+    monthly: {
+      copyKeys: ["customerId", "supplierName", "supplierAddress", "supplierEmail", "serviceName", "siteId", "cid", "paymentNumber", "amount", "method"],
+      matchKeys: ["customerId", "supplierName", "serviceName"],
+    },
     defaults: { status: "paid", amount: "" },
     columns: [
       { key: "supplierName", label: "Pemasok" },

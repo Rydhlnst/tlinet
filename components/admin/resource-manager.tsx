@@ -13,6 +13,7 @@ import { formatDate, formatDateTime, formatMonth, formatRupiah, whatsappUrl } fr
 import { cn } from "@/lib/utils";
 import { AmountSummary } from "./amount-summary";
 import type { DynamicOptions } from "./field-control";
+import { MonthlyGenerate } from "./monthly-generate";
 import { ProofViewer } from "./proof-viewer";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
 
@@ -99,7 +100,8 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
           <h1 className="text-2xl font-semibold tracking-tight">{entity.label}</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{entity.description}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {entity.monthly && <MonthlyGenerate entityKey={entity.key} monthly={entity.monthly} rows={rows} />}
           {entity.publicPath && (
             <Button asChild variant="outline" size="lg">
               <Link href={entity.publicPath} target="_blank">
