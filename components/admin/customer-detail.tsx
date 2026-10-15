@@ -117,7 +117,7 @@ function HistoryPanel({
   /** Kata benda untuk tombol dan label, mis. "Pembayaran". */
   noun: string;
   /** Baris pembelian membawa pemasok dan layanan; bila ada, keduanya ditampilkan sebagai kolom. */
-  rows: (HistoryRow & Partial<Pick<PurchaseRow, "supplierName" | "serviceName">>)[];
+  rows: (HistoryRow & Partial<Pick<PurchaseRow, "supplierName" | "serviceName" | "cid" | "paymentNumber">>)[];
   customerId: string;
   /** Isian awal form tambah selain bulan, tanggal, dan status, mis. nominal dari biaya bulanan pelanggan. */
   defaults: Row;
@@ -149,10 +149,11 @@ function HistoryPanel({
               <TableHead className="w-12 pl-5">No</TableHead>
               {withSupplier && <TableHead>Pemasok</TableHead>}
               {withSupplier && <TableHead>Layanan</TableHead>}
+              {withSupplier && <TableHead>CID</TableHead>}
               <TableHead>Bulan</TableHead>
               <TableHead>Tanggal Bayar</TableHead>
               <TableHead>Nominal</TableHead>
-              <TableHead>Metode</TableHead>
+              <TableHead>{withSupplier ? "No. Pembayaran" : "Metode"}</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Bukti</TableHead>
               <TableHead className="w-32 pr-5 text-right">Aksi</TableHead>
@@ -164,13 +165,14 @@ function HistoryPanel({
                 <TableCell className="pl-5 text-muted-foreground tabular-nums">{index + 1}</TableCell>
                 {withSupplier && <TableCell className="font-medium">{item.supplierName || "—"}</TableCell>}
                 {withSupplier && <TableCell>{item.serviceName || "—"}</TableCell>}
+                {withSupplier && <TableCell className="whitespace-nowrap">{item.cid || "—"}</TableCell>}
                 <TableCell className="font-medium whitespace-nowrap">
                   {formatMonth(item.period)}
                   {item.note && <span className="block max-w-56 truncate text-xs font-normal text-muted-foreground">{item.note}</span>}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">{item.paidDate ? formatDate(item.paidDate) : "—"}</TableCell>
                 <TableCell className="font-medium whitespace-nowrap tabular-nums">{formatRupiah(item.amount)}</TableCell>
-                <TableCell>{item.method || "—"}</TableCell>
+                <TableCell className="tabular-nums">{(withSupplier ? item.paymentNumber : item.method) || "—"}</TableCell>
                 <TableCell>
                   <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
                 </TableCell>
@@ -198,7 +200,7 @@ function HistoryPanel({
             ))}
             {rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={withSupplier ? 10 : 8} className="h-28 text-center text-muted-foreground">
+                <TableCell colSpan={withSupplier ? 11 : 8} className="h-28 text-center text-muted-foreground">
                   Belum ada {lower} yang dicatat.
                 </TableCell>
               </TableRow>
@@ -525,6 +527,8 @@ export function CustomerDetail({ customer, payments, purchases, ledger }: { cust
           supplierEmail: purchases[0]?.supplierEmail ?? "",
           serviceName: purchases[0]?.serviceName ?? "",
           cid: purchases[0]?.cid || customer.cid,
+          siteId: customer.siteId,
+          paymentNumber: purchases[0]?.paymentNumber || customer.paymentNumber,
         }}
       />
 

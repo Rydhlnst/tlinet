@@ -188,6 +188,10 @@ export const customerPurchases = pgTable(
     serviceName: text("service_name").notNull().default(""),
     /** Circuit ID layanan dari pemasok. */
     cid: text("cid").notNull().default(""),
+    /** Site ID dan nomor pembayaran ke pemasok; diisi dari pelanggan terkait bila dikosongkan. */
+    siteId: text("site_id").notNull().default(""),
+    paymentNumber: text("payment_number").notNull().default(""),
+    ba: text("ba").notNull().default(""),
     ...billingColumns(),
   },
   (table) => [index("customer_purchases_customer_idx").on(table.customerId, table.period)],
