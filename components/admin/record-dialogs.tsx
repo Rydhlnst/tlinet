@@ -158,7 +158,7 @@ function DetailValue({ entity, field, row, options }: { entity: EntityDef; field
     case "image":
       // Bukti transfer dibuka lewat penampil layar penuh; gambar lain cukup ditampilkan.
       return column?.type === "proof" && row.id ? (
-        <ProofViewer entityKey={entity.key} id={row.id} url={text} label={formatMonth(String(row.period ?? ""))} thumbClassName="max-h-56 w-auto max-w-full object-contain" />
+        <ProofViewer entityKey={entity.key} id={row.id} url={text} field={field.name} name={column.proofName} label={formatMonth(String(row.period ?? ""))} thumbClassName="max-h-56 w-auto max-w-full object-contain" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={text} alt="" className="max-h-56 w-auto max-w-full rounded-md border object-contain" />

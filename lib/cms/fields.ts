@@ -12,8 +12,8 @@ type FieldBase = {
 
 export type Field =
   | (FieldBase & { type: "text" | "email" | "url" | "icon" | "date" | "month" | "switch" })
-  /** `allowPdf`: selain gambar, juga menerima berkas PDF (mis. bukti transfer). */
-  | (FieldBase & { type: "image"; allowPdf?: boolean })
+  /** `allowPdf`: selain gambar, juga menerima berkas PDF. `jpgPngOnly`: hanya JPG atau PNG (mis. bukti transfer pembelian). */
+  | (FieldBase & { type: "image"; allowPdf?: boolean; jpgPngOnly?: boolean })
   | (FieldBase & { type: "textarea"; rows?: number })
   /** `min`: nilai terkecil yang diterima, mis. 1 untuk nominal yang tidak boleh nol atau negatif. */
   | (FieldBase & { type: "number"; integer?: boolean; min?: number })

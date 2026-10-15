@@ -121,7 +121,7 @@ function HistoryPanel({
   /** Kata benda untuk tombol dan label, mis. "Pembayaran". */
   noun: string;
   /** Baris pembelian membawa pemasok dan layanan; bila ada, keduanya ditampilkan sebagai kolom. */
-  rows: (HistoryRow & Partial<Pick<PurchaseRow, "supplierName" | "serviceName" | "cid" | "paymentNumber">>)[];
+  rows: (HistoryRow & Partial<Pick<PurchaseRow, "supplierName" | "serviceName" | "cid" | "paymentNumber" | "transferProofUrl">>)[];
   customerId: string;
   /** Isian awal form tambah selain bulan, tanggal, dan status, mis. nominal dari biaya bulanan pelanggan. */
   defaults: Row;
@@ -165,6 +165,7 @@ function HistoryPanel({
               <TableHead>Nominal</TableHead>
               <TableHead>{withSupplier ? "No. Pembayaran" : "Metode"}</TableHead>
               <TableHead>Status</TableHead>
+              {withSupplier && <TableHead>Invoice</TableHead>}
               <TableHead>Bukti</TableHead>
               <TableHead className="w-32 pr-5 text-right">Aksi</TableHead>
             </TableRow>
@@ -186,8 +187,27 @@ function HistoryPanel({
                 <TableCell>
                   <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
                 </TableCell>
+                {withSupplier && (
+                  <TableCell>
+                    {item.proofUrl ? (
+                      <ProofViewer entityKey={entityKey} id={item.id} url={item.proofUrl} name="Invoice pemasok" label={formatMonth(item.period)} />
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                )}
                 <TableCell>
-                  {item.proofUrl ? <ProofViewer entityKey={entityKey} id={item.id} url={item.proofUrl} label={formatMonth(item.period)} /> : <span className="text-muted-foreground">—</span>}
+                  {(withSupplier ? item.transferProofUrl : item.proofUrl) ? (
+                    <ProofViewer
+                      entityKey={entityKey}
+                      id={item.id}
+                      url={(withSupplier ? item.transferProofUrl : item.proofUrl) ?? ""}
+                      field={withSupplier ? "transferProofUrl" : "proofUrl"}
+                      label={formatMonth(item.period)}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="pr-4 text-right whitespace-nowrap">
                   <Button variant="ghost" size="icon-sm" onClick={() => setViewing(item)} aria-label={`Lihat detail ${lower} ${formatMonth(item.period)}`}>
@@ -210,7 +230,7 @@ function HistoryPanel({
             ))}
             {rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={withSupplier ? 11 : 8} className="h-28 text-center text-muted-foreground">
+                <TableCell colSpan={withSupplier ? 12 : 8} className="h-28 text-center text-muted-foreground">
                   Belum ada {lower} yang dicatat.
                 </TableCell>
               </TableRow>
@@ -443,6 +463,10 @@ export function CustomerDetail({
               ["Kecamatan", customer.district],
               ["Kabupaten", customer.regency],
               ["Provinsi", customer.province],
+              [
+                "AOS",
+                customer.aosUrl ? <ProofViewer entityKey="customers" id={customer.id} url={customer.aosUrl} field="aosUrl" name="AOS" label={customer.siteId || customer.name} /> : "",
+              ],
             ]}
           />
         </Panel>

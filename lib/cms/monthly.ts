@@ -42,7 +42,7 @@ export function planNextMonth(monthly: Monthly, rows: Row[], source?: string) {
 /** Isian baris baru untuk bulan tujuan: data tetap disalin, data pembayaran dikosongkan, status belum lunas. */
 export function nextMonthValues(monthly: Monthly, row: Row, target: string): Row {
   const copied = Object.fromEntries(monthly.copyKeys.map((key) => [key, row[key]]));
-  if (monthly.kind !== "invoice") return { ...copied, period: target, status: "unpaid", paidDate: "", proofUrl: "", note: "" };
+  if (monthly.kind !== "invoice") return { ...copied, period: target, status: "unpaid", paidDate: "", proofUrl: "", transferProofUrl: "", note: "" };
 
   // Invoice: tanggal maju sebulan dengan jarak jatuh tempo yang sama, dan nama bulan di item ikut berganti.
   const issueDate = String(row.issueDate ?? "");

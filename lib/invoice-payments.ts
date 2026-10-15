@@ -122,14 +122,14 @@ export async function syncInvoicePurchase(invoiceId: string) {
 }
 
 /**
- * Tagihan pemasok sebuah invoice ikut terhapus bersama invoicenya, kecuali yang sudah lunas atau punya bukti
- * transfer: itu sudah dibayar sungguhan, jadi hanya dilepas dari invoicenya.
+ * Tagihan pemasok sebuah invoice ikut terhapus bersama invoicenya, kecuali yang sudah lunas atau punya berkas
+ * (invoice pemasok atau bukti transfer): itu tagihan sungguhan, jadi hanya dilepas dari invoicenya.
  */
 export async function deleteInvoicePurchase(invoiceId: string) {
   const db = requireDb();
   await db
     .update(customerPurchases)
     .set({ invoiceId: "", updatedAt: new Date() })
-    .where(and(eq(customerPurchases.invoiceId, invoiceId), or(ne(customerPurchases.proofUrl, ""), eq(customerPurchases.status, "paid"))));
+    .where(and(eq(customerPurchases.invoiceId, invoiceId), or(ne(customerPurchases.proofUrl, ""), ne(customerPurchases.transferProofUrl, ""), eq(customerPurchases.status, "paid"))));
   await db.delete(customerPurchases).where(eq(customerPurchases.invoiceId, invoiceId));
 }

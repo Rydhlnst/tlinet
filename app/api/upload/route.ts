@@ -37,7 +37,9 @@ export async function POST(request: Request) {
   const form = await request.formData();
   const file = form.get("file");
   const allowPdf = form.get("allowPdf") === "1";
+  const jpgPngOnly = form.get("jpgPng") === "1";
   if (!(file instanceof File)) return fail("File wajib dipilih.", 400);
+  if (jpgPngOnly && file.type !== "image/jpeg" && file.type !== "image/png") return fail("Hanya gambar JPG atau PNG yang diterima.", 400);
   const isPdf = allowPdf && file.type === pdfType;
   const extension = isPdf ? "pdf" : allowed.get(file.type);
   if (!extension) return fail(allowPdf ? "Gunakan gambar JPG, PNG, WebP, AVIF, atau berkas PDF." : "Gunakan gambar JPG, PNG, WebP, atau AVIF.", 400);

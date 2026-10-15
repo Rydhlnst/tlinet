@@ -18,6 +18,8 @@ export function ProofViewer({
   id,
   label,
   url = "",
+  field = "proofUrl",
+  name = "Bukti transfer",
   thumbClassName = "size-9 object-cover",
 }: {
   entityKey: string;
@@ -25,17 +27,21 @@ export function ProofViewer({
   label: string;
   /** Alamat asli bukti, untuk mengenali PDF. */
   url?: string;
+  /** Kolom berkasnya bila bukan `proofUrl`, mis. `transferProofUrl` atau `aosUrl`. */
+  field?: string;
+  /** Nama berkas di judul dan label tombol, mis. "Invoice pemasok" atau "AOS". */
+  name?: string;
   thumbClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const src = `/api/bukti/${entityKey}/${id}`;
+  const src = `/api/bukti/${entityKey}/${id}${field === "proofUrl" ? "" : `?field=${field}`}`;
   const pdf = isPdfUrl(url);
 
   return (
     <>
       <button
         type="button"
-        aria-label={`Lihat bukti transfer ${label}`}
+        aria-label={`Lihat ${name} ${label}`}
         className="block rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={(event) => {
           // Baris tabel di sekitarnya bisa punya aksi klik sendiri.
@@ -59,9 +65,9 @@ export function ProofViewer({
           {/* Kejadian di dalam portal tetap merambat ke induk React-nya, jadi dihentikan di sini juga. */}
           <DialogPrimitive.Content aria-describedby={undefined} onClick={(event) => event.stopPropagation()} className="fixed inset-0 z-50 flex flex-col bg-black/95 text-white outline-none">
             <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3">
-              <DialogPrimitive.Title className="min-w-0 truncate text-sm font-medium">Bukti transfer {label}</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="min-w-0 truncate text-sm font-medium">{name} {label}</DialogPrimitive.Title>
               <div className="flex shrink-0 gap-2">
-                <a href={`${src}?download=1`} download className={barButton}>
+                <a href={`${src}${src.includes("?") ? "&" : "?"}download=1`} download className={barButton}>
                   <Download />
                   Unduh
                 </a>
@@ -73,10 +79,10 @@ export function ProofViewer({
             </div>
             <div className="flex min-h-0 flex-1 items-center justify-center p-4 pt-0">
               {pdf ? (
-                <iframe src={src} title={`Bukti transfer ${label}`} className="size-full rounded-lg bg-white" />
+                <iframe src={src} title={`${name} ${label}`} className="size-full rounded-lg bg-white" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={src} alt={`Bukti transfer ${label}`} className="max-h-full max-w-full rounded-lg object-contain" />
+                <img src={src} alt={`${name} ${label}`} className="max-h-full max-w-full rounded-lg object-contain" />
               )}
             </div>
           </DialogPrimitive.Content>

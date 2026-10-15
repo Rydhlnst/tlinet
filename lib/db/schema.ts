@@ -141,6 +141,8 @@ export const customers = pgTable(
     vendor: text("vendor").notNull().default(""),
     ipAddress: text("ip_address").notNull().default(""),
     vlan: text("vlan").notNull().default(""),
+    /** Dokumen AOS pelanggan (PDF atau gambar). */
+    aosUrl: text("aos_url").notNull().default(""),
     status: text("status").notNull().default("active"),
     activationDate: text("activation_date").notNull().default(""),
     note: text("note").notNull().default(""),
@@ -203,6 +205,8 @@ export const customerPurchases = pgTable(
     ba: text("ba").notNull().default(""),
     /** Invoice pelanggan yang memicu tagihan pemasok ini; kosong untuk pembelian yang dicatat langsung. */
     invoiceId: text("invoice_id").notNull().default(""),
+    /** Bukti transfer ke pemasok (JPG/PNG). `proofUrl` pembelian berisi invoice dari pemasoknya. */
+    transferProofUrl: text("transfer_proof_url").notNull().default(""),
     ...billingColumns(),
   },
   (table) => [index("customer_purchases_customer_idx").on(table.customerId, table.period)],

@@ -5,6 +5,8 @@ export type Column = {
   label: string;
   /** `proof`: gambar bukti transfer yang bisa dibuka layar penuh dan diunduh. */
   type?: "text" | "badge" | "boolean" | "image" | "proof" | "date" | "datetime" | "month" | "currency" | "whatsapp";
+  /** Untuk `proof`: nama berkasnya di penampil dan unduhan. Bawaan "Bukti transfer". */
+  proofName?: string;
   /** Untuk `badge` dan teks: label per nilai. Untuk kolom yang nilainya id, halaman admin mengisinya dari data terkait. */
   labels?: Record<string, string>;
   labelsFrom?: string;
@@ -328,6 +330,7 @@ export const entityDefs: EntityDef[] = [
       { name: "ipAddress", label: "IP address", type: "text", half: true },
       { name: "vlan", label: "VLAN", type: "text", half: true, placeholder: "mis. 120" },
       { name: "activationDate", label: "Tanggal aktivasi", type: "date", half: true },
+      { name: "aosUrl", label: "AOS", type: "image", allowPdf: true, help: "Opsional. Unggah dokumen AOS dalam PDF (maks. 4 MB) atau gambar." },
       { name: "note", label: "Keterangan", type: "textarea", rows: 3 },
     ],
   },
@@ -381,7 +384,7 @@ export const entityDefs: EntityDef[] = [
     monthly: {
       copyKeys: ["customerId", "supplierName", "supplierAddress", "supplierEmail", "serviceName", "amount", "method"],
       matchKeys: ["customerId", "supplierName", "serviceName"],
-      note: "Pemasok, layanan, dan nominal disalin dan tetap bisa diubah; statusnya Belum lunas, sedangkan tanggal bayar, BA, bukti transfer, dan keterangan dikosongkan.",
+      note: "Pemasok, layanan, dan nominal disalin dan tetap bisa diubah; statusnya Belum lunas, sedangkan tanggal bayar, BA, invoice pemasok, bukti transfer, dan keterangan dikosongkan.",
     },
     defaults: { status: "paid", amount: "" },
     columns: [
@@ -394,7 +397,8 @@ export const entityDefs: EntityDef[] = [
       { key: "amount", label: "Nominal", type: "currency" },
       { key: "paymentNumber", label: "No. pembayaran" },
       { key: "status", label: "Status", type: "badge", labels: paymentStatusLabels },
-      { key: "proofUrl", label: "Bukti", type: "proof" },
+      { key: "proofUrl", label: "Invoice", type: "proof", proofName: "Invoice pemasok" },
+      { key: "transferProofUrl", label: "Bukti", type: "proof" },
     ],
     fields: [
       {
@@ -419,7 +423,8 @@ export const entityDefs: EntityDef[] = [
       { name: "amount", label: "Nominal (Rp)", type: "number", integer: true, required: true, min: 1, half: true },
       { name: "method", label: "Metode pembayaran", type: "text", half: true, placeholder: "Transfer BRI" },
       { name: "status", label: "Status", type: "select", half: true, options: toOptions(paymentStatusLabels) },
-      { name: "proofUrl", label: "Bukti transfer", type: "image", allowPdf: true, help: "Opsional. Unggah foto, tangkapan layar, atau PDF bukti transfer (maks. 4 MB untuk PDF)." },
+      { name: "proofUrl", label: "Invoice pemasok", type: "image", allowPdf: true, help: "Opsional. Unggah PDF atau gambar invoice dari pemasok (maks. 4 MB untuk PDF)." },
+      { name: "transferProofUrl", label: "Bukti transfer", type: "image", jpgPngOnly: true, help: "Opsional. Hanya gambar JPG atau PNG." },
       { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
     ],
   },

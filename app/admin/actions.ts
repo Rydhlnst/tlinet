@@ -118,12 +118,12 @@ export async function saveCustomerPhotosAction(id: string, photos: string[]): Pr
   return saveCustomerPhotos(id, photos);
 }
 
-export type MediaItem = { id: string; url: string; filename: string; size: number; createdAt: Date };
+export type MediaItem = { id: string; url: string; filename: string; mimeType: string; size: number; createdAt: Date };
 
 export async function listMediaAction(): Promise<MediaItem[]> {
   if (!(await getAdmin()) || !db) return [];
   return db
-    .select({ id: mediaAssets.id, url: mediaAssets.url, filename: mediaAssets.filename, size: mediaAssets.size, createdAt: mediaAssets.createdAt })
+    .select({ id: mediaAssets.id, url: mediaAssets.url, filename: mediaAssets.filename, mimeType: mediaAssets.mimeType, size: mediaAssets.size, createdAt: mediaAssets.createdAt })
     .from(mediaAssets)
     .orderBy(desc(mediaAssets.createdAt));
 }

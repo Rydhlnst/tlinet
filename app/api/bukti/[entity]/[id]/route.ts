@@ -1,19 +1,31 @@
 import { eq } from "drizzle-orm";
 import { getAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { customerPayments, customerPurchases, mediaAssets } from "@/lib/db/schema";
+import { customerPayments, customerPurchases, customers, mediaAssets } from "@/lib/db/schema";
+import { slugify } from "@/lib/format";
 import { isR2Url } from "@/lib/storage";
 
 const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif", "application/pdf": "pdf" };
 
-/** Bukti transfer sebuah baris pembayaran atau pembelian: tautan gambarnya dan bulan tagihannya. */
-async function findProof(entity: string, id: string) {
+/** Berkas yang boleh disajikan: bukti transfer dan invoice pemasok di riwayat, serta AOS pelanggan. Hasilnya tautan dan nama unduhannya. */
+async function findProof(entity: string, id: string, field: string): Promise<{ proofUrl: string; name: string } | undefined> {
   if (!db) return undefined;
-  if (entity === "customer-payments") {
-    return (await db.select({ proofUrl: customerPayments.proofUrl, period: customerPayments.period }).from(customerPayments).where(eq(customerPayments.id, id)).limit(1))[0];
+  if (entity === "customer-payments" && field === "proofUrl") {
+    const [row] = await db.select({ url: customerPayments.proofUrl, period: customerPayments.period }).from(customerPayments).where(eq(customerPayments.id, id)).limit(1);
+    return row && { proofUrl: row.url, name: `bukti-transfer-${row.period}` };
   }
-  if (entity === "customer-purchases") {
-    return (await db.select({ proofUrl: customerPurchases.proofUrl, period: customerPurchases.period }).from(customerPurchases).where(eq(customerPurchases.id, id)).limit(1))[0];
+  if (entity === "customer-purchases" && (field === "proofUrl" || field === "transferProofUrl")) {
+    const [row] = await db
+      .select({ proofUrl: customerPurchases.proofUrl, transferProofUrl: customerPurchases.transferProofUrl, period: customerPurchases.period })
+      .from(customerPurchases)
+      .where(eq(customerPurchases.id, id))
+      .limit(1);
+    if (!row) return undefined;
+    return field === "proofUrl" ? { proofUrl: row.proofUrl, name: `invoice-pemasok-${row.period}` } : { proofUrl: row.transferProofUrl, name: `bukti-transfer-${row.period}` };
+  }
+  if (entity === "customers" && field === "aosUrl") {
+    const [row] = await db.select({ url: customers.aosUrl, siteId: customers.siteId }).from(customers).where(eq(customers.id, id)).limit(1);
+    return row && { proofUrl: row.url, name: `aos-${slugify(row.siteId) || id.slice(0, 8)}` };
   }
   return undefined;
 }
@@ -36,7 +48,7 @@ async function loadImage(url: string): Promise<{ body: BodyInit; type: string } 
 export async function GET(request: Request, { params }: RouteContext<"/api/bukti/[entity]/[id]">) {
   if (!(await getAdmin())) return new Response("Unauthorized", { status: 401 });
   const { entity, id } = await params;
-  const proof = await findProof(entity, id);
+  const proof = await findProof(entity, id, new URL(request.url).searchParams.get("field") ?? "proofUrl");
   if (!proof?.proofUrl) return new Response("Not found", { status: 404 });
 
   // Tautan luar yang diketik manual tidak diambil oleh server; peramban diarahkan langsung ke sana.
@@ -49,7 +61,7 @@ export async function GET(request: Request, { params }: RouteContext<"/api/bukti
   return new Response(image.body, {
     headers: {
       "Content-Type": image.type,
-      "Content-Disposition": `${disposition}; filename="bukti-transfer-${proof.period}.${extensions[image.type] ?? "jpg"}"`,
+      "Content-Disposition": `${disposition}; filename="${proof.name}.${extensions[image.type] ?? "jpg"}"`,
       "Cache-Control": "private, max-age=3600",
       "X-Content-Type-Options": "nosniff",
     },

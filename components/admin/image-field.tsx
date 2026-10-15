@@ -12,6 +12,8 @@ import { isPdfUrl } from "@/lib/format";
 
 /** Jenis yang diterima server apa adanya; jenis gambar lain diubah dulu di peramban. */
 const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+/** Untuk isian yang hanya menerima JPG atau PNG; gambar lain diubah ke JPEG. */
+const jpgPngTypes = ["image/jpeg", "image/png"];
 /** Di bawah ukuran ini gambar dikirim tanpa diubah; di atasnya diperkecil sampai di bawah batas unggah. */
 const keepAsIsBytes = 1024 * 1024;
 const uploadLimitBytes = 3.5 * 1024 * 1024;
@@ -38,12 +40,12 @@ function render(bitmap: ImageBitmap, side: number, type: string, quality: number
  * dijadikan WebP supaya latar transparan tidak hilang. Bila peramban tidak bisa membacanya, berkas asli dikirim
  * dan server yang menjelaskan penolakannya.
  */
-async function prepareImage(file: File): Promise<File> {
-  const accepted = acceptedTypes.includes(file.type);
+async function prepareImage(file: File, jpgPngOnly = false): Promise<File> {
+  const accepted = jpgPngOnly ? jpgPngTypes.includes(file.type) : acceptedTypes.includes(file.type);
   if (accepted && file.size <= keepAsIsBytes) return file;
   try {
     const bitmap = await createImageBitmap(file);
-    const wanted = ["image/png", "image/webp", "image/gif"].includes(file.type) ? "image/webp" : "image/jpeg";
+    const wanted = !jpgPngOnly && ["image/png", "image/webp", "image/gif"].includes(file.type) ? "image/webp" : "image/jpeg";
     let best: Blob | null = null;
     for (const [side, quality] of shrinkSteps) {
       let blob = await render(bitmap, side, wanted, quality);
@@ -66,19 +68,25 @@ const pdfLimitBytes = 4 * 1024 * 1024;
 /**
  * Mengunggah satu gambar ke /api/upload dan mengembalikan URL-nya. Gangguan sementara di server dicoba sekali lagi.
  * Dengan `allowPdf`, berkas PDF ikut diterima dan dikirim apa adanya (PDF tidak bisa diperkecil di peramban).
+ * Dengan `jpgPngOnly`, hanya gambar yang diterima dan selain JPG/PNG diubah ke JPEG.
  */
-export async function uploadImage(original: File, { allowPdf = false } = {}): Promise<string | null> {
+export async function uploadImage(original: File, { allowPdf = false, jpgPngOnly = false } = {}): Promise<string | null> {
+  if (jpgPngOnly && !original.type.startsWith("image/")) {
+    toast.error("Hanya gambar JPG atau PNG yang diterima.");
+    return null;
+  }
   const pdf = allowPdf && original.type === "application/pdf";
   if (pdf && original.size > pdfLimitBytes) {
     toast.error("Ukuran PDF maksimal 4 MB.");
     return null;
   }
-  const prepared = pdf ? original : await prepareImage(original);
+  const prepared = pdf ? original : await prepareImage(original, jpgPngOnly);
   try {
     for (let attempt = 1; ; attempt++) {
       const body = new FormData();
       body.append("file", prepared);
       if (allowPdf) body.append("allowPdf", "1");
+      if (jpgPngOnly) body.append("jpgPng", "1");
       const response = await fetch("/api/upload", { method: "POST", body });
       // Penolakan dari server hosting (mis. 413 karena terlalu besar) tidak berbentuk JSON.
       const result = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
@@ -93,7 +101,19 @@ export async function uploadImage(original: File, { allowPdf = false } = {}): Pr
   }
 }
 
-export function ImageField({ value, onChange, id, allowPdf = false }: { value: string; onChange: (value: string) => void; id?: string; allowPdf?: boolean }) {
+export function ImageField({
+  value,
+  onChange,
+  id,
+  allowPdf = false,
+  jpgPngOnly = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  id?: string;
+  allowPdf?: boolean;
+  jpgPngOnly?: boolean;
+}) {
   const input = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [library, setLibrary] = useState<MediaItem[] | null>(null);
@@ -102,7 +122,7 @@ export function ImageField({ value, onChange, id, allowPdf = false }: { value: s
   async function onFile(file: File | undefined) {
     if (!file) return;
     setUploading(true);
-    const url = await uploadImage(file, { allowPdf });
+    const url = await uploadImage(file, { allowPdf, jpgPngOnly });
     setUploading(false);
     if (url) onChange(url);
   }
@@ -128,12 +148,12 @@ export function ImageField({ value, onChange, id, allowPdf = false }: { value: s
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder={allowPdf ? "https://… atau unggah gambar/PDF" : "https://… atau unggah gambar"} />
+        <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder={allowPdf ? "https://… atau unggah gambar/PDF" : jpgPngOnly ? "https://… atau unggah JPG/PNG" : "https://… atau unggah gambar"} />
         <div className="flex flex-wrap gap-2">
           <input
             ref={input}
             type="file"
-            accept={allowPdf ? "image/*,application/pdf" : "image/*"}
+            accept={allowPdf ? "image/*,application/pdf" : jpgPngOnly ? "image/jpeg,image/png" : "image/*"}
             className="hidden"
             onChange={(event) => {
               void onFile(event.target.files?.[0]);
@@ -173,7 +193,7 @@ export function ImageField({ value, onChange, id, allowPdf = false }: { value: s
             <p className="py-12 text-center text-sm text-muted-foreground">Belum ada gambar. Unggah gambar terlebih dahulu.</p>
           ) : (
             <div className="grid max-h-[60vh] grid-cols-3 gap-3 overflow-y-auto p-0.5 sm:grid-cols-4">
-              {library.filter((item) => allowPdf || !isPdfUrl(item.url)).map((item) => (
+              {library.filter((item) => (jpgPngOnly ? jpgPngTypes.includes(item.mimeType) : allowPdf || !isPdfUrl(item.url))).map((item) => (
                 <button
                   key={item.id}
                   type="button"
