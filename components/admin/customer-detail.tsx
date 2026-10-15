@@ -448,6 +448,7 @@ export function CustomerDetail({
               ["No. Pembayaran", customer.paymentNumber],
               ["Vendor", customer.vendor],
               ["IP Address", customer.ipAddress],
+              ["VLAN", customer.vlan],
               ["Tanggal Aktivasi", customer.activationDate ? formatDate(customer.activationDate) : ""],
               ["Status Layanan", statusPill],
             ]}

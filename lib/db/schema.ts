@@ -140,6 +140,7 @@ export const customers = pgTable(
     paymentNumber: text("payment_number").notNull().default(""),
     vendor: text("vendor").notNull().default(""),
     ipAddress: text("ip_address").notNull().default(""),
+    vlan: text("vlan").notNull().default(""),
     status: text("status").notNull().default("active"),
     activationDate: text("activation_date").notNull().default(""),
     note: text("note").notNull().default(""),
