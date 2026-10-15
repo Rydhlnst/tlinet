@@ -169,7 +169,13 @@ const billingColumns = () => ({
 /** Pembayaran dari pelanggan (subnet) ke kita. */
 export const customerPayments = pgTable(
   "customer_payments",
-  { id: text("id").primaryKey(), customerId: text("customer_id").notNull(), ...billingColumns() },
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull(),
+    /** Penanggung jawab pembayaran; diisi dari nama pelanggan bila dikosongkan. */
+    pic: text("pic").notNull().default(""),
+    ...billingColumns(),
+  },
   (table) => [index("customer_payments_customer_idx").on(table.customerId, table.period)],
 );
 

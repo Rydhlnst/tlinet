@@ -30,7 +30,8 @@ import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from ".
 
 type Customer = typeof customers.$inferSelect;
 /** Baris History Pembayaran Subnet; baris History Pembelian Perusahaan menambah pemasok dan layanannya. */
-type HistoryRow = typeof customerPayments.$inferSelect;
+// Kolom bersama pembayaran dan pembelian; PIC hanya ada di pembayaran.
+type HistoryRow = Omit<typeof customerPayments.$inferSelect, "pic">;
 type PurchaseRow = typeof customerPurchases.$inferSelect;
 /** Data Accurate pelanggan ini: null bila tidak tertaut, `error` bila Accurate gagal dijangkau. */
 export type LedgerState = AccurateLedger | { error: string } | null;

@@ -71,16 +71,16 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
   }
   if (customerHistoryKeys.includes(entity.key) && values.customerId) {
     const [owner] = await db
-      .select({ siteId: customers.siteId, paymentNumber: customers.paymentNumber })
+      .select({ name: customers.name, siteId: customers.siteId, paymentNumber: customers.paymentNumber })
       .from(customers)
       .where(eq(customers.id, String(values.customerId)))
       .limit(1);
     if (!owner) errors.push("Pelanggan tidak ditemukan.");
-    // Site dan nomor pembayaran pembelian yang dikosongkan diambil dari pelanggan terkait.
+    // Isian yang dikosongkan diambil dari pelanggan terkait: site dan nomor pembayaran pembelian, PIC pembayaran.
     else if (entity.key === "customer-purchases") {
       values.siteId ||= owner.siteId;
       values.paymentNumber ||= owner.paymentNumber;
-    }
+    } else if (entity.key === "customer-payments") values.pic ||= owner.name;
   }
   if (entity.key === "invoices") await prepareInvoice(values, (input ?? {}) as Record<string, unknown>, givenId, errors);
   // Pembelian berstatus lunas harus punya tanggal bayarnya.
