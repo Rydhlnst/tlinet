@@ -328,6 +328,7 @@ export const entityDefs: EntityDef[] = [
     searchKeys: ["period", "method", "note"],
     internal: true,
     detailDialog: true,
+    summary: { amountKey: "amount", statusKey: "status", periodKey: "period" },
     defaults: { status: "paid", amount: "" },
     columns: [
       { key: "customerId", label: "Pelanggan", labelsFrom: "customerNames" },
