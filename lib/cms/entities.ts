@@ -29,8 +29,11 @@ export type EntityDef = {
   detailPath?: string;
   /** Menampilkan tombol tiga titik yang membuka dialog berisi semua isian baris itu. */
   detailDialog?: boolean;
-  /** Kartu rangkuman nominal di atas tabel; status "paid" dihitung sebagai lunas. */
-  summary?: { amountKey: string; statusKey: string; periodKey: string };
+  /**
+   * Kartu rangkuman nominal di atas tabel; status "paid" dihitung sebagai lunas. `periodKey` boleh kolom bulan atau tanggal.
+   * Label bawaannya "Sudah lunas", "Belum lunas", dan "Tagihan".
+   */
+  summary?: { amountKey: string; statusKey: string; periodKey: string; paidLabel?: string; unpaidLabel?: string; periodLabel?: string };
 };
 
 const ordering: Field[] = [
@@ -399,6 +402,7 @@ export const entityDefs: EntityDef[] = [
     searchKeys: ["number", "companyName", "customerCode", "pic"],
     internal: true,
     detailPath: "/admin/invoice",
+    summary: { amountKey: "total", statusKey: "status", periodKey: "issueDate", paidLabel: "Paid", unpaidLabel: "Unpaid", periodLabel: "Terbit" },
     defaults: { status: "unpaid", items: [], notes: [], taxRate: "" },
     columns: [
       { key: "number", label: "No. Invoice" },

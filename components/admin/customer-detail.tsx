@@ -19,10 +19,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { AccurateLedger } from "@/lib/accurate";
-import { customerStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
+import { customerStatusLabels, getEntityDef, paymentStatusLabels } from "@/lib/cms/entities";
 import type { customerPayments, customerPurchases, customers } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { AmountSummary } from "./amount-summary";
 import { uploadImage } from "./image-field";
 import { ProofViewer } from "./proof-viewer";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
@@ -127,6 +128,7 @@ function HistoryPanel({
   const [viewing, setViewing] = useState<Row | null>(null);
   const lower = noun.toLowerCase();
   const withSupplier = entityKey === "customer-purchases";
+  const summary = getEntityDef(entityKey)?.summary;
 
   return (
     <>
@@ -143,6 +145,7 @@ function HistoryPanel({
           </Button>
         }
       >
+        {summary && rows.length > 0 && <AmountSummary summary={summary} rows={rows} variant="strip" />}
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
