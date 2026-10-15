@@ -95,7 +95,7 @@ export default async function ArticlePage({ params }: PageProps<"/berita/[slug]"
         </header>
 
         <div className="mt-10 aspect-[16/9] overflow-hidden rounded-3xl border">
-          <ArticleCover article={article} eager />
+          <ArticleCover article={article} eager sizes="(min-width: 768px) 768px, 100vw" />
         </div>
 
         <div className="mt-10 flex flex-col gap-5 text-[17px] leading-[1.8] text-foreground/85">

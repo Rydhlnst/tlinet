@@ -139,6 +139,15 @@
   }
 }
 
+/*
+ * Garis dan titik peta yang berkilau baru bergerak setelah halaman selesai dimuat (kelas page-settled dari
+ * RevealObserver): bayangan bercahayanya digambar ulang tiap bingkai, berat bagi HP saat halaman masih disiapkan.
+ */
+:root:not(.page-settled) .hero-arc,
+:root:not(.page-settled) .hero-node {
+  animation-play-state: paused;
+}
+
 .hero-arc {
   stroke-dashoffset: 1;
   animation: arc-flow 5s linear infinite;

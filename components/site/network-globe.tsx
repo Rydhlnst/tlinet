@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { afterPageSettles, frameInterval } from "@/lib/after-load";
 import { cn } from "@/lib/utils";
 
 const POINTS = 170;
@@ -80,6 +81,8 @@ export function NetworkGlobe({ labels, className }: { labels: string[]; classNam
     let frame = 0;
     let last = 0;
     let visible = true;
+    // Animasi baru berjalan setelah halaman selesai dimuat; sebelumnya cukup satu bingkai diam.
+    let ready = false;
 
     const draw = () => {
       context.clearRect(0, 0, width, height);
@@ -167,7 +170,11 @@ export function NetworkGlobe({ labels, className }: { labels: string[]; classNam
     };
 
     const tick = (time: number) => {
-      angle += Math.min((time - last) / 1000, 0.05) * SPEED * pace;
+      if (time - last < frameInterval) {
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+      angle += Math.min((time - last) / 1000, 0.1) * SPEED * pace;
       last = time;
       draw();
       frame = requestAnimationFrame(tick);
@@ -176,7 +183,7 @@ export function NetworkGlobe({ labels, className }: { labels: string[]; classNam
     const stop = () => cancelAnimationFrame(frame);
     const start = () => {
       stop();
-      if (!visible || document.hidden) return;
+      if (!ready || !visible || document.hidden) return;
       last = performance.now();
       frame = requestAnimationFrame(tick);
     };
@@ -201,9 +208,13 @@ export function NetworkGlobe({ labels, className }: { labels: string[]; classNam
     viewObserver.observe(canvas);
     document.addEventListener("visibilitychange", start);
     resize();
-    start();
+    const cancelReady = afterPageSettles(() => {
+      ready = true;
+      start();
+    });
 
     return () => {
+      cancelReady();
       stop();
       sizeObserver.disconnect();
       viewObserver.disconnect();

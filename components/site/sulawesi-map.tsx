@@ -68,6 +68,18 @@ const links = [
   { d: arc("Makassar", "Palu", -0.12), duration: 6.6, delay: 1.4 },
 ];
 
+/**
+ * Titik-titik peta digambar sebagai lima path (satu per tingkat keterangan), bukan ratusan elemen <circle>:
+ * hasilnya sama, tetapi halaman jauh lebih ringan untuk diurai, ditata, dan digambar peramban.
+ */
+const DOT_RADIUS = 1.9;
+const dotLevels = Array.from({ length: 5 }, (_, level) =>
+  dots
+    .filter(([x, y]) => (x * 7 + y * 13) % 5 === level)
+    .map(([x, y]) => `M${x - DOT_RADIUS} ${y}a${DOT_RADIUS} ${DOT_RADIUS} 0 1 0 ${DOT_RADIUS * 2} 0a${DOT_RADIUS} ${DOT_RADIUS} 0 1 0 -${DOT_RADIUS * 2} 0`)
+    .join(""),
+);
+
 type Props = { className?: string; labels?: boolean; tone?: "dark" | "light" };
 
 export function SulawesiMap({ className, labels = false, tone = "dark" }: Props) {
@@ -75,8 +87,8 @@ export function SulawesiMap({ className, labels = false, tone = "dark" }: Props)
   return (
     <svg viewBox={`-40 -10 ${WIDTH + 90} ${HEIGHT + 20}`} fill="none" aria-hidden="true" className={cn("overflow-visible", className)}>
       <g fill={dark ? "#60a5fa" : "#3b82f6"}>
-        {dots.map(([x, y]) => (
-          <circle key={`${x}-${y}`} cx={x} cy={y} r="1.9" opacity={dark ? 0.35 + ((x * 7 + y * 13) % 5) * 0.12 : 0.22 + ((x * 7 + y * 13) % 5) * 0.08} />
+        {dotLevels.map((d, level) => (
+          <path key={level} d={d} opacity={dark ? 0.35 + level * 0.12 : 0.22 + level * 0.08} />
         ))}
       </g>
       {links.map((link) => (

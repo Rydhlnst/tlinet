@@ -1,8 +1,28 @@
 import type { NextConfig } from "next";
 
+/**
+ * Asal gambar unggahan di Cloudflare R2. Hanya alamat ini yang boleh diperkecil oleh pengoptimal gambar Next,
+ * supaya pengoptimal tidak bisa dipakai untuk gambar dari tempat lain.
+ */
+const cmsImageOrigin = (process.env.R2_PUBLIC_URL || "https://pub-7755b913f9b14072967cbd0b06d0415e.r2.dev").replace(/\/$/, "");
+
 const nextConfig: NextConfig = {
   // Folder induk punya lockfile sendiri; tanpa ini Turbopack salah menebak akar proyek.
   turbopack: { root: process.cwd() },
+  // Dibaca CmsImage untuk memutuskan gambar mana yang dilewatkan ke pengoptimal.
+  env: { CMS_IMAGE_ORIGIN: cmsImageOrigin },
+  images: {
+    remotePatterns: [new URL(`${cmsImageOrigin}/uploads/**`)],
+    // Gambar yang disimpan di database (/media/<id>) dan aset di public/images.
+    localPatterns: [
+      { pathname: "/media/**", search: "" },
+      { pathname: "/images/**", search: "" },
+    ],
+    formats: ["image/avif", "image/webp"],
+    qualities: [75],
+    // Nama berkas unggahan selalu baru, jadi hasil olahannya aman disimpan lama.
+    minimumCacheTTL: 2_678_400,
+  },
 };
 
 export default nextConfig;

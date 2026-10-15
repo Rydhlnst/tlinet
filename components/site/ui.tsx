@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { preload } from "react-dom";
+import { optimizedImage } from "@/lib/cms-image";
 import { cn } from "@/lib/utils";
 import { AccentText, LinedEyebrow } from "./decor";
 import { NodeField } from "./node-field";
@@ -112,8 +114,21 @@ export function PageHero({ eyebrow, title, description, children }: { eyebrow?: 
   );
 }
 
-/** Gambar dari CMS: sumbernya bisa R2, /media, atau URL luar, sehingga tidak lewat next/image. */
-export function CmsImage({ alt, className, ...props }: ComponentProps<"img">) {
+/**
+ * Gambar dari CMS. Unggahan R2, /media, dan public/images diperkecil ke AVIF/WebP selebar yang dibutuhkan
+ * (`sizes`) lewat pengoptimal Next dari domain sendiri; URL lain ditampilkan apa adanya. Tetap elemen <img>
+ * biasa, jadi ukurannya diatur CSS seperti sebelumnya. `preload` untuk gambar LCP di atas lipatan.
+ */
+export function CmsImage({
+  alt,
+  className,
+  src,
+  sizes = "100vw",
+  preload: preloadImage = false,
+  ...props
+}: Omit<ComponentProps<"img">, "src"> & { src?: string; preload?: boolean }) {
+  const optimized = src ? optimizedImage(src, sizes) : null;
+  if (optimized && preloadImage) preload(optimized.src, { as: "image", imageSrcSet: optimized.srcSet, imageSizes: optimized.sizes, fetchPriority: "high" });
   // eslint-disable-next-line @next/next/no-img-element
-  return <img alt={alt ?? ""} loading="lazy" decoding="async" className={className} {...props} />;
+  return <img alt={alt ?? ""} loading="lazy" decoding="async" className={className} {...props} src={optimized?.src ?? src} srcSet={optimized?.srcSet} sizes={optimized ? optimized.sizes : undefined} />;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { afterPageSettles } from "@/lib/after-load";
 
 /**
  * Animasi muncul saat digulir untuk halaman publik. Elemen bertanda `data-reveal` (atau anak dari `data-reveal-stagger`,
@@ -11,6 +12,8 @@ import { useEffect } from "react";
 export function RevealObserver() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Hiasan bergerak (garis peta berkilau) dinyalakan setelah halaman selesai dimuat.
+    const cancelSettled = afterPageSettles(() => document.documentElement.classList.add("page-settled"));
 
     const reveal = new IntersectionObserver(
       (entries) => {
@@ -51,6 +54,7 @@ export function RevealObserver() {
     changes.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      cancelSettled();
       cancelAnimationFrame(frame);
       changes.disconnect();
       reveal.disconnect();

@@ -21,12 +21,24 @@ function fallbackCover(slug: string, category: string) {
 }
 
 /** Sampul artikel; tanpa gambar unggahan, dipakai sampul bawaan sesuai kategorinya. */
-export function ArticleCover({ article, className, eager }: { article: Pick<Article, "coverUrl" | "title" | "slug" | "category">; className?: string; eager?: boolean }) {
+export function ArticleCover({
+  article,
+  className,
+  eager,
+  sizes = "(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw",
+}: {
+  article: Pick<Article, "coverUrl" | "title" | "slug" | "category">;
+  className?: string;
+  eager?: boolean;
+  /** Lebar tampil sampul; bawaannya untuk kartu di kisi tiga kolom. */
+  sizes?: string;
+}) {
   return (
     <CmsImage
       src={article.coverUrl || fallbackCover(article.slug, article.category)}
       alt={article.coverUrl ? article.title : ""}
       loading={eager ? "eager" : "lazy"}
+      sizes={sizes}
       className={cn("size-full object-cover", className)}
     />
   );

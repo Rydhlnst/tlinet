@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { afterPageSettles, frameInterval } from "@/lib/after-load";
 import { cn } from "@/lib/utils";
 
 type Node = { x: number; y: number; vx: number; vy: number; accent: boolean };
@@ -32,6 +33,8 @@ export function NodeField({ className, tone = "light" }: { className?: string; t
     let frame = 0;
     let last = 0;
     let visible = true;
+    // Animasi baru berjalan setelah halaman selesai dimuat; sebelumnya cukup satu bingkai diam.
+    let ready = false;
 
     const spawn = (): Node => {
       const angle = Math.random() * Math.PI * 2;
@@ -68,7 +71,11 @@ export function NodeField({ className, tone = "light" }: { className?: string; t
     };
 
     const tick = (time: number) => {
-      const elapsed = Math.min((time - last) / 1000, 0.05);
+      if (time - last < frameInterval) {
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+      const elapsed = Math.min((time - last) / 1000, 0.1);
       last = time;
       for (const node of nodes) {
         node.x += node.vx * elapsed;
@@ -85,7 +92,7 @@ export function NodeField({ className, tone = "light" }: { className?: string; t
     const stop = () => cancelAnimationFrame(frame);
     const start = () => {
       stop();
-      if (!visible || document.hidden) return;
+      if (!ready || !visible || document.hidden) return;
       last = performance.now();
       frame = requestAnimationFrame(tick);
     };
@@ -114,9 +121,13 @@ export function NodeField({ className, tone = "light" }: { className?: string; t
     viewObserver.observe(canvas);
     document.addEventListener("visibilitychange", start);
     resize();
-    start();
+    const cancelReady = afterPageSettles(() => {
+      ready = true;
+      start();
+    });
 
     return () => {
+      cancelReady();
       stop();
       sizeObserver.disconnect();
       viewObserver.disconnect();

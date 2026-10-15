@@ -41,19 +41,19 @@ export function AboutSection({ who }: { who: AboutContent["who"] }) {
           )}
 
           {who.highlights.length > 0 && (
-            <dl data-reveal-stagger className="mt-2 grid w-full gap-4 sm:grid-cols-2">
+            <ul data-reveal-stagger className="mt-2 grid w-full gap-4 sm:grid-cols-2">
               {who.highlights.map((item, index) => (
-                <div key={item.title} className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-md shadow-primary/5 ring-1 ring-border">
+                <li key={item.title} className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-md shadow-primary/5 ring-1 ring-border">
                   <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-primary">
                     <Icon name={item.icon || highlightIcons[index % highlightIcons.length]} className="size-6" />
                   </span>
                   <div>
-                    <dt className="text-xl font-extrabold tracking-tight">{item.title}</dt>
-                    <dd className="text-sm text-muted-foreground">{item.description}</dd>
+                    <p className="text-xl font-extrabold tracking-tight">{item.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
                   </div>
-                </div>
+                </li>
               ))}
-            </dl>
+            </ul>
           )}
         </div>
 
@@ -61,7 +61,7 @@ export function AboutSection({ who }: { who: AboutContent["who"] }) {
           <div className="surface-ink relative isolate min-h-[30rem] overflow-hidden rounded-[2rem] p-5 text-white shadow-2xl shadow-ink/30 sm:min-h-[34rem] sm:p-7">
             {who.imageUrl ? (
               <>
-                <CmsImage src={who.imageUrl} alt={who.cardTitle} className="absolute inset-0 -z-10 size-full object-cover" />
+                <CmsImage src={who.imageUrl} alt={who.cardTitle} sizes="(min-width: 1024px) 40vw, 100vw" className="absolute inset-0 -z-10 size-full object-cover" />
                 <div className="absolute inset-0 -z-10 bg-gradient-to-br from-ink via-ink/50 to-transparent" aria-hidden="true" />
               </>
             ) : (

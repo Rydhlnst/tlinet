@@ -17,10 +17,11 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
     <section className="hero-under-header relative isolate overflow-hidden bg-ink text-white">
       {/*
         Di layar lebar foto dipasang selebar hero dengan tinggi aslinya (tidak diperbesar), mulai di bawah header,
-        dan memudar di tepi atas dan bawah; di layar kecil foto hanya mengisi bagian atas agar tidak diperbesar sampai buram.
+        dan memudar di tepi atas dan bawah; di layar kecil foto hanya mengisi bagian atas agar tidak diperbesar sampai buram,
+        dan pudarnya cukup dari lapisan gelap di atasnya (tanpa mask, yang berat digambar di HP).
       */}
       <div
-        className="absolute inset-x-0 top-0 grid h-[38rem] lg:top-14 lg:h-auto lg:min-h-[60%] -z-20 [mask-image:linear-gradient(to_bottom,black_45%,transparent)] lg:[mask-image:linear-gradient(to_bottom,transparent,black_12%,black_58%,transparent)]"
+        className="absolute inset-x-0 top-0 grid h-[38rem] lg:top-14 lg:h-auto lg:min-h-[60%] -z-20 lg:[mask-image:linear-gradient(to_bottom,transparent,black_12%,black_58%,transparent)]"
         aria-hidden="true"
       >
         {imageUrl &&
@@ -37,8 +38,10 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
               className="h-full w-full object-cover object-right"
             />
           ) : (
-            <CmsImage src={imageUrl} alt="" loading="eager" fetchPriority="high" className="h-full w-full object-cover object-right" />
+            <CmsImage src={imageUrl} alt="" loading="eager" fetchPriority="high" sizes="100vw" preload className="h-full w-full object-cover object-right" />
           ))}
+        {/* Pengganti mask di HP: tepi bawah foto dilebur ke latar dengan gradien biasa. */}
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-ink lg:hidden" />
       </div>
       {/* Di layar lebar hanya sisi kiri yang digelapkan; di layar kecil foto digelapkan makin pekat ke bawah. */}
       <div
@@ -53,8 +56,10 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
       <div className="absolute inset-x-0 top-14 -z-10 hidden min-h-[60%] opacity-90 [mask-image:linear-gradient(to_bottom,black_45%,transparent_80%)] lg:grid" aria-hidden="true">
         <HeroArcs className="h-full w-full" />
       </div>
-      <div className="absolute -top-32 -left-32 -z-10 size-[30rem] rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
-      <NodeField tone="dark" className="-z-10 opacity-70 [mask-image:linear-gradient(to_right,black,transparent_65%)]" />
+      {/* Cahaya lembut di pojok kiri atas: gradien melingkar, bukan filter blur yang berat digambar di HP. */}
+      <div className="absolute -top-56 -left-56 -z-10 size-[44rem] rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklch,var(--primary)_28%,transparent),transparent)]" aria-hidden="true" />
+      {/* Titik jaringan bergerak hanya di layar lebar; di HP kanvas bertopeng ini berat digambar dan menunda tampilan pertama. */}
+      <NodeField tone="dark" className="-z-10 hidden opacity-70 [mask-image:linear-gradient(to_right,black,transparent_65%)] lg:block" />
 
       <div className="container-page flex flex-col gap-10 pt-12 pb-10 sm:gap-12 sm:pt-20 lg:pt-24 lg:pb-12">
         <div className="flex max-w-2xl flex-col items-start gap-5 sm:gap-6">
@@ -91,26 +96,26 @@ export function HomeHero({ hero }: { hero: HomeContent["hero"] }) {
         </div>
 
         {hero.stats.length > 0 && (
-          <dl className="grid max-w-xl grid-cols-2 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md lg:max-w-4xl lg:grid-cols-4">
+          <ul className="grid max-w-xl grid-cols-2 overflow-hidden rounded-2xl border border-white/10 bg-ink/45 lg:max-w-4xl lg:grid-cols-4">
             {hero.stats.slice(0, 4).map((stat) => (
-              <div
+              <li
                 key={stat.label}
                 className={`flex flex-col items-start gap-2.5 px-4 py-4 min-[30rem]:flex-row min-[30rem]:items-center min-[30rem]:gap-3 sm:px-5 ${cellBorders}`}
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#4f8dff]/15 text-[#8ab6ff] ring-1 ring-white/10 ring-inset">
                   <Icon name={stat.icon || "gauge"} strokeWidth={1.7} className="size-5" />
                 </span>
-                <div className="flex flex-col-reverse">
-                  <dt className="text-xs whitespace-nowrap text-white/65">{stat.label}</dt>
-                  <dd className="text-xl leading-tight font-semibold tracking-tight">{stat.value}</dd>
-                </div>
-              </div>
+                <p className="flex flex-col-reverse">
+                  <span className="text-xs whitespace-nowrap text-white/65">{stat.label}</span>
+                  <span className="text-xl leading-tight font-semibold tracking-tight">{stat.value}</span>
+                </p>
+              </li>
             ))}
-          </dl>
+          </ul>
         )}
 
         {hero.segments.length > 0 && (
-          <ul className="grid grid-cols-2 overflow-hidden rounded-3xl border border-white/10 bg-ink/55 backdrop-blur-md lg:grid-cols-4">
+          <ul className="grid grid-cols-2 overflow-hidden rounded-3xl border border-white/10 bg-ink/75 lg:grid-cols-4">
             {hero.segments.slice(0, 4).map((segment) => (
               <li key={segment.title} className={cellBorders}>
                 <SmartLink
