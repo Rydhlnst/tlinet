@@ -35,10 +35,11 @@ export type EntityDef = {
    */
   summary?: { amountKey: string; statusKey: string; periodKey: string; paidLabel?: string; unpaidLabel?: string; periodLabel?: string };
   /**
-   * Tombol "Generate Tagihan <bulan>": baris bulan tagihan terakhir disalin ke bulan berikutnya. `copyKeys` ikut disalin,
-   * `matchKeys` menandai tagihan yang sama sehingga yang sudah ada di bulan tujuan dilewati.
+   * Tombol "Generate Tagihan <bulan>": baris bulan tagihan terakhir disalin ke bulan berikutnya. `copyKeys` ikut disalin
+   * (isian yang tertaut ke Data Pelanggan tidak perlu, karena diisi dari pelanggannya), `matchKeys` menandai tagihan yang
+   * sama sehingga yang sudah ada di bulan tujuan dilewati. `copied` dan `cleared` menjelaskannya di dialog konfirmasi.
    */
-  monthly?: { copyKeys: string[]; matchKeys: string[] };
+  monthly?: { copyKeys: string[]; matchKeys: string[]; copied: string; cleared: string };
 };
 
 const ordering: Field[] = [
@@ -338,6 +339,12 @@ export const entityDefs: EntityDef[] = [
     internal: true,
     detailDialog: true,
     summary: { amountKey: "amount", statusKey: "status", periodKey: "period" },
+    monthly: {
+      copyKeys: ["customerId", "amount", "method"],
+      matchKeys: ["customerId"],
+      copied: "Pelanggan, metode, dan nominal",
+      cleared: "tanggal bayar, bukti transfer, dan keterangan",
+    },
     defaults: { status: "paid", amount: "" },
     columns: [
       { key: "customerId", label: "PT", labelsFrom: "customerNames" },
@@ -371,8 +378,10 @@ export const entityDefs: EntityDef[] = [
     detailDialog: true,
     summary: { amountKey: "amount", statusKey: "status", periodKey: "period" },
     monthly: {
-      copyKeys: ["customerId", "supplierName", "supplierAddress", "supplierEmail", "serviceName", "siteId", "cid", "paymentNumber", "amount", "method"],
+      copyKeys: ["customerId", "supplierName", "supplierAddress", "supplierEmail", "serviceName", "amount", "method"],
       matchKeys: ["customerId", "supplierName", "serviceName"],
+      copied: "Pemasok, layanan, dan nominal",
+      cleared: "tanggal bayar, BA, bukti transfer, dan keterangan",
     },
     defaults: { status: "paid", amount: "" },
     columns: [
