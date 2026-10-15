@@ -87,7 +87,7 @@ export function SectionHeading({
   className?: string;
 }) {
   return (
-    <div className={cn("flex max-w-3xl flex-col gap-4", align === "center" ? "mx-auto items-center text-center" : "items-start", className)}>
+    <div data-reveal className={cn("flex max-w-3xl flex-col gap-4", align === "center" ? "mx-auto items-center text-center" : "items-start", className)}>
       <LinedEyebrow align={align}>{eyebrow}</LinedEyebrow>
       <h2 className="text-3xl leading-[1.12] font-bold sm:text-4xl lg:text-[2.75rem]">
         <AccentText text={title} accent={titleAccent} />

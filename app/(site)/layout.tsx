@@ -1,5 +1,6 @@
 import { RouteFade } from "@/components/route-fade";
 import { JsonLd } from "@/components/site/json-ld";
+import { RevealObserver } from "@/components/site/reveal-observer";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { WhatsAppFloat } from "@/components/site/whatsapp-float";
@@ -47,6 +48,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <main className="flex-1">
         <RouteFade>{children}</RouteFade>
       </main>
+      <RevealObserver />
       <SiteFooter settings={settings} />
       <WhatsAppFloat href={whatsappUrl(settings.whatsappNumber, settings.whatsappMessage)} />
     </>

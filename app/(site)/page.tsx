@@ -43,7 +43,7 @@ export default async function HomePage() {
 
       <section className="container-page py-20 sm:py-24">
         <SectionHeading {...features} />
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div data-reveal-stagger className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.items.map((item) => (
             <article key={item.title} className="group rounded-3xl border bg-card p-6 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
               <span className="flex size-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-ink transition-colors group-hover:bg-primary group-hover:text-white">
@@ -61,7 +61,7 @@ export default async function HomePage() {
       <section id="produk-layanan" className="border-y bg-muted/40">
         <div className="container-page py-20 sm:py-24">
           <SectionHeading {...home.packages} />
-          <div className="mt-12">
+          <div data-reveal className="mt-12">
             <PackageTabs categories={categories} packages={packages} />
           </div>
           {home.packages.note && <p className="mt-8 text-center text-xs text-muted-foreground">{home.packages.note}</p>}

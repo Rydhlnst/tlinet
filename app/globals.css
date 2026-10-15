@@ -201,6 +201,24 @@
   }
 }
 
+/*
+ * Muncul saat digulir (RevealObserver): yang belum tampil disembunyikan hanya setelah skripnya siap, lalu naik pelan.
+ * Dipakai animation dengan fill "backwards" (bukan transition), supaya efek hover kartu tetap cepat setelahnya.
+ */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+.reveal-ready [data-reveal]:not([data-shown]) {
+  opacity: 0;
+}
+.reveal-ready [data-reveal][data-animate] {
+  animation: reveal-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--reveal-index, 0) * 90ms);
+}
+
 /* Kilau kerangka muat: cahaya tipis yang menyapu dari kiri ke kanan, menggantikan kedip animate-pulse. */
 @keyframes skeleton-shimmer {
   to {

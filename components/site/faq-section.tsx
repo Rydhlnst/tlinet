@@ -44,7 +44,7 @@ export function FaqSection({ content, faqs, helpHref }: Props) {
       <div className="container-page relative py-20 sm:py-24">
         <SectionHeading eyebrow={content.eyebrow} title={content.title} titleAccent={content.titleAccent} description={content.description} />
 
-        <div className="mt-14 grid items-start gap-10 lg:grid-cols-[1.7fr_1fr] lg:gap-12">
+        <div data-reveal-stagger className="mt-14 grid items-start gap-10 lg:grid-cols-[1.7fr_1fr] lg:gap-12">
           <div className="flex flex-col items-center gap-8">
             <div className="w-full">
               <FaqList faqs={faqs} />

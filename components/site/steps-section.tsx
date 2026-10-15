@@ -136,7 +136,7 @@ export function StepsSection({ steps, speeds }: { steps: HomeContent["steps"]; s
           {steps.description && <p className="text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">{steps.description}</p>}
         </div>
 
-        <ol className={cn("mx-auto mt-14 grid gap-6", columns[Math.min(steps.items.length, 4)] ?? columns[3])}>
+        <ol data-reveal-stagger className={cn("mx-auto mt-14 grid gap-6", columns[Math.min(steps.items.length, 4)] ?? columns[3])}>
           {steps.items.map((item, index) => (
             <li key={item.title} className="relative">
               <article className="relative flex h-full min-h-[17.5rem] overflow-hidden rounded-3xl bg-gradient-to-br from-white via-white to-brand-soft p-7 shadow-lg shadow-primary/5 ring-1 ring-border">

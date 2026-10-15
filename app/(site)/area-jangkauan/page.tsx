@@ -18,14 +18,14 @@ export default async function CoveragePage() {
     <>
       <PageHero {...coverage.hero} />
 
-      <section className="container-page relative z-10 -mt-10 pb-20 sm:pb-24">
+      <section data-reveal className="container-page relative z-10 -mt-10 pb-20 sm:pb-24">
         <CoverageExplorer areas={areas} content={coverage.map} />
       </section>
 
       <section className="border-y bg-muted/40">
         <div className="container-page grid gap-10 py-20 sm:py-24 lg:grid-cols-[1fr_1.25fr] lg:gap-16">
           <SectionHeading {...coverage.form} align="left" />
-          <div className="rounded-3xl border bg-card p-6 shadow-xl shadow-primary/5 sm:p-8">
+          <div data-reveal className="rounded-3xl border bg-card p-6 shadow-xl shadow-primary/5 sm:p-8">
             <LeadForm
               type="coverage"
               brandName={settings.brandName}

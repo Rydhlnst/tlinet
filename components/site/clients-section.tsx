@@ -50,7 +50,7 @@ export function NetworkSection({
     <section className="relative isolate overflow-hidden border-t">
       <div className="bg-grid absolute inset-0 -z-10" aria-hidden="true" />
       <div className="container-page py-20 sm:py-24">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
+        <div data-reveal-stagger className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
           <div>
             {partners.eyebrow && <p className={smallLabel}>{partners.eyebrow}</p>}
             {headings.length > 0 && (
@@ -77,7 +77,7 @@ export function NetworkSection({
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-12 sm:mt-20">
+        <div data-reveal-stagger className="mt-14 flex flex-col gap-12 sm:mt-20">
           {rows.map((row) => (
             <div key={row.stat}>
               <h3 className={smallLabel}>{row.content.title}</h3>

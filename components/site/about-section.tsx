@@ -27,7 +27,7 @@ export function AboutSection({ who }: { who: AboutContent["who"] }) {
           ))}
 
           {who.features.length > 0 && (
-            <ul className="mt-2 grid w-full grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
+            <ul data-reveal-stagger className="mt-2 grid w-full grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
               {who.features.map((item) => (
                 <li key={item.title} className="flex flex-col items-start gap-2">
                   <span className="flex size-11 items-center justify-center rounded-xl bg-brand-soft text-primary ring-1 ring-primary/10">
@@ -41,7 +41,7 @@ export function AboutSection({ who }: { who: AboutContent["who"] }) {
           )}
 
           {who.highlights.length > 0 && (
-            <dl className="mt-2 grid w-full gap-4 sm:grid-cols-2">
+            <dl data-reveal-stagger className="mt-2 grid w-full gap-4 sm:grid-cols-2">
               {who.highlights.map((item, index) => (
                 <div key={item.title} className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-md shadow-primary/5 ring-1 ring-border">
                   <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-primary">

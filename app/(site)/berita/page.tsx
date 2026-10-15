@@ -18,7 +18,7 @@ export default async function NewsPage() {
       <PageHero {...news.hero} />
       <section className="container-page pt-16 sm:pt-20">
         {articles.length ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div data-reveal-stagger className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {articles.map((article) => (
               <ArticleCard key={article.id} article={article} readMoreLabel={news.readMoreLabel} heading="h2" />
             ))}

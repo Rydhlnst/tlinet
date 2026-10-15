@@ -28,7 +28,7 @@ export function NewsSection({ content, articles, readMoreLabel }: Props) {
       </div>
 
       <div className="container-page relative -mt-36 pb-20 sm:pb-24">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div data-reveal-stagger className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {articles.slice(0, 3).map((article) => (
             <ArticleCard key={article.id} article={article} readMoreLabel={readMoreLabel} />
           ))}

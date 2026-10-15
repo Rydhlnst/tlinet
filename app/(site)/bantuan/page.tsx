@@ -35,7 +35,7 @@ export default async function HelpPage() {
       )}
       <PageHero {...help.hero} />
 
-      <section className="container-page relative z-10 -mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section data-reveal-stagger className="container-page relative z-10 -mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {help.quickLinks.map((item) => (
           <SmartLink
             key={item.title}

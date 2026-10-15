@@ -23,7 +23,7 @@ export default async function AboutPage() {
       <AboutSection who={who} />
 
       <section className="border-y bg-muted/40">
-        <div className="container-page grid gap-5 py-20 sm:py-24 lg:grid-cols-2">
+        <div data-reveal-stagger className="container-page grid gap-5 py-20 sm:py-24 lg:grid-cols-2">
           <article className="rounded-3xl border bg-card p-8">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-ink">
               <Eye className="size-5" />
@@ -50,7 +50,7 @@ export default async function AboutPage() {
 
       <section className="container-page pt-20 sm:pt-24">
         <SectionHeading {...values} />
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div data-reveal-stagger className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {values.items.map((item) => (
             <article key={item.title} className="rounded-3xl border bg-card p-6">
               <span className="flex size-11 items-center justify-center rounded-2xl bg-primary text-white">

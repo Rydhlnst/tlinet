@@ -24,7 +24,7 @@ export function WhySection({ why }: { why: HomeContent["why"] }) {
           )}
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div data-reveal-stagger className="grid gap-5 sm:grid-cols-2">
           {why.items.map((item, index) => (
             <article
               key={item.title}
