@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getEntityDef, type Column } from "@/lib/cms/entities";
 import { formatDate, formatDateTime, formatMonth, formatRupiah, whatsappUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { AmountSummary } from "./amount-summary";
 import type { DynamicOptions } from "./field-control";
 import { ProofViewer } from "./proof-viewer";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
@@ -112,6 +113,8 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
           )}
         </div>
       </div>
+
+      {entity.summary && <AmountSummary summary={entity.summary} rows={visible} />}
 
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="flex items-center justify-between gap-3 border-b p-3">

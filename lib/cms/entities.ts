@@ -29,6 +29,8 @@ export type EntityDef = {
   detailPath?: string;
   /** Menampilkan tombol tiga titik yang membuka dialog berisi semua isian baris itu. */
   detailDialog?: boolean;
+  /** Kartu rangkuman nominal di atas tabel; status "paid" dihitung sebagai lunas. */
+  summary?: { amountKey: string; statusKey: string; periodKey: string };
 };
 
 const ordering: Field[] = [
@@ -355,6 +357,7 @@ export const entityDefs: EntityDef[] = [
     searchKeys: ["supplierName", "serviceName", "siteId", "cid", "ba", "paymentNumber", "period", "method", "note"],
     internal: true,
     detailDialog: true,
+    summary: { amountKey: "amount", statusKey: "status", periodKey: "period" },
     defaults: { status: "paid", amount: "" },
     columns: [
       { key: "supplierName", label: "Pemasok" },
