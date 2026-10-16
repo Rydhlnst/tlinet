@@ -6,12 +6,13 @@ import { afterPageSettles } from "@/lib/after-load";
 /**
  * Animasi muncul saat digulir untuk halaman publik. Elemen bertanda `data-reveal` (atau anak dari `data-reveal-stagger`,
  * yang muncul bergiliran) naik pelan begitu masuk layar. Animasi hanya aktif setelah skrip ini berjalan, jadi isi tetap
- * terlihat tanpa JavaScript; yang sudah terlihat saat halaman dibuka tidak disembunyikan; dan semuanya dilewati bila
- * pengguna meminta gerak dikurangi. Pengamat DOM menangkap isi yang datang belakangan (halaman baru, streaming).
+ * terlihat tanpa JavaScript; yang sudah terlihat saat halaman dibuka tidak disembunyikan; dan semuanya dilewati di HP
+ * atau bila pengguna meminta gerak dikurangi. Pengamat DOM menangkap isi yang datang belakangan (halaman baru, streaming).
  */
 export function RevealObserver() {
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Di HP (dan bila pengguna meminta gerak dikurangi) semua isi langsung tampil diam, supaya halaman ringan.
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (max-width: 1023px)").matches) return;
     // Hiasan bergerak (garis peta berkilau) dinyalakan setelah halaman selesai dimuat.
     const cancelSettled = afterPageSettles(() => document.documentElement.classList.add("page-settled"));
 

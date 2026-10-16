@@ -72,7 +72,8 @@ export function NetworkSection({
               ))}
             </dl>
           </div>
-          <div className="mx-auto aspect-square w-full max-w-sm lg:max-w-none">
+          {/* Di HP bola jaring tidak ditampilkan: animasi kanvasnya berat dan isi bagian ini tetap lengkap tanpanya. */}
+          <div className="mx-auto hidden aspect-square w-full max-w-sm lg:block lg:max-w-none">
             <NetworkGlobe labels={takeTurns(rows.map((row) => row.items.map((item) => shortName(item.name))))} />
           </div>
         </div>

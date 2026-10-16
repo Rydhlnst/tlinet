@@ -135,5 +135,6 @@ export function NodeField({ className, tone = "light" }: { className?: string; t
     };
   }, [tone]);
 
-  return <canvas ref={ref} aria-hidden="true" className={cn("pointer-events-none absolute inset-0 h-full w-full", className)} />;
+  // Di layar kecil disembunyikan; kanvas yang tidak tampil tidak pernah mulai beranimasi.
+  return <canvas ref={ref} aria-hidden="true" className={cn("pointer-events-none absolute inset-0 h-full w-full max-lg:hidden", className)} />;
 }
