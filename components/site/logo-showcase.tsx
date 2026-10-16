@@ -24,7 +24,7 @@ function Marquee({ items }: { items: LogoItem[] }) {
   const loop = Array.from({ length: repeats * 2 }, () => items).flat();
   return (
     // Di layar kecil deretan ini diam dan digeser dengan jari: tanpa animasi dan tanpa topeng pudar, yang berat di HP.
-    <div className="overflow-hidden max-lg:-mx-4 max-lg:overflow-x-auto max-lg:px-4 max-lg:[scrollbar-width:none] lg:[mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+    <div className="overflow-hidden max-lg:-mx-4 max-lg:overflow-x-auto max-lg:px-4 max-lg:no-scrollbar lg:[mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
       <ul className="flex w-max animate-marquee hover:[animation-play-state:paused] motion-reduce:[animation-duration:90s] max-lg:animate-none">
         {loop.map((item, index) => (
           <li key={`${item.id}-${index}`} aria-hidden={index >= items.length} className={cn(chip, "mr-3", index >= items.length && "max-lg:hidden")}>
