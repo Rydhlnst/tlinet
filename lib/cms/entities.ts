@@ -331,6 +331,7 @@ export const entityDefs: EntityDef[] = [
       { name: "vlan", label: "VLAN", type: "text", half: true, placeholder: "mis. 120" },
       { name: "activationDate", label: "Tanggal aktivasi", type: "date", half: true },
       { name: "aosUrl", label: "AOS", type: "image", allowPdf: true, help: "Opsional. Unggah dokumen AOS dalam PDF (maks. 4 MB) atau gambar." },
+      { name: "pksUrl", label: "PKS", type: "image", allowPdf: true, help: "Opsional. Dokumen Perjanjian Kerja Sama dalam PDF (maks. 4 MB). Pelanggan bisa melihatnya di portal Subnet." },
       { name: "note", label: "Keterangan", type: "textarea", rows: 3 },
     ],
   },

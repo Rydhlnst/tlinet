@@ -38,7 +38,7 @@ const fileLink = (url: string, label: string) =>
 const empty = <span className="text-muted-foreground">—</span>;
 
 /**
- * Portal pelanggan: data pelanggan (tanpa biaya ke NAP dan selisih keuntungan), invoice, dan history pembayarannya.
+ * Portal pelanggan: data pelanggan (tanpa biaya ke NAP, selisih keuntungan, dan no. pembayaran), invoice, dan history pembayarannya.
  * Semuanya hanya bisa dilihat; yang bisa diubah pelanggan hanya foto profil dan alamat.
  */
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
@@ -194,6 +194,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
                 ["Kabupaten", customer.regency],
                 ["Provinsi", customer.province],
                 ["AOS", fileLink(customer.aosUrl, "Lihat AOS")],
+                ["PKS", fileLink(customer.pksUrl, "Lihat PKS")],
               ]}
             />
           </Panel>
@@ -202,7 +203,6 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
               items={[
                 ["Kapasitas", customer.capacity],
                 ["Biaya Bulanan ke ISP", customer.monthlyFee ? formatRupiah(customer.monthlyFee) : ""],
-                ["No. Pembayaran", customer.paymentNumber],
                 ["Vendor", customer.vendor],
                 ["IP Address", customer.ipAddress],
                 ["VLAN", customer.vlan],

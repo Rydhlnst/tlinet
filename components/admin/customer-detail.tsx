@@ -408,6 +408,10 @@ export function CustomerDetail({
                 "AOS",
                 customer.aosUrl ? <ProofViewer entityKey="customers" id={customer.id} url={customer.aosUrl} field="aosUrl" name="AOS" label={customer.siteId || customer.name} /> : "",
               ],
+              [
+                "PKS",
+                customer.pksUrl ? <ProofViewer entityKey="customers" id={customer.id} url={customer.pksUrl} field="pksUrl" name="PKS" label={customer.siteId || customer.name} /> : "",
+              ],
             ]}
           />
         </Panel>

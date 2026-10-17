@@ -7,7 +7,7 @@ import { isR2Url } from "@/lib/storage";
 
 const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif", "application/pdf": "pdf" };
 
-/** Berkas yang boleh disajikan: bukti transfer dan invoice pemasok di riwayat, serta AOS pelanggan. Hasilnya tautan dan nama unduhannya. */
+/** Berkas yang boleh disajikan: bukti transfer dan invoice pemasok di riwayat, serta AOS dan PKS pelanggan. Hasilnya tautan dan nama unduhannya. */
 async function findProof(entity: string, id: string, field: string): Promise<{ proofUrl: string; name: string } | undefined> {
   if (!db) return undefined;
   if (entity === "customer-payments" && field === "proofUrl") {
@@ -23,9 +23,10 @@ async function findProof(entity: string, id: string, field: string): Promise<{ p
     if (!row) return undefined;
     return field === "proofUrl" ? { proofUrl: row.proofUrl, name: `invoice-pemasok-${row.period}` } : { proofUrl: row.transferProofUrl, name: `bukti-transfer-${row.period}` };
   }
-  if (entity === "customers" && field === "aosUrl") {
-    const [row] = await db.select({ url: customers.aosUrl, siteId: customers.siteId }).from(customers).where(eq(customers.id, id)).limit(1);
-    return row && { proofUrl: row.url, name: `aos-${slugify(row.siteId) || id.slice(0, 8)}` };
+  if (entity === "customers" && (field === "aosUrl" || field === "pksUrl")) {
+    const [row] = await db.select({ aosUrl: customers.aosUrl, pksUrl: customers.pksUrl, siteId: customers.siteId }).from(customers).where(eq(customers.id, id)).limit(1);
+    const kind = field === "aosUrl" ? "aos" : "pks";
+    return row && { proofUrl: row[field], name: `${kind}-${slugify(row.siteId) || id.slice(0, 8)}` };
   }
   return undefined;
 }

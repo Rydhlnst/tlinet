@@ -143,6 +143,8 @@ export const customers = pgTable(
     vlan: text("vlan").notNull().default(""),
     /** Dokumen AOS pelanggan (PDF atau gambar). */
     aosUrl: text("aos_url").notNull().default(""),
+    /** Dokumen PKS (Perjanjian Kerja Sama) pelanggan; ikut tampil di portal Subnet. */
+    pksUrl: text("pks_url").notNull().default(""),
     status: text("status").notNull().default("active"),
     activationDate: text("activation_date").notNull().default(""),
     note: text("note").notNull().default(""),
