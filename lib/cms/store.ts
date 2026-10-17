@@ -2,7 +2,7 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
-import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, invoices, leads, packageCategories, packages, siteContent } from "@/lib/db/schema";
+import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, invoices, leads, packageCategories, packages, siteContent, subnetAccounts } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
 import { deleteInvoicePayment, deleteInvoicePurchase, syncInvoicePayment, syncInvoicePurchase, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { prepareInvoice } from "@/lib/invoices";
@@ -144,10 +144,11 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
     await deleteInvoicePayment(id);
     await deleteInvoicePurchase(id);
   }
-  // Riwayat pembayaran dan pembelian ikut terhapus bersama pelanggannya.
+  // Riwayat pembayaran dan pembelian, serta akun portal Subnet, ikut terhapus bersama pelanggannya.
   if (entity.key === "customers") {
     await db.delete(customerPayments).where(eq(customerPayments.customerId, id));
     await db.delete(customerPurchases).where(eq(customerPurchases.customerId, id));
+    await db.delete(subnetAccounts).where(eq(subnetAccounts.customerId, id));
   }
   await db.delete(tables[entity.key]).where(eq(tables[entity.key].id, id));
   return { ok: true, message: "Data dihapus." };

@@ -18,7 +18,9 @@ export function invoiceTotals(items: InvoiceItem[], taxRate: number) {
 }
 
 /** Alamat publik invoice untuk pelanggan: /invoice/<id>/<kode>; tanpa kode yang cocok halamannya tidak ditemukan. */
-export const invoicePublicUrl = (id: string) => absoluteUrl(`/invoice/${id}/${linkCode(`invoice:${id}`)}`);
+export const invoicePublicPath = (id: string) => `/invoice/${id}/${linkCode(`invoice:${id}`)}`;
+
+export const invoicePublicUrl = (id: string) => absoluteUrl(invoicePublicPath(id));
 
 /**
  * Tautan wa.me ke nomor telepon invoice dengan pesan berisi rincian tagihan dan tautan ke invoicenya,

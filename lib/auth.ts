@@ -13,7 +13,7 @@ const adminPassword = () => process.env.ADMIN_PASSWORD ?? "";
 
 export const credentialsConfigured = () => Boolean(adminEmail()) && adminPassword().length >= minPasswordLength;
 
-function secret() {
+export function secret() {
   const value = process.env.SESSION_SECRET;
   if (value) return value;
   if (process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET belum diatur.");
