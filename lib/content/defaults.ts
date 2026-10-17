@@ -17,6 +17,7 @@ export const defaultContent: ContentMap = {
       { label: "Bantuan", href: "/bantuan" },
       { label: "Tentang Kami", href: "/tentang-kami" },
       { label: "Berita", href: "/berita" },
+      { label: "SUBNET", href: "/subnet/login" },
     ],
     navCtaLabel: "Daftar Sekarang",
     navCtaHref: "/formulir-registrasi",

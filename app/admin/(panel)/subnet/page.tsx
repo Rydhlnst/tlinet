@@ -1,4 +1,4 @@
-import { asc, count, eq, sql } from "drizzle-orm";
+import { asc, count, desc, eq, ne, sql } from "drizzle-orm";
 import { ExternalLink, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -27,7 +27,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
   const keywords = ((Array.isArray(query) ? query[0] : query) ?? "").trim().slice(0, 80);
   const db = requireDb();
 
-  const [all, invoiceStats] = await Promise.all([
+  const [all, invoiceStats, invoiceEmails] = await Promise.all([
     db
       .select({
         id: customers.id,
@@ -35,7 +35,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         company: customers.company,
         phone: customers.phone,
         siteId: customers.siteId,
-        username: subnetAccounts.username,
+        email: subnetAccounts.email,
         active: subnetAccounts.active,
         lastLoginAt: subnetAccounts.lastLoginAt,
       })
@@ -51,17 +51,21 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
       })
       .from(invoices)
       .groupBy(invoices.customerId),
+    // Usulan email akses: email di invoice terbaru pelanggan.
+    db.select({ customerId: invoices.customerId, email: invoices.email }).from(invoices).where(ne(invoices.email, "")).orderBy(desc(invoices.issueDate)),
   ]);
+  const emailOf = new Map<string, string>();
+  for (const row of invoiceEmails) if (!emailOf.has(row.customerId)) emailOf.set(row.customerId, row.email);
   const statsOf = new Map(invoiceStats.map((row) => [row.customerId, row]));
   const portalUrl = absoluteUrl("/subnet/login");
 
   const term = keywords.toLowerCase();
   const rows = all
     .map((row) => ({ ...row, title: row.company || row.name }))
-    .filter((row) => !term || `${row.name} ${row.company} ${row.siteId} ${row.username ?? ""}`.toLowerCase().includes(term))
+    .filter((row) => !term || `${row.name} ${row.company} ${row.siteId} ${row.email ?? ""}`.toLowerCase().includes(term))
     // Yang sudah punya akses lebih dulu.
-    .sort((a, b) => Number(Boolean(b.username)) - Number(Boolean(a.username)) || a.title.localeCompare(b.title, "id"));
-  const withAccess = all.filter((row) => row.username && row.active).length;
+    .sort((a, b) => Number(Boolean(b.email)) - Number(Boolean(a.email)) || a.title.localeCompare(b.title, "id"));
+  const withAccess = all.filter((row) => row.email && row.active).length;
 
   return (
     <>
@@ -69,7 +73,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Subnet</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Akses portal pelanggan. Pelanggan masuk dengan username dan kata sandi dari sini, lalu bisa melihat dan mengunduh invoicenya sendiri. {withAccess} dari {all.length}{" "}
+            Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length}{" "}
             pelanggan punya akses aktif.
           </p>
         </div>
@@ -96,7 +100,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-4">Pelanggan</TableHead>
               <TableHead>Site ID</TableHead>
-              <TableHead>Username</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Akses</TableHead>
               <TableHead>Invoice</TableHead>
               <TableHead>Login terakhir</TableHead>
@@ -115,9 +119,9 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                     {row.company && <span className="block text-xs text-muted-foreground">{row.name}</span>}
                   </TableCell>
                   <TableCell>{row.siteId || empty}</TableCell>
-                  <TableCell className="font-mono text-xs">{row.username || empty}</TableCell>
+                  <TableCell className="text-sm">{row.email || empty}</TableCell>
                   <TableCell>
-                    {row.username ? <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Aktif" : "Nonaktif"}</Badge> : <Badge variant="outline">Belum ada</Badge>}
+                    {row.email ? <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Aktif" : "Nonaktif"}</Badge> : <Badge variant="outline">Belum ada</Badge>}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {stats ? (
@@ -132,8 +136,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                   <TableCell className="whitespace-nowrap text-muted-foreground">{row.lastLoginAt ? formatDateTime(row.lastLoginAt) : "—"}</TableCell>
                   <TableCell className="pr-4 text-right">
                     <SubnetAccessButton
-                      customer={{ id: row.id, title: row.title, phone: row.phone, siteId: row.siteId }}
-                      account={row.username ? { username: row.username, active: Boolean(row.active) } : null}
+                      customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "" }}
+                      account={row.email ? { email: row.email, active: Boolean(row.active) } : null}
                       portalUrl={portalUrl}
                     />
                   </TableCell>

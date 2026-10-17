@@ -15,8 +15,8 @@ export function SubnetLoginForm() {
   return (
     <form action={action} className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="username">Username</Label>
-        <Input id="username" name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} required autoFocus className="h-10" />
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" name="email" type="email" autoComplete="username" required autoFocus className="h-10" />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="password">Kata sandi</Label>

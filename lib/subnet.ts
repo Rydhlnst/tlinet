@@ -7,13 +7,12 @@ import { secret } from "@/lib/auth";
 import { requireDb } from "@/lib/db";
 import { customers, subnetAccounts } from "@/lib/db/schema";
 
-/** Portal Subnet: pelanggan masuk dengan username dan kata sandi yang dibuat admin, lalu melihat invoicenya sendiri. */
+/** Portal Subnet: pelanggan masuk dengan email dan kata sandi yang dibuat admin, lalu melihat data dan invoicenya sendiri. */
 
 const sessionCookie = "tl_subnet";
 const maxAgeSeconds = 60 * 60 * 24 * 30;
 export const minSubnetPasswordLength = 8;
-/** Huruf kecil, angka, titik, garis bawah, dan tanda hubung; 3–40 karakter. */
-export const subnetUsernamePattern = /^[a-z0-9._-]{3,40}$/;
+export const subnetEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const scrypt = (password: BinaryLike, salt: BinaryLike) =>
   new Promise<Buffer>((resolve, reject) => scryptCallback(password, salt, 32, (error, key) => (error ? reject(error) : resolve(key))));
@@ -49,7 +48,7 @@ export async function destroySubnetSession() {
   (await cookies()).delete(sessionCookie);
 }
 
-export type SubnetUser = { customerId: string; username: string; name: string; company: string };
+export type SubnetUser = { customerId: string; email: string; photoUrl: string };
 
 /** Pelanggan yang sedang masuk ke portal, atau `null`. Akun yang dinonaktifkan atau dihapus admin langsung keluar. */
 export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
@@ -64,7 +63,7 @@ export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
   if (typeof session.id !== "string" || typeof session.exp !== "number" || session.exp <= Date.now()) return null;
 
   const [account] = await requireDb()
-    .select({ customerId: subnetAccounts.customerId, username: subnetAccounts.username, passwordHash: subnetAccounts.passwordHash, active: subnetAccounts.active, name: customers.name, company: customers.company })
+    .select({ customerId: subnetAccounts.customerId, email: subnetAccounts.email, passwordHash: subnetAccounts.passwordHash, active: subnetAccounts.active, photoUrl: subnetAccounts.photoUrl })
     .from(subnetAccounts)
     .innerJoin(customers, eq(customers.id, subnetAccounts.customerId))
     .where(eq(subnetAccounts.customerId, session.id))
@@ -72,7 +71,7 @@ export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
   if (!account?.active) return null;
   const expected = sign(payload, account.passwordHash);
   if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
-  return { customerId: account.customerId, username: account.username, name: account.name, company: account.company };
+  return { customerId: account.customerId, email: account.email, photoUrl: account.photoUrl };
 });
 
 export async function requireSubnetUser() {

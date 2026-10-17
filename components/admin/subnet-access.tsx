@@ -13,34 +13,29 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { whatsappUrl } from "@/lib/format";
 
-export type SubnetCustomer = { id: string; title: string; phone: string; siteId: string };
-export type SubnetAccount = { username: string; active: boolean } | null;
+/** `email`: usulan email untuk akses baru, mis. dari invoice terakhir pelanggan. */
+export type SubnetCustomer = { id: string; title: string; phone: string; email: string };
+export type SubnetAccount = { email: string; active: boolean } | null;
 
 // Tanpa huruf/angka yang mirip (0/O, 1/l/I) supaya mudah diketik ulang pelanggan.
 const passwordAlphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const randomPassword = () => Array.from(crypto.getRandomValues(new Uint32Array(10)), (value) => passwordAlphabet[value % passwordAlphabet.length]).join("");
 
-/** Usulan username: Site ID bila ada, kalau tidak nama PT tanpa awalan "PT"/"CV". */
-function suggestUsername(customer: SubnetCustomer) {
-  const source = customer.siteId || customer.title.replace(/^\s*(pt|cv)\b\.?\s*/i, "");
-  return source.toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 30);
-}
-
 /** Tombol "Buat akses"/"Ubah akses" di menu Subnet beserta dialognya. */
 export function SubnetAccessButton({ customer, account, portalUrl }: { customer: SubnetCustomer; account: SubnetAccount; portalUrl: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [active, setActive] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Setelah disimpan dialog menampilkan data login untuk disalin atau dikirim ke pelanggan.
-  const [saved, setSaved] = useState<{ username: string; password: string } | null>(null);
+  const [saved, setSaved] = useState<{ email: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function openDialog() {
-    setUsername(account?.username ?? suggestUsername(customer));
+    setEmail(account?.email ?? customer.email);
     setPassword(account ? "" : randomPassword());
     setActive(account?.active ?? true);
     setConfirmDelete(false);
@@ -51,13 +46,13 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
 
   function save() {
     startTransition(async () => {
-      const result = await saveSubnetAccessAction(customer.id, { username, password, active });
+      const result = await saveSubnetAccessAction(customer.id, { email, password, active });
       if (!result.ok) {
         toast.error(result.message);
         return;
       }
       toast.success(result.message);
-      setSaved({ username: username.trim().toLowerCase(), password });
+      setSaved({ email: email.trim().toLowerCase(), password });
       router.refresh();
     });
   }
@@ -83,10 +78,10 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
     ? [
         `Halo Bapak/Ibu ${customer.title},`,
         "",
-        "Berikut akses portal Subnet TLINET untuk melihat dan mengunduh invoice Anda:",
+        "Berikut akses portal Subnet TLINET untuk melihat data layanan dan invoice Anda:",
         "",
         `Alamat: ${portalUrl}`,
-        `Username: ${saved.username}`,
+        `Email: ${saved.email}`,
         ...(saved.password ? [`Password: ${saved.password}`] : []),
         "",
         "Terima kasih.",
@@ -150,9 +145,9 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
               }}
             >
               <div className="flex flex-col gap-2">
-                <Label htmlFor="subnet-username">Username</Label>
-                <Input id="subnet-username" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="off" required />
-                <p className="text-xs text-muted-foreground">Huruf kecil, angka, titik, garis bawah, atau tanda hubung, tanpa spasi.</p>
+                <Label htmlFor="subnet-email">Email</Label>
+                <Input id="subnet-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="off" required />
+                <p className="text-xs text-muted-foreground">Dipakai pelanggan untuk masuk ke portal Subnet.</p>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="subnet-password">{account ? "Kata sandi baru" : "Kata sandi"}</Label>

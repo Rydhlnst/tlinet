@@ -171,14 +171,16 @@ const billingColumns = () => ({
 
 /**
  * Akun login portal Subnet (/subnet): satu per pelanggan, dibuat admin dari menu Subnet.
- * Username disimpan huruf kecil; kata sandi hanya disimpan sebagai hash scrypt.
+ * Email disimpan huruf kecil; kata sandi hanya disimpan sebagai hash scrypt.
  */
 export const subnetAccounts = pgTable("subnet_accounts", {
   customerId: text("customer_id").primaryKey(),
-  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   active: boolean("active").notNull().default(true),
   lastLoginAt: timestamp("last_login_at"),
+  /** Foto profil yang diunggah pelanggan dari portal; juga dipasang sebagai foto pertama di Data Pelanggan. */
+  photoUrl: text("photo_url").notNull().default(""),
   ...timestamps,
 });
 

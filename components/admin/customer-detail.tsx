@@ -3,7 +3,7 @@
 import { ArrowLeft, Calculator, ChevronRight, Ellipsis, Eye, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ScrollText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { saveCustomerPhotosAction } from "@/app/admin/actions";
 import {
@@ -22,8 +22,8 @@ import type { AccurateLedger } from "@/lib/accurate";
 import { customerStatusLabels, getEntityDef, invoiceStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
 import type { customerPayments, customerPurchases, customers, invoices as invoiceTable } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { AmountSummary } from "./amount-summary";
+import { customerTones, InfoList, initials, Panel, StatusPill } from "./detail-panels";
 import { MonthlyGenerate } from "./monthly-generate";
 import { uploadImage } from "./image-field";
 import { ProofViewer } from "./proof-viewer";
@@ -40,69 +40,10 @@ export type LedgerState = AccurateLedger | { error: string } | null;
 
 const listPath = "/admin/data/customers";
 
-/** Dua huruf awal nama ("Ahmad Rahman" → "AR"). */
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase();
-
 /** Tanggal hari ini menurut jam perangkat, "YYYY-MM-DD". */
 function today() {
   const now = new Date();
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
-
-const pillTones = {
-  good: ["bg-emerald-50 text-emerald-700", "bg-emerald-500"],
-  warn: ["bg-amber-50 text-amber-700", "bg-amber-500"],
-  bad: ["bg-red-50 text-red-700", "bg-red-500"],
-  muted: ["bg-muted text-muted-foreground", "bg-muted-foreground/60"],
-};
-
-const customerTones: Record<string, keyof typeof pillTones> = { active: "good", inactive: "muted", suspended: "bad", relocation: "warn" };
-
-function StatusPill({ tone, children }: { tone: keyof typeof pillTones; children: ReactNode }) {
-  const [surface, dot] = pillTones[tone];
-  return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", surface)}>
-      <span className={cn("size-1.5 rounded-full", dot)} aria-hidden="true" />
-      {children}
-    </span>
-  );
-}
-
-function Panel({ icon: Icon, title, action, children, className }: { icon: LucideIcon; title: string; action?: ReactNode; children: ReactNode; className?: string }) {
-  return (
-    <section className={cn("rounded-xl border bg-card", className)}>
-      <div className="flex min-h-14 items-center justify-between gap-3 border-b px-5 py-3">
-        <h2 className="flex items-center gap-2.5 text-base font-semibold">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand-ink">
-            <Icon className="size-4" />
-          </span>
-          {title}
-        </h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function InfoList({ items }: { items: [label: string, value: ReactNode][] }) {
-  return (
-    <dl className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-x-4 gap-y-3 p-5 text-sm">
-      {items.map(([label, value]) => (
-        <div key={label} className="contents">
-          <dt className="text-muted-foreground">{label}</dt>
-          <dd className="font-medium break-words">{value || <span className="font-normal text-muted-foreground">—</span>}</dd>
-        </div>
-      ))}
-    </dl>
-  );
 }
 
 /** Panel riwayat bulanan (pembayaran atau pembelian) beserta form tambah/ubah dan konfirmasi hapusnya. */
