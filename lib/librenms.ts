@@ -107,14 +107,90 @@ export async function getPortGraph(portId: number, range: TrafficRange) {
   }
 }
 
-/** "112,09 Mbps" dari bit per detik. */
-export function formatBitrate(bps: number) {
-  const units = ["bps", "Kbps", "Mbps", "Gbps"];
-  let value = bps;
-  let unit = 0;
-  while (value >= 1000 && unit < units.length - 1) {
-    value /= 1000;
-    unit += 1;
+/*
+ * Real time: penghitung oktet port dibaca langsung dari router lewat SNMP oleh LibreNMS (/realtime/data/{port}), seperti tab
+ * "Real time" di LibreNMS. Rute itu hanya untuk sesi login web, bukan token API, jadi server masuk dengan user LibreNMS
+ * khusus (sebaiknya hanya bisa membaca, tanpa 2FA) dari LIBRENMS_USERNAME dan LIBRENMS_PASSWORD.
+ */
+
+const webUser = () => process.env.LIBRENMS_USERNAME?.trim() ?? "";
+const webPassword = () => process.env.LIBRENMS_PASSWORD ?? "";
+
+export const realtimeConfigured = () => Boolean(webUser() && webPassword());
+
+/** Cookie sesi LibreNMS, dipakai ulang selama instance server hidup. Sesi Laravel bawaannya berlaku 2 jam. */
+let webSession: { cookie: string; expires: number } | null = null;
+let pendingLogin: Promise<string | null> | null = null;
+
+function collectCookies(response: Response, jar: Map<string, string>) {
+  for (const header of response.headers.getSetCookie()) {
+    const pair = header.split(";")[0];
+    const split = pair.indexOf("=");
+    if (split > 0) jar.set(pair.slice(0, split), pair.slice(split + 1));
   }
-  return `${value.toLocaleString("id-ID", { maximumFractionDigits: value < 10 ? 2 : 1 })} ${units[unit]}`;
+  return [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
+}
+
+async function login(): Promise<string | null> {
+  try {
+    const jar = new Map<string, string>();
+    const page = await fetch(`${baseUrl}/login`, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
+    let cookie = collectCookies(page, jar);
+    const token = (await page.text()).match(/name="_token" value="([^"]+)"/)?.[1];
+    if (!token) return null;
+    const response = await fetch(`${baseUrl}/login`, {
+      method: "POST",
+      redirect: "manual",
+      cache: "no-store",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookie },
+      body: new URLSearchParams({ _token: token, username: webUser(), password: webPassword() }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    cookie = collectCookies(response, jar);
+    // Berhasil: dialihkan ke halaman selain /login. Gagal: kembali ke /login.
+    const location = response.headers.get("location") ?? "";
+    if (response.status !== 302 || /\/login(\?|$)/.test(location)) {
+      console.error("[librenms] login gagal", response.status);
+      return null;
+    }
+    return cookie;
+  } catch (error) {
+    console.error("[librenms] login", error);
+    return null;
+  }
+}
+
+async function sessionCookie(forceNew = false) {
+  if (!forceNew && webSession && webSession.expires > Date.now()) return webSession.cookie;
+  pendingLogin ??= login().finally(() => (pendingLogin = null));
+  const cookie = await pendingLogin;
+  webSession = cookie ? { cookie, expires: Date.now() + 90 * 60_000 } : null;
+  return cookie;
+}
+
+/** Penghitung oktet masuk/keluar port saat ini (string, karena bisa melebihi batas angka JavaScript), atau `null`. */
+export async function getRealtimeCounters(portId: number): Promise<{ time: number; in: string; out: string } | null> {
+  if (!realtimeConfigured()) return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const cookie = await sessionCookie(attempt > 0);
+    if (!cookie) return null;
+    try {
+      const response = await fetch(`${baseUrl}/realtime/data/${portId}`, {
+        headers: { Cookie: cookie, Accept: "text/plain" },
+        redirect: "manual",
+        cache: "no-store",
+        signal: AbortSignal.timeout(10_000),
+      });
+      // Sesi kedaluwarsa: LibreNMS mengalihkan ke /login; masuk ulang sekali.
+      if (response.status === 302 || response.status === 401 || response.status === 419) continue;
+      if (!response.ok) return null;
+      const [time, inOctets, outOctets] = (await response.text()).trim().split("|");
+      if (!/^\d+$/.test(inOctets ?? "") || !/^\d+$/.test(outOctets ?? "")) return null;
+      return { time: Number(time), in: inOctets, out: outOctets };
+    } catch (error) {
+      console.error("[librenms] realtime", portId, error);
+      return null;
+    }
+  }
+  return null;
 }

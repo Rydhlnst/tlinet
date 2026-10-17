@@ -61,3 +61,15 @@ export function whatsappUrl(number: string, message = "") {
 export function resolveHref(href: string, whatsapp: string) {
   return href === "whatsapp" ? whatsapp : href || "#";
 }
+
+/** "112,09 Mbps" dari bit per detik. */
+export function formatBitrate(bps: number) {
+  const units = ["bps", "Kbps", "Mbps", "Gbps"];
+  let value = bps;
+  let unit = 0;
+  while (value >= 1000 && unit < units.length - 1) {
+    value /= 1000;
+    unit += 1;
+  }
+  return `${value.toLocaleString("id-ID", { maximumFractionDigits: value < 10 ? 2 : 1 })} ${units[unit]}`;
+}

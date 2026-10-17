@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { customerTones, InfoList, Panel, StatusPill } from "@/components/admin/detail-panels";
 import { Brand } from "@/components/site/brand";
+import { RealtimeTraffic } from "@/components/site/realtime-traffic";
 import { SubnetPing } from "@/components/site/subnet-ping";
 import { SubnetAddressButton, SubnetPhoto } from "@/components/site/subnet-profile";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,9 @@ import { customerStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
 import { customerPayments, customers, invoices } from "@/lib/db/schema";
-import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
+import { formatBitrate, formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { invoicePublicPath } from "@/lib/invoices";
-import { formatBitrate, getPortTraffic, trafficRanges, type TrafficRange } from "@/lib/librenms";
+import { getPortTraffic, realtimeConfigured, trafficRanges, type TrafficRange } from "@/lib/librenms";
 import { requireSubnetUser } from "@/lib/subnet";
 import { cn } from "@/lib/utils";
 import { subnetLogoutAction } from "./actions";
@@ -44,8 +45,17 @@ const empty = <span className="text-muted-foreground">—</span>;
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
 
 /** Kecepatan terakhir dan grafik trafik port pelanggan dari LibreNMS. Download = trafik keluar port menuju pelanggan. */
-async function TrafficPanel({ portId, range }: { portId: number | null; range: TrafficRange }) {
-  const traffic = portId ? await getPortTraffic(portId) : null;
+type TrafficView = TrafficRange | "realtime";
+
+async function TrafficPanel({ portId, view }: { portId: number | null; view: TrafficView }) {
+  const realtime = view === "realtime";
+  const range: TrafficRange = realtime ? "day" : view;
+  const traffic = portId && !realtime ? await getPortTraffic(portId) : null;
+  // "Real time" hanya muncul bila server punya user LibreNMS untuk membaca router secara langsung.
+  const tabs: { key: TrafficView; label: string }[] = [
+    ...(realtimeConfigured() ? [{ key: "realtime" as const, label: "Real time" }] : []),
+    ...(Object.keys(trafficRanges) as TrafficRange[]).map((key) => ({ key, label: trafficRanges[key].label })),
+  ];
   return (
     <Panel
       icon={Activity}
@@ -53,15 +63,15 @@ async function TrafficPanel({ portId, range }: { portId: number | null; range: T
       action={
         portId ? (
           <nav className="flex rounded-lg border p-0.5 text-xs" aria-label="Rentang grafik">
-            {(Object.keys(trafficRanges) as TrafficRange[]).map((key) => (
+            {tabs.map(({ key, label }) => (
               <Link
                 key={key}
                 href={key === "day" ? "/subnet" : `/subnet?trafik=${key}`}
                 scroll={false}
-                aria-current={key === range ? "page" : undefined}
-                className={cn("rounded-md px-2.5 py-1 font-medium", key === range ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                aria-current={key === view ? "page" : undefined}
+                className={cn("rounded-md px-2.5 py-1 font-medium whitespace-nowrap", key === view ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
               >
-                {trafficRanges[key].label}
+                {label}
               </Link>
             ))}
           </nav>
@@ -70,6 +80,8 @@ async function TrafficPanel({ portId, range }: { portId: number | null; range: T
     >
       {!portId ? (
         <p className="px-5 py-10 text-center text-sm text-muted-foreground">Grafik trafik belum diatur. Silakan hubungi admin TLINET.</p>
+      ) : realtime ? (
+        <RealtimeTraffic />
       ) : (
         <div className="flex flex-col gap-4 p-5">
           {traffic ? (
@@ -118,7 +130,7 @@ async function TrafficPanel({ portId, range }: { portId: number | null; range: T
 export default async function SubnetHomePage({ searchParams }: PageProps<"/subnet">) {
   const user = await requireSubnetUser();
   const trafik = (await searchParams).trafik;
-  const range: TrafficRange = typeof trafik === "string" && trafik in trafficRanges ? (trafik as TrafficRange) : "day";
+  const view: TrafficView = trafik === "realtime" && realtimeConfigured() ? "realtime" : typeof trafik === "string" && trafik in trafficRanges ? (trafik as TrafficRange) : "day";
   const db = requireDb();
   const [settings, invoiceSettings, [customer], invoiceList, payments] = await Promise.all([
     getContent("settings"),
@@ -215,14 +227,14 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
 
         {/* Data LibreNMS dimuat terpisah supaya bagian lain halaman tidak ikut menunggu. */}
         <Suspense
-          key={range}
+          key={view}
           fallback={
             <Panel icon={Activity} title="Trafik Internet">
               <p className="px-5 py-16 text-center text-sm text-muted-foreground">Memuat data trafik…</p>
             </Panel>
           }
         >
-          <TrafficPanel portId={user.portId} range={range} />
+          <TrafficPanel portId={user.portId} view={view} />
         </Suspense>
 
         {user.pingTarget && (
