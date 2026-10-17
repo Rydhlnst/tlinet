@@ -2,7 +2,7 @@
 
 import { Check, Copy, KeyRound, LoaderCircle, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { createContext, useContext, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { deleteSubnetAccessAction, saveSubnetAccessAction } from "@/app/admin/subnet-actions";
 import { WhatsAppIcon } from "@/components/site/whatsapp-float";
@@ -13,9 +13,18 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { whatsappUrl } from "@/lib/format";
 
-/** `email`: usulan email untuk akses baru, mis. dari invoice terakhir pelanggan. */
-export type SubnetCustomer = { id: string; title: string; phone: string; email: string };
-export type SubnetAccount = { email: string; active: boolean } | null;
+/** `email` dan `portId`: usulan untuk akses baru, dari invoice terakhir dan nomor VLAN pelanggan. */
+export type SubnetCustomer = { id: string; title: string; phone: string; email: string; portId: number | null };
+export type SubnetAccount = { email: string; active: boolean; portId: number | null } | null;
+export type SubnetPortOption = { portId: number; device: string; name: string; up: boolean };
+
+// Daftar port LibreNMS dikirim sekali untuk seluruh tabel, bukan per baris.
+const PortsContext = createContext<SubnetPortOption[] | null>(null);
+
+/** `ports` null berarti LibreNMS belum diatur (API_LIBRE_NMS kosong) atau sedang tidak bisa dijangkau. */
+export function SubnetPortsProvider({ ports, children }: { ports: SubnetPortOption[] | null; children: ReactNode }) {
+  return <PortsContext.Provider value={ports}>{children}</PortsContext.Provider>;
+}
 
 // Tanpa huruf/angka yang mirip (0/O, 1/l/I) supaya mudah diketik ulang pelanggan.
 const passwordAlphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -28,6 +37,8 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [active, setActive] = useState(true);
+  const [portId, setPortId] = useState("");
+  const ports = useContext(PortsContext);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Setelah disimpan dialog menampilkan data login untuk disalin atau dikirim ke pelanggan.
   const [saved, setSaved] = useState<{ email: string; password: string } | null>(null);
@@ -38,6 +49,7 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
     setEmail(account?.email ?? customer.email);
     setPassword(account ? "" : randomPassword());
     setActive(account?.active ?? true);
+    setPortId(String((account ? account.portId : customer.portId) ?? ""));
     setConfirmDelete(false);
     setSaved(null);
     setCopied(false);
@@ -46,7 +58,7 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
 
   function save() {
     startTransition(async () => {
-      const result = await saveSubnetAccessAction(customer.id, { email, password, active });
+      const result = await saveSubnetAccessAction(customer.id, { email, password, active, portId: portId ? Number(portId) : null });
       if (!result.ok) {
         toast.error(result.message);
         return;
@@ -165,6 +177,32 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">Minimal 8 karakter. Mengganti kata sandi membuat pelanggan keluar dari portal.</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="subnet-port">Grafik trafik (MRTG)</Label>
+                <select
+                  id="subnet-port"
+                  value={portId}
+                  onChange={(event) => setPortId(event.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <option value="">Tidak ditampilkan</option>
+                  {[...new Set((ports ?? []).map((port) => port.device))].map((device) => (
+                    <optgroup key={device} label={device}>
+                      {ports!.filter((port) => port.device === device).map((port) => (
+                        <option key={port.portId} value={port.portId}>
+                          {port.name}
+                          {port.up ? "" : " (down)"}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  {/* Port tersimpan yang tidak ada di daftar (mis. LibreNMS sedang tak terjangkau) tetap terpilih. */}
+                  {portId && !ports?.some((port) => String(port.portId) === portId) && <option value={portId}>Port #{portId}</option>}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  {ports ? "Port VLAN pelanggan di LibreNMS. Grafiknya tampil di portal pelanggan." : "Daftar port LibreNMS tidak bisa dimuat. Periksa API_LIBRE_NMS."}
+                </p>
               </div>
               <label className="flex items-center justify-between gap-4 rounded-lg border p-3">
                 <span>

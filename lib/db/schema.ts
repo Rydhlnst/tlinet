@@ -181,6 +181,8 @@ export const subnetAccounts = pgTable("subnet_accounts", {
   lastLoginAt: timestamp("last_login_at"),
   /** Foto profil yang diunggah pelanggan dari portal; juga dipasang sebagai foto pertama di Data Pelanggan. */
   photoUrl: text("photo_url").notNull().default(""),
+  /** Port LibreNMS (MRTG) yang grafik trafiknya tampil di portal; dipilih admin di menu Subnet. */
+  librenmsPortId: integer("librenms_port_id"),
   ...timestamps,
 });
 

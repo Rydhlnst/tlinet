@@ -2,7 +2,7 @@ import { asc, count, desc, eq, ne, sql } from "drizzle-orm";
 import { ExternalLink, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SubnetAccessButton } from "@/components/admin/subnet-access";
+import { SubnetAccessButton, SubnetPortsProvider } from "@/components/admin/subnet-access";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { requireAdmin } from "@/lib/auth";
 import { requireDb } from "@/lib/db";
 import { customers, invoices, subnetAccounts } from "@/lib/db/schema";
 import { formatDateTime, formatRupiah } from "@/lib/format";
+import { librenmsConfigured, listLibrenmsPorts, suggestPort } from "@/lib/librenms";
 import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = { title: "Subnet" };
@@ -19,7 +20,7 @@ const empty = <span className="text-muted-foreground">—</span>;
 
 /**
  * Akses portal Subnet per pelanggan. Daftar pelanggannya dari Data Pelanggan dan jumlah invoicenya dari menu Invoice;
- * yang disimpan di sini hanya username, kata sandi, dan status aksesnya.
+ * yang disimpan di sini hanya email, kata sandi, status akses, dan port LibreNMS untuk grafik trafiknya.
  */
 export default async function SubnetPage({ searchParams }: PageProps<"/admin/subnet">) {
   await requireAdmin();
@@ -27,7 +28,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
   const keywords = ((Array.isArray(query) ? query[0] : query) ?? "").trim().slice(0, 80);
   const db = requireDb();
 
-  const [all, invoiceStats, invoiceEmails] = await Promise.all([
+  const [all, invoiceStats, invoiceEmails, ports] = await Promise.all([
     db
       .select({
         id: customers.id,
@@ -35,7 +36,9 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         company: customers.company,
         phone: customers.phone,
         siteId: customers.siteId,
+        vlan: customers.vlan,
         email: subnetAccounts.email,
+        portId: subnetAccounts.librenmsPortId,
         active: subnetAccounts.active,
         lastLoginAt: subnetAccounts.lastLoginAt,
       })
@@ -53,7 +56,9 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
       .groupBy(invoices.customerId),
     // Usulan email akses: email di invoice terbaru pelanggan.
     db.select({ customerId: invoices.customerId, email: invoices.email }).from(invoices).where(ne(invoices.email, "")).orderBy(desc(invoices.issueDate)),
+    librenmsConfigured() ? listLibrenmsPorts() : Promise.resolve([]),
   ]);
+  const portName = new Map(ports.map((port) => [port.portId, port.name]));
   const emailOf = new Map<string, string>();
   for (const row of invoiceEmails) if (!emailOf.has(row.customerId)) emailOf.set(row.customerId, row.email);
   const statsOf = new Map(invoiceStats.map((row) => [row.customerId, row]));
@@ -73,7 +78,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Subnet</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length}{" "}
+            Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, grafik trafik, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length}{" "}
             pelanggan punya akses aktif.
           </p>
         </div>
@@ -85,6 +90,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         </Button>
       </div>
 
+      <SubnetPortsProvider ports={ports.length ? ports : null}>
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="flex items-center justify-between gap-3 border-b p-3">
           <form className="relative w-full max-w-xs" role="search">
@@ -102,6 +108,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
               <TableHead>Site ID</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Akses</TableHead>
+              <TableHead>Grafik trafik</TableHead>
               <TableHead>Invoice</TableHead>
               <TableHead>Login terakhir</TableHead>
               <TableHead className="pr-4 text-right">Aksi</TableHead>
@@ -123,6 +130,9 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                   <TableCell>
                     {row.email ? <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Aktif" : "Nonaktif"}</Badge> : <Badge variant="outline">Belum ada</Badge>}
                   </TableCell>
+                  <TableCell className="max-w-48 truncate text-xs" title={row.portId ? portName.get(row.portId) : undefined}>
+                    {row.portId ? (portName.get(row.portId) ?? `Port #${row.portId}`) : empty}
+                  </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {stats ? (
                       <>
@@ -136,8 +146,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                   <TableCell className="whitespace-nowrap text-muted-foreground">{row.lastLoginAt ? formatDateTime(row.lastLoginAt) : "—"}</TableCell>
                   <TableCell className="pr-4 text-right">
                     <SubnetAccessButton
-                      customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "" }}
-                      account={row.email ? { email: row.email, active: Boolean(row.active) } : null}
+                      customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", portId: suggestPort(row.vlan, ports)?.portId ?? null }}
+                      account={row.email ? { email: row.email, active: Boolean(row.active), portId: row.portId } : null}
                       portalUrl={portalUrl}
                     />
                   </TableCell>
@@ -146,7 +156,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
             })}
             {rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                   {keywords ? "Tidak ada pelanggan yang cocok dengan pencarian." : "Belum ada pelanggan di Data Pelanggan."}
                 </TableCell>
               </TableRow>
@@ -154,6 +164,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
           </TableBody>
         </Table>
       </div>
+      </SubnetPortsProvider>
     </>
   );
 }

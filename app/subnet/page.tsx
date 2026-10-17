@@ -1,8 +1,9 @@
 import { desc, eq } from "drizzle-orm";
-import { FileText, LogOut, MapPin, ReceiptText, ScrollText, User, Wifi } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, FileText, LogOut, MapPin, ReceiptText, ScrollText, User, Wifi } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { customerTones, InfoList, Panel, StatusPill } from "@/components/admin/detail-panels";
 import { Brand } from "@/components/site/brand";
 import { SubnetAddressButton, SubnetPhoto } from "@/components/site/subnet-profile";
@@ -14,7 +15,9 @@ import { requireDb } from "@/lib/db";
 import { customerPayments, customers, invoices } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { invoicePublicPath } from "@/lib/invoices";
+import { formatBitrate, getPortTraffic, trafficRanges, type TrafficRange } from "@/lib/librenms";
 import { requireSubnetUser } from "@/lib/subnet";
+import { cn } from "@/lib/utils";
 import { subnetLogoutAction } from "./actions";
 
 export const metadata: Metadata = { title: "Portal Subnet", robots: { index: false } };
@@ -37,8 +40,84 @@ const empty = <span className="text-muted-foreground">—</span>;
  * Portal pelanggan: data pelanggan (tanpa biaya ke NAP dan selisih keuntungan), invoice, dan history pembayarannya.
  * Semuanya hanya bisa dilihat; yang bisa diubah pelanggan hanya foto profil dan alamat.
  */
-export default async function SubnetHomePage() {
+const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
+
+/** Kecepatan terakhir dan grafik trafik port pelanggan dari LibreNMS. Download = trafik keluar port menuju pelanggan. */
+async function TrafficPanel({ portId, range }: { portId: number | null; range: TrafficRange }) {
+  const traffic = portId ? await getPortTraffic(portId) : null;
+  return (
+    <Panel
+      icon={Activity}
+      title="Trafik Internet"
+      action={
+        portId ? (
+          <nav className="flex rounded-lg border p-0.5 text-xs" aria-label="Rentang grafik">
+            {(Object.keys(trafficRanges) as TrafficRange[]).map((key) => (
+              <Link
+                key={key}
+                href={key === "day" ? "/subnet" : `/subnet?trafik=${key}`}
+                scroll={false}
+                aria-current={key === range ? "page" : undefined}
+                className={cn("rounded-md px-2.5 py-1 font-medium", key === range ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+              >
+                {trafficRanges[key].label}
+              </Link>
+            ))}
+          </nav>
+        ) : undefined
+      }
+    >
+      {!portId ? (
+        <p className="px-5 py-10 text-center text-sm text-muted-foreground">Grafik trafik belum diatur. Silakan hubungi admin TLINET.</p>
+      ) : (
+        <div className="flex flex-col gap-4 p-5">
+          {traffic ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border p-3">
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <ArrowDown className="size-3.5 text-brand-ink" /> Download saat ini
+                </p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">{formatBitrate(traffic.outBps)}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <ArrowUp className="size-3.5 text-emerald-600" /> Upload saat ini
+                </p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">{formatBitrate(traffic.inBps)}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Status koneksi</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <StatusPill tone={traffic.up ? "good" : "bad"}>{traffic.up ? "Terhubung" : "Terputus"}</StatusPill>
+                  {traffic.polledAt && <span className="text-xs text-muted-foreground">pukul {timeFormat.format(traffic.polledAt)} WITA</span>}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Data trafik sedang tidak bisa diambil. Coba muat ulang beberapa saat lagi.</p>
+          )}
+          {/* Di HP grafiknya kecil; ketuk untuk membukanya dalam ukuran penuh. */}
+          <a href={`/subnet/traffic?range=${range}`} target="_blank" rel="noopener" title="Buka grafik ukuran penuh">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/subnet/traffic?range=${range}`}
+              alt={`Grafik trafik ${trafficRanges[range].label} terakhir`}
+              width={1000}
+              height={300}
+              className="h-auto w-full rounded-lg border bg-white"
+            />
+          </a>
+          {traffic?.name && <p className="text-xs text-muted-foreground">Port {traffic.name} · sumber MRTG (LibreNMS)</p>}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+export default async function SubnetHomePage({ searchParams }: PageProps<"/subnet">) {
   const user = await requireSubnetUser();
+  const trafik = (await searchParams).trafik;
+  const range: TrafficRange = typeof trafik === "string" && trafik in trafficRanges ? (trafik as TrafficRange) : "day";
   const db = requireDb();
   const [settings, invoiceSettings, [customer], invoiceList, payments] = await Promise.all([
     getContent("settings"),
@@ -132,6 +211,18 @@ export default async function SubnetHomePage() {
             />
           </Panel>
         </div>
+
+        {/* Data LibreNMS dimuat terpisah supaya bagian lain halaman tidak ikut menunggu. */}
+        <Suspense
+          key={range}
+          fallback={
+            <Panel icon={Activity} title="Trafik Internet">
+              <p className="px-5 py-16 text-center text-sm text-muted-foreground">Memuat data trafik…</p>
+            </Panel>
+          }
+        >
+          <TrafficPanel portId={user.portId} range={range} />
+        </Suspense>
 
         <Panel icon={MapPin} title="Alamat Lengkap" action={<SubnetAddressButton value={{ address: customer.address, district: customer.district, regency: customer.regency, province: customer.province }} />}>
           <div className="flex flex-col gap-1.5 p-5 text-sm leading-relaxed">
