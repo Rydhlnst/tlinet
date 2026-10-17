@@ -33,6 +33,14 @@ export function credentialsMatch(email: string, password: string) {
 // Kata sandi ikut menjadi kunci tanda tangan, sehingga menggantinya di env mengakhiri semua sesi lama.
 const sign = (payload: string) => createHmac("sha256", `${secret()}:${adminPassword()}`).update(payload).digest("base64url");
 
+/**
+ * Kode rahasia tautan publik, mis. invoice yang dibagikan ke pelanggan. Tidak bisa ditebak tanpa SESSION_SECRET dan,
+ * berbeda dengan sesi, tetap berlaku walau kata sandi admin diganti.
+ */
+export const linkCode = (value: string) => createHmac("sha256", secret()).update(`link:${value}`).digest("base64url").slice(0, 22);
+
+export const linkCodeMatches = (value: string, code: string) => timingSafeEqual(digest(code), digest(linkCode(value)));
+
 function readSession(value: string | undefined) {
   if (!value) return null;
   const [payload, signature] = value.split(".");

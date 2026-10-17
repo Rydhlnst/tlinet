@@ -1,9 +1,11 @@
 import { and, eq, like, ne } from "drizzle-orm";
+import { linkCode } from "@/lib/auth";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
 import type { InvoiceSettings } from "@/lib/content/types";
 import { customers, invoices, type InvoiceItem } from "@/lib/db/schema";
 import { formatDate, formatRupiah, whatsappUrl } from "@/lib/format";
+import { absoluteUrl } from "@/lib/seo";
 
 /** Jatuh tempo bawaan, dihitung dari tanggal terbit. */
 const dueInDays = 14;
@@ -15,12 +17,16 @@ export function invoiceTotals(items: InvoiceItem[], taxRate: number) {
   return { subtotal, tax, total: subtotal + tax };
 }
 
+/** Alamat publik invoice untuk pelanggan: /invoice/<id>/<kode>; tanpa kode yang cocok halamannya tidak ditemukan. */
+export const invoicePublicUrl = (id: string) => absoluteUrl(`/invoice/${id}/${linkCode(`invoice:${id}`)}`);
+
 /**
- * Tautan wa.me ke nomor telepon invoice dengan pesan berisi rincian tagihannya, atau kosong bila nomornya tidak ada.
- * WhatsApp tidak bisa melampirkan berkas lewat tautan, jadi PDF invoicenya dilampirkan sendiri di chat.
+ * Tautan wa.me ke nomor telepon invoice dengan pesan berisi rincian tagihan dan tautan ke invoicenya,
+ * atau kosong bila nomornya tidak ada.
  */
 export function invoiceWhatsappUrl(invoice: typeof invoices.$inferSelect, settings: InvoiceSettings) {
   if (!invoice.phone.replace(/\D/g, "")) return "";
+  const link = ["", "Lihat detail dan unduh invoice Anda di sini:", invoicePublicUrl(invoice.id)];
   const items = invoice.items.map((item) => item.description.trim()).filter(Boolean).join(", ");
   const details = [
     `Nomor Invoice: ${invoice.number}`,
@@ -34,8 +40,8 @@ export function invoiceWhatsappUrl(invoice: typeof invoices.$inferSelect, settin
       : [];
   const lines =
     invoice.status === "paid"
-      ? ["Pembayaran untuk tagihan berikut sudah kami terima:", "", ...details]
-      : ["Berikut saya kirimkan rincian tagihan Anda:", "", ...details, `Jatuh Tempo: ${formatDate(invoice.dueDate)}`, ...bank, "", "Rincian invoice lengkap terlampir dalam bentuk PDF."];
+      ? ["Pembayaran untuk tagihan berikut sudah kami terima:", "", ...details, ...link]
+      : ["Berikut saya kirimkan rincian tagihan Anda:", "", ...details, `Jatuh Tempo: ${formatDate(invoice.dueDate)}`, ...link, ...bank];
   return whatsappUrl(invoice.phone, [`Halo Bapak/Ibu ${invoice.companyName},`, "", ...lines, "", "Terima kasih."].join("\n"));
 }
 
