@@ -36,7 +36,7 @@ export function StatusPill({ tone, children }: { tone: keyof typeof pillTones; c
 export function Panel({ icon: Icon, title, action, children, className }: { icon: LucideIcon; title: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <section className={cn("rounded-xl border bg-card", className)}>
-      <div className="flex min-h-14 items-center justify-between gap-3 border-b px-5 py-3">
+      <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
         <h2 className="flex items-center gap-2.5 text-base font-semibold">
           <span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand-ink">
             <Icon className="size-4" />
