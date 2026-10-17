@@ -37,6 +37,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         phone: customers.phone,
         siteId: customers.siteId,
         vlan: customers.vlan,
+        ipAddress: customers.ipAddress,
+        pingTarget: subnetAccounts.pingTarget,
         email: subnetAccounts.email,
         portId: subnetAccounts.librenmsPortId,
         active: subnetAccounts.active,
@@ -146,8 +148,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                   <TableCell className="whitespace-nowrap text-muted-foreground">{row.lastLoginAt ? formatDateTime(row.lastLoginAt) : "—"}</TableCell>
                   <TableCell className="pr-4 text-right">
                     <SubnetAccessButton
-                      customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", portId: suggestPort(row.vlan, ports)?.portId ?? null }}
-                      account={row.email ? { email: row.email, active: Boolean(row.active), portId: row.portId } : null}
+                      customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", portId: suggestPort(row.vlan, ports)?.portId ?? null, ip: row.ipAddress.split(/[\s/,]/)[0] ?? "" }}
+                      account={row.email ? { email: row.email, active: Boolean(row.active), portId: row.portId, pingTarget: row.pingTarget ?? "" } : null}
                       portalUrl={portalUrl}
                     />
                   </TableCell>

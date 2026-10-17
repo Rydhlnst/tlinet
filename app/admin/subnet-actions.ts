@@ -6,7 +6,7 @@ import { getAdmin } from "@/lib/auth";
 import type { SaveResult } from "@/lib/cms/store";
 import { requireDb } from "@/lib/db";
 import { customers, subnetAccounts } from "@/lib/db/schema";
-import { hashSubnetPassword, minSubnetPasswordLength, subnetEmailPattern } from "@/lib/subnet";
+import { hashSubnetPassword, minSubnetPasswordLength, pingTargetPattern, subnetEmailPattern } from "@/lib/subnet";
 
 const expired: SaveResult = { ok: false, message: "Sesi berakhir. Silakan masuk kembali." };
 
@@ -14,7 +14,7 @@ const expired: SaveResult = { ok: false, message: "Sesi berakhir. Silakan masuk 
  * Membuat atau mengubah akses portal Subnet satu pelanggan. Kata sandi wajib saat akses baru dibuat;
  * saat mengubah, kata sandi kosong berarti tetap memakai yang lama.
  */
-export async function saveSubnetAccessAction(customerId: string, input: { email: string; password: string; active: boolean; portId: number | null }): Promise<SaveResult> {
+export async function saveSubnetAccessAction(customerId: string, input: { email: string; password: string; active: boolean; portId: number | null; pingTarget: string }): Promise<SaveResult> {
   if (!(await getAdmin())) return expired;
   const db = requireDb();
   const email = String(input.email ?? "").trim().toLowerCase();
@@ -34,8 +34,11 @@ export async function saveSubnetAccessAction(customerId: string, input: { email:
   if (!existing && !password) return { ok: false, message: "Isi kata sandi untuk akses baru." };
   if (password && password.length < minSubnetPasswordLength) return { ok: false, message: `Kata sandi minimal ${minSubnetPasswordLength} karakter.` };
 
+  const pingTarget = String(input.pingTarget ?? "").trim();
+  if (pingTarget && !pingTargetPattern.test(pingTarget)) return { ok: false, message: "IP untuk ping.pe tidak valid. Isi satu alamat IP atau hostname, tanpa spasi atau garis miring." };
+
   const portId = Number.isInteger(input.portId) && Number(input.portId) > 0 ? Number(input.portId) : null;
-  const values = { email, active: Boolean(input.active), librenmsPortId: portId, updatedAt: new Date(), ...(password ? { passwordHash: await hashSubnetPassword(password) } : {}) };
+  const values = { email, active: Boolean(input.active), librenmsPortId: portId, pingTarget, updatedAt: new Date(), ...(password ? { passwordHash: await hashSubnetPassword(password) } : {}) };
   if (existing) {
     await db.update(subnetAccounts).set(values).where(eq(subnetAccounts.customerId, customerId));
   } else {

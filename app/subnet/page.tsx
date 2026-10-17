@@ -1,11 +1,12 @@
 import { desc, eq } from "drizzle-orm";
-import { Activity, ArrowDown, ArrowUp, FileText, LogOut, MapPin, ReceiptText, ScrollText, User, Wifi } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, FileText, Gauge, LogOut, MapPin, ReceiptText, ScrollText, User, Wifi } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { customerTones, InfoList, Panel, StatusPill } from "@/components/admin/detail-panels";
 import { Brand } from "@/components/site/brand";
+import { SubnetPing } from "@/components/site/subnet-ping";
 import { SubnetAddressButton, SubnetPhoto } from "@/components/site/subnet-profile";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -223,6 +224,12 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
         >
           <TrafficPanel portId={user.portId} range={range} />
         </Suspense>
+
+        {user.pingTarget && (
+          <Panel icon={Gauge} title="Ping Real-time">
+            <SubnetPing target={user.pingTarget} />
+          </Panel>
+        )}
 
         <Panel icon={MapPin} title="Alamat Lengkap" action={<SubnetAddressButton value={{ address: customer.address, district: customer.district, regency: customer.regency, province: customer.province }} />}>
           <div className="flex flex-col gap-1.5 p-5 text-sm leading-relaxed">

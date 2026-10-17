@@ -183,6 +183,8 @@ export const subnetAccounts = pgTable("subnet_accounts", {
   photoUrl: text("photo_url").notNull().default(""),
   /** Port LibreNMS (MRTG) yang grafik trafiknya tampil di portal; dipilih admin di menu Subnet. */
   librenmsPortId: integer("librenms_port_id"),
+  /** IP atau hostname yang dicek lewat ping.pe di portal; diisi admin di menu Subnet. */
+  pingTarget: text("ping_target").notNull().default(""),
   ...timestamps,
 });
 

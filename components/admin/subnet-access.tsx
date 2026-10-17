@@ -13,9 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { whatsappUrl } from "@/lib/format";
 
-/** `email` dan `portId`: usulan untuk akses baru, dari invoice terakhir dan nomor VLAN pelanggan. */
-export type SubnetCustomer = { id: string; title: string; phone: string; email: string; portId: number | null };
-export type SubnetAccount = { email: string; active: boolean; portId: number | null } | null;
+/** `email`, `portId`, dan `ip`: usulan untuk akses baru, dari invoice terakhir, nomor VLAN, dan IP Address pelanggan. */
+export type SubnetCustomer = { id: string; title: string; phone: string; email: string; portId: number | null; ip: string };
+export type SubnetAccount = { email: string; active: boolean; portId: number | null; pingTarget: string } | null;
 export type SubnetPortOption = { portId: number; device: string; name: string; up: boolean };
 
 // Daftar port LibreNMS dikirim sekali untuk seluruh tabel, bukan per baris.
@@ -38,6 +38,7 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
   const [password, setPassword] = useState("");
   const [active, setActive] = useState(true);
   const [portId, setPortId] = useState("");
+  const [pingTarget, setPingTarget] = useState("");
   const ports = useContext(PortsContext);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Setelah disimpan dialog menampilkan data login untuk disalin atau dikirim ke pelanggan.
@@ -50,6 +51,7 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
     setPassword(account ? "" : randomPassword());
     setActive(account?.active ?? true);
     setPortId(String((account ? account.portId : customer.portId) ?? ""));
+    setPingTarget(account ? account.pingTarget : customer.ip);
     setConfirmDelete(false);
     setSaved(null);
     setCopied(false);
@@ -58,7 +60,7 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
 
   function save() {
     startTransition(async () => {
-      const result = await saveSubnetAccessAction(customer.id, { email, password, active, portId: portId ? Number(portId) : null });
+      const result = await saveSubnetAccessAction(customer.id, { email, password, active, portId: portId ? Number(portId) : null, pingTarget });
       if (!result.ok) {
         toast.error(result.message);
         return;
@@ -203,6 +205,11 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
                 <p className="text-xs text-muted-foreground">
                   {ports ? "Port VLAN pelanggan di LibreNMS. Grafiknya tampil di portal pelanggan." : "Daftar port LibreNMS tidak bisa dimuat. Periksa API_LIBRE_NMS."}
                 </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="subnet-ping">IP untuk cek ping (ping.pe)</Label>
+                <Input id="subnet-ping" value={pingTarget} onChange={(event) => setPingTarget(event.target.value)} placeholder="mis. 103.112.139.131" autoComplete="off" />
+                <p className="text-xs text-muted-foreground">Ping real-time dari berbagai lokasi ke IP ini tampil di portal pelanggan. Kosongkan bila tidak ditampilkan.</p>
               </div>
               <label className="flex items-center justify-between gap-4 rounded-lg border p-3">
                 <span>
