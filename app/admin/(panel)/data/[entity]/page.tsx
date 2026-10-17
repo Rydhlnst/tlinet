@@ -8,6 +8,7 @@ import { customerHistoryKeys, getEntityDef } from "@/lib/cms/entities";
 import { withCustomerData } from "@/lib/cms/linked";
 import { listRecords } from "@/lib/cms/store";
 import { getContent } from "@/lib/data";
+import { invoiceWhatsappUrl } from "@/lib/invoices";
 import { requireDb } from "@/lib/db";
 import { customers, invoices, packageCategories } from "@/lib/db/schema";
 
@@ -47,6 +48,11 @@ export default async function DataPage({ params }: PageProps<"/admin/data/[entit
   const entity = getEntityDef((await params).entity);
   if (!entity) notFound();
   const [rows, options] = await Promise.all([listRecords(entity).then((list) => withCustomerData(entity.key, list)), loadOptions(entity.key)]);
+  if (entity.key === "invoices") {
+    // Tombol WhatsApp per baris; tautannya disusun di sini karena pesannya memakai rekening dari Pengaturan Invoice.
+    const settings = await getContent("invoice");
+    options.whatsappLinks = (rows as (typeof invoices.$inferSelect)[]).map((row) => ({ value: row.id, label: invoiceWhatsappUrl(row, settings) })).filter((link) => link.label);
+  }
 
   return <ResourceManager key={entity.key} entityKey={entity.key} rows={rows} options={options} />;
 }

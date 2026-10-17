@@ -6,11 +6,13 @@ import { notFound } from "next/navigation";
 import { InvoiceDocument } from "@/components/admin/invoice-document";
 import { InvoiceStatusButton } from "@/components/admin/invoice-status-button";
 import { PrintButton } from "@/components/admin/print-button";
+import { WhatsAppIcon } from "@/components/site/whatsapp-float";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
 import { invoices } from "@/lib/db/schema";
+import { invoiceWhatsappUrl } from "@/lib/invoices";
 
 const findInvoice = async (id: string) => (await requireDb().select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
 
@@ -26,6 +28,7 @@ export default async function InvoicePage({ params }: PageProps<"/admin/invoice/
   await requireAdmin();
   const [invoice, settings] = await Promise.all([findInvoice((await params).id), getContent("invoice")]);
   if (!invoice) notFound();
+  const whatsapp = invoiceWhatsappUrl(invoice, settings);
 
   return (
     <div className="flex-1 bg-muted print:bg-white">
@@ -44,6 +47,14 @@ export default async function InvoicePage({ params }: PageProps<"/admin/invoice/
             </Link>
           </Button>
           <InvoiceStatusButton id={invoice.id} paid={invoice.status === "paid"} />
+          {whatsapp && (
+            <Button asChild variant="outline" size="lg" className="bg-background">
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                <WhatsAppIcon className="text-[#1fa855]" />
+                WhatsApp
+              </a>
+            </Button>
+          )}
           <PrintButton />
         </div>
       </div>

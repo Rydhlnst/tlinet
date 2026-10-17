@@ -15,6 +15,7 @@ import { AmountSummary } from "./amount-summary";
 import type { DynamicOptions } from "./field-control";
 import { MonthlyGenerate } from "./monthly-generate";
 import { ProofViewer } from "./proof-viewer";
+import { WhatsAppIcon } from "@/components/site/whatsapp-float";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
 
 function Cell({ column, row, options, entityKey }: { column: Column; row: Row; options: DynamicOptions; entityKey: string }) {
@@ -92,6 +93,9 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
   const amountTotal = amountKey ? visible.reduce((total, row) => total + (Number(row[amountKey]) || 0), 0) : 0;
   // Koleksi berhalaman detail membuka detailnya saat baris diklik; yang lain langsung membuka form ubah.
   const openRow = (row: Row) => (entity.detailPath ? router.push(detailHref(row)) : setEditing({ ...row }));
+  // Tautan kirim lewat WhatsApp per baris (saat ini untuk invoice), disusun di server.
+  const whatsappLinks = options.whatsappLinks;
+  const whatsappOf = (row: Row) => whatsappLinks?.find((link) => link.value === row.id)?.label;
 
   return (
     <div className="flex flex-col gap-6">
@@ -139,7 +143,7 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
                   {column.label}
                 </TableHead>
               ))}
-              <TableHead className={cn("pr-4 text-right", entity.detailPath || entity.detailDialog ? "w-32" : "w-24")}>Aksi</TableHead>
+              <TableHead className={cn("pr-4 text-right", whatsappLinks ? "w-40" : entity.detailPath || entity.detailDialog ? "w-32" : "w-24")}>Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -151,6 +155,13 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
                   </TableCell>
                 ))}
                 <TableCell className="pr-3 text-right whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                  {whatsappOf(row) && (
+                    <Button asChild variant="ghost" size="icon-sm" className="text-[#1fa855] hover:text-[#1fa855]" title="Kirim lewat WhatsApp">
+                      <a href={whatsappOf(row)} target="_blank" rel="noopener noreferrer" aria-label={`Kirim ${titleOf(row)} lewat WhatsApp`}>
+                        <WhatsAppIcon />
+                      </a>
+                    </Button>
+                  )}
                   {entity.detailPath && (
                     <Button asChild variant="ghost" size="icon-sm" aria-label={`Lihat detail ${titleOf(row)}`}>
                       <Link href={detailHref(row)}>

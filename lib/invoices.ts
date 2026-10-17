@@ -1,7 +1,9 @@
 import { and, eq, like, ne } from "drizzle-orm";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
+import type { InvoiceSettings } from "@/lib/content/types";
 import { customers, invoices, type InvoiceItem } from "@/lib/db/schema";
+import { formatDate, formatRupiah, whatsappUrl } from "@/lib/format";
 
 /** Jatuh tempo bawaan, dihitung dari tanggal terbit. */
 const dueInDays = 14;
@@ -11,6 +13,27 @@ export function invoiceTotals(items: InvoiceItem[], taxRate: number) {
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const tax = Math.round((subtotal * taxRate) / 100);
   return { subtotal, tax, total: subtotal + tax };
+}
+
+/**
+ * Tautan wa.me ke nomor telepon invoice dengan pesan berisi ringkasannya, atau kosong bila nomornya tidak ada.
+ * WhatsApp tidak bisa melampirkan berkas lewat tautan, jadi PDF invoicenya dilampirkan sendiri di chat.
+ */
+export function invoiceWhatsappUrl(invoice: typeof invoices.$inferSelect, settings: InvoiceSettings) {
+  if (!invoice.phone.replace(/\D/g, "")) return "";
+  const sender = settings.companyName || "PT Trans Link Internasional";
+  const greeting = `Yth. ${invoice.pic || invoice.companyName},`;
+  const period = invoice.periodStart && invoice.periodEnd ? `Periode: ${formatDate(invoice.periodStart)} – ${formatDate(invoice.periodEnd)}` : "";
+  const details = [`No. Invoice: ${invoice.number}`, period, `Total tagihan: ${formatRupiah(invoice.total)}`].filter(Boolean);
+  const bank =
+    settings.bankName && settings.bankAccountNumber
+      ? ["", "Pembayaran dapat ditransfer ke:", settings.bankName, `No. Rekening: ${settings.bankAccountNumber}`, ...(settings.bankAccountHolder ? [`a.n. ${settings.bankAccountHolder}`] : [])]
+      : [];
+  const lines =
+    invoice.status === "paid"
+      ? [greeting, "", "Terima kasih, pembayaran invoice berikut telah kami terima:", ...details]
+      : [greeting, "", `Berikut tagihan layanan internet dari ${sender}:`, ...details, `Jatuh tempo: ${formatDate(invoice.dueDate)}`, ...bank, "", "Invoice lengkapnya kami lampirkan dalam bentuk PDF. Terima kasih."];
+  return whatsappUrl(invoice.phone, [...lines, "", "Salam,", sender].join("\n"));
 }
 
 /** Nomor berikutnya untuk tahun itu: INV-2026-000001, INV-2026-000002, … */
