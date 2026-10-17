@@ -16,24 +16,27 @@ export function invoiceTotals(items: InvoiceItem[], taxRate: number) {
 }
 
 /**
- * Tautan wa.me ke nomor telepon invoice dengan pesan berisi ringkasannya, atau kosong bila nomornya tidak ada.
+ * Tautan wa.me ke nomor telepon invoice dengan pesan berisi rincian tagihannya, atau kosong bila nomornya tidak ada.
  * WhatsApp tidak bisa melampirkan berkas lewat tautan, jadi PDF invoicenya dilampirkan sendiri di chat.
  */
 export function invoiceWhatsappUrl(invoice: typeof invoices.$inferSelect, settings: InvoiceSettings) {
   if (!invoice.phone.replace(/\D/g, "")) return "";
-  const sender = settings.companyName || "PT Trans Link Internasional";
-  const greeting = `Yth. ${invoice.pic || invoice.companyName},`;
-  const period = invoice.periodStart && invoice.periodEnd ? `Periode: ${formatDate(invoice.periodStart)} – ${formatDate(invoice.periodEnd)}` : "";
-  const details = [`No. Invoice: ${invoice.number}`, period, `Total tagihan: ${formatRupiah(invoice.total)}`].filter(Boolean);
+  const items = invoice.items.map((item) => item.description.trim()).filter(Boolean).join(", ");
+  const details = [
+    `Nomor Invoice: ${invoice.number}`,
+    `Tanggal: ${formatDate(invoice.issueDate)}`,
+    `Nominal: ${formatRupiah(invoice.total)}`,
+    ...(items ? [`Item: ${items}`] : []),
+  ];
   const bank =
     settings.bankName && settings.bankAccountNumber
-      ? ["", "Pembayaran dapat ditransfer ke:", settings.bankName, `No. Rekening: ${settings.bankAccountNumber}`, ...(settings.bankAccountHolder ? [`a.n. ${settings.bankAccountHolder}`] : [])]
+      ? ["", "Pembayaran dapat ditransfer ke:", `Rekening ${settings.bankName}: ${settings.bankAccountNumber}`, ...(settings.bankAccountHolder ? [`a.n. ${settings.bankAccountHolder}`] : [])]
       : [];
   const lines =
     invoice.status === "paid"
-      ? [greeting, "", "Terima kasih, pembayaran invoice berikut telah kami terima:", ...details]
-      : [greeting, "", `Berikut tagihan layanan internet dari ${sender}:`, ...details, `Jatuh tempo: ${formatDate(invoice.dueDate)}`, ...bank, "", "Invoice lengkapnya kami lampirkan dalam bentuk PDF. Terima kasih."];
-  return whatsappUrl(invoice.phone, [...lines, "", "Salam,", sender].join("\n"));
+      ? ["Pembayaran untuk tagihan berikut sudah kami terima:", "", ...details]
+      : ["Berikut saya kirimkan rincian tagihan Anda:", "", ...details, `Jatuh Tempo: ${formatDate(invoice.dueDate)}`, ...bank, "", "Rincian invoice lengkap terlampir dalam bentuk PDF."];
+  return whatsappUrl(invoice.phone, [`Halo Bapak/Ibu ${invoice.companyName},`, "", ...lines, "", "Terima kasih."].join("\n"));
 }
 
 /** Nomor berikutnya untuk tahun itu: INV-2026-000001, INV-2026-000002, … */
