@@ -96,10 +96,12 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
   const metroOrder = metro && isMetroKind(metro.kind) ? { ...metro, kind: metro.kind, status: "active" as const } : null;
   const metroNext = metroOrder ? metroProgress(metroOrder.kind, metroOrder.steps).next : null;
 
-  const chat = (message: string) => (settings.whatsappNumber ? whatsappUrl(settings.whatsappNumber, message) : "/subnet/layanan#bantuan");
+  const chat = (number: string, message: string) => (number ? whatsappUrl(number, message) : "/subnet/layanan#bantuan");
+  // Gangguan jaringan langsung ke IT Support Jaringan; Customer Service bila nomornya belum diisi.
   const report = chat(
+    settings.itSupportWhatsapp || settings.whatsappNumber,
     [
-      `Halo NOC ${settings.brandName}, saya ingin melaporkan gangguan.`,
+      `Halo IT Support Jaringan ${settings.brandName}, saya ingin melaporkan gangguan.`,
       `Nama: ${customer.name}`,
       customer.siteId && `Site ID: ${customer.siteId}`,
       customer.cid && `CID: ${customer.cid}`,
@@ -186,7 +188,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
             <MenuTile href="/subnet/layanan" icon={Package} label="Detail Layanan" />
             <MenuTile href="/subnet/layanan#dokumen" icon={ReceiptText} label="Dokumen" />
             <MenuTile href="/subnet/profil#alamat" icon={MapPin} label="Alamat" />
-            <MenuTile href={chat(`Halo ${settings.brandName}, saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `)} icon={Headset} label="Hubungi NOC" />
+            <MenuTile href={chat(settings.whatsappNumber, `Halo ${settings.brandName}, saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `)} icon={Headset} label="Customer Service" />
             <MenuTile href="/subnet/progres" icon={Route} label="Progres Metro" />
           </div>
         </SectionCard>

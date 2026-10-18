@@ -24,8 +24,10 @@ export type SiteSettings = {
   email: string;
   whatsappNumber: string;
   whatsappMessage: string;
-  /** WhatsApp tim IT Support, tampil di portal Subnet (Layanan dan Progres Metro). */
+  /** WhatsApp IT Support jaringan, tampil di portal Subnet (Layanan dan Lapor Gangguan). */
   itSupportWhatsapp: string;
+  /** WhatsApp untuk pertanyaan Progres Metro (pemasangan dan upgrade), tampil di portal Subnet. */
+  metroWhatsapp: string;
   cta: SectionHead & { primaryLabel: string; primaryHref: string; secondaryLabel: string };
 };
 

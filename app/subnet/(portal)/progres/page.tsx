@@ -29,14 +29,14 @@ export default async function SubnetProgressPage() {
   const installing = active.some((order) => order.kind === "install");
   const upgrading = active.some((order) => order.kind === "upgrade");
   const options = upgradeOptions(customer?.capacity ?? "");
-  // Pesan WhatsApp ke IT Support menyebut progres yang sedang berjalan supaya tim langsung tahu konteksnya.
+  // Pesan WhatsApp ke tim Progres Metro menyebut progres yang sedang berjalan supaya tim langsung tahu konteksnya.
   const current = active[0];
   const currentStep = current ? metroProgress(current.kind, current.steps).next : null;
-  const itChat = settings.itSupportWhatsapp
+  const metroChat = settings.metroWhatsapp
     ? whatsappUrl(
-        settings.itSupportWhatsapp,
+        settings.metroWhatsapp,
         [
-          `Halo IT Support ${settings.brandName}, saya ${customer?.name ?? ""}${customer?.siteId ? ` (Site ID ${customer.siteId})` : ""}.`,
+          `Halo ${settings.brandName}, saya ${customer?.name ?? ""}${customer?.siteId ? ` (Site ID ${customer.siteId})` : ""}.`,
           current && `Saya ingin menanyakan progres ${metroKindLabels[current.kind].toLowerCase()} ${current.capacity}${currentStep ? ` (sekarang: ${currentStep.label})` : ""}.`,
         ]
           .filter(Boolean)
@@ -103,20 +103,20 @@ export default async function SubnetProgressPage() {
           ) : options.length ? (
             <UpgradeRequestForm options={options} current={customer?.capacity ?? ""} />
           ) : (
-            <p className="px-5 pb-5 text-sm text-muted-foreground">Kapasitas Anda sudah yang tertinggi di pilihan kami. Hubungi NOC untuk kebutuhan lebih besar.</p>
+            <p className="px-5 pb-5 text-sm text-muted-foreground">Kapasitas Anda sudah yang tertinggi di pilihan kami. Hubungi kami untuk kebutuhan lebih besar.</p>
           )}
         </SectionCard>
 
-        {itChat && (
+        {metroChat && (
           <SectionCard>
             <div className="flex flex-col gap-4 p-5">
               <div>
                 <p className="font-semibold">Ada pertanyaan soal progres?</p>
-                <p className="mt-1 text-sm text-muted-foreground">Tim IT Support kami siap membantu, {localPhone(settings.itSupportWhatsapp)}.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Tim Progres Metro kami siap membantu, {localPhone(settings.metroWhatsapp)}.</p>
               </div>
-              <a href={itChat} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1fa855] text-sm font-semibold text-white transition-colors hover:bg-[#1b974c]">
+              <a href={metroChat} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1fa855] text-sm font-semibold text-white transition-colors hover:bg-[#1b974c]">
                 <WhatsAppIcon className="size-4" />
-                Chat WhatsApp IT Support
+                Chat WhatsApp Progres Metro
               </a>
             </div>
           </SectionCard>

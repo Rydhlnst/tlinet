@@ -63,9 +63,9 @@ export default async function SubnetServicePage() {
   const chat = settings.whatsappNumber
     ? whatsappUrl(settings.whatsappNumber, `Halo ${settings.brandName}, saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `)
     : "";
-  const itChat = settings.itSupportWhatsapp
-    ? whatsappUrl(settings.itSupportWhatsapp, `Halo IT Support ${settings.brandName}, saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `)
-    : "";
+  const greeting = `saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `;
+  const itChat = settings.itSupportWhatsapp ? whatsappUrl(settings.itSupportWhatsapp, `Halo IT Support Jaringan ${settings.brandName}, ${greeting}`) : "";
+  const metroChat = settings.metroWhatsapp ? whatsappUrl(settings.metroWhatsapp, `Halo ${settings.brandName}, ${greeting}Saya ingin menanyakan progres pemasangan/upgrade.`) : "";
 
   return (
     <>
@@ -135,8 +135,9 @@ export default async function SubnetServicePage() {
 
           <SectionCard title="Bantuan" icon={Headset}>
             <div id="bantuan" className="scroll-mt-24 divide-y pb-1">
-              {chat && <ActionRow href={chat} external icon={WhatsAppIcon} tone="green" title="Chat WhatsApp NOC" subtitle="Gangguan, tagihan, dan perubahan layanan" />}
-              {itChat && <ActionRow href={itChat} external icon={WhatsAppIcon} tone="green" title="Chat WhatsApp IT Support" subtitle={`${localPhone(settings.itSupportWhatsapp)} · teknis, upgrade, dan progres`} />}
+              {chat && <ActionRow href={chat} external icon={WhatsAppIcon} tone="green" title="Customer Service" subtitle={`${localPhone(settings.whatsappNumber)} · tagihan dan layanan`} />}
+              {itChat && <ActionRow href={itChat} external icon={WhatsAppIcon} tone="green" title="IT Support Jaringan" subtitle={`${localPhone(settings.itSupportWhatsapp)} · gangguan dan teknis`} />}
+              {metroChat && <ActionRow href={metroChat} external icon={WhatsAppIcon} tone="green" title="Progres Metro" subtitle={`${localPhone(settings.metroWhatsapp)} · pemasangan dan upgrade`} />}
               {phone && <ActionRow href={`tel:${phone}`} icon={Phone} title="Telepon" subtitle={settings.phone} />}
               {settings.email && <ActionRow href={`mailto:${settings.email}`} icon={Mail} title="Email" subtitle={settings.email} />}
             </div>
