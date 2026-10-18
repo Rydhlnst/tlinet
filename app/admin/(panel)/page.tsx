@@ -41,7 +41,7 @@ function StatusRow({ ok, title, detail }: { ok: boolean; title: string; detail: 
 }
 
 export default async function DashboardPage() {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("dashboard");
   const db = requireDb();
   const [[newLeads], [allLeads], [packageCount], [areaCount], [articleCount], recent, r2Online] = await Promise.all([
     db.select({ value: count() }).from(leads).where(eq(leads.status, "new")),

@@ -18,14 +18,14 @@ const findInvoice = async (id: string) => (await requireDb().select().from(invoi
 
 // Judul halaman menjadi nama berkas saat invoice disimpan sebagai PDF.
 export async function generateMetadata({ params }: PageProps<"/admin/invoice/[id]">): Promise<Metadata> {
-  await requireAdmin();
+  await requireAdmin("billing");
   const invoice = await findInvoice((await params).id);
   return { title: invoice ? `Invoice ${invoice.number}` : "Invoice", robots: { index: false } };
 }
 
 /** Invoice siap cetak. Berdiri di luar kerangka dashboard supaya yang tercetak hanya lembar invoicenya. */
 export default async function InvoicePage({ params }: PageProps<"/admin/invoice/[id]">) {
-  await requireAdmin();
+  await requireAdmin("billing");
   const [invoice, settings] = await Promise.all([findInvoice((await params).id), getContent("invoice")]);
   if (!invoice) notFound();
   const whatsapp = invoiceWhatsappUrl(invoice, settings);

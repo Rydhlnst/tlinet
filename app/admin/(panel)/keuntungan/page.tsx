@@ -31,7 +31,7 @@ const money = (value: number) => (value ? formatRupiah(value) : <span className=
  * Tidak ada yang disimpan di sini; angkanya selalu dihitung dari Data Pelanggan.
  */
 export default async function ProfitPage({ searchParams }: PageProps<"/admin/keuntungan">) {
-  await requireAdmin();
+  await requireAdmin("finance");
   const query = (await searchParams).q;
   const keywords = ((Array.isArray(query) ? query[0] : query) ?? "").trim().slice(0, 80);
 

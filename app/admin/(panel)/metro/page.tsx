@@ -22,7 +22,7 @@ const filters: { key: string; label: string; status?: MetroStatus }[] = [
 
 /** Pemasangan baru dan upgrade kapasitas pelanggan; tiap langkah yang ditandai di sini terlihat pelanggan di portal Subnet. */
 export default async function MetroPage({ searchParams }: PageProps<"/admin/metro">) {
-  await requireAdmin();
+  await requireAdmin("metro");
   const requested = (await searchParams).status;
   const filter = filters.find((item) => item.key === requested) ?? filters[0];
   const db = requireDb();

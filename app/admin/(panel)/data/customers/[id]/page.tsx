@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CustomerDetail, type LedgerState } from "@/components/admin/customer-detail";
 import { accurateMode, getAccurateLedger } from "@/lib/accurate";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { withCustomerData } from "@/lib/cms/linked";
 import { requireDb } from "@/lib/db";
 import { customerPayments, customerPurchases, customers, invoices } from "@/lib/db/schema";
@@ -21,24 +22,27 @@ async function loadLedger(accurateId: number | null): Promise<LedgerState> {
 }
 
 export default async function CustomerPage({ params }: PageProps<"/admin/data/customers/[id]">) {
-  await requireAdmin();
+  const admin = await requireAdmin("customers");
+  const access = { billing: can(admin, "billing"), finance: can(admin, "finance") };
   const { id } = await params;
   const db = requireDb();
   const [[customer], payments, purchases, customerInvoices] = await Promise.all([
     db.select().from(customers).where(eq(customers.id, id)).limit(1),
-    db.select().from(customerPayments).where(eq(customerPayments.customerId, id)).orderBy(desc(customerPayments.period), desc(customerPayments.createdAt)),
-    db.select().from(customerPurchases).where(eq(customerPurchases.customerId, id)).orderBy(desc(customerPurchases.period), desc(customerPurchases.createdAt)),
-    db.select().from(invoices).where(eq(invoices.customerId, id)).orderBy(desc(invoices.issueDate), desc(invoices.createdAt)),
+    // Riwayat yang tidak boleh dilihat tidak dimuat sama sekali.
+    access.billing ? db.select().from(customerPayments).where(eq(customerPayments.customerId, id)).orderBy(desc(customerPayments.period), desc(customerPayments.createdAt)) : [],
+    access.finance ? db.select().from(customerPurchases).where(eq(customerPurchases.customerId, id)).orderBy(desc(customerPurchases.period), desc(customerPurchases.createdAt)) : [],
+    access.billing ? db.select().from(invoices).where(eq(invoices.customerId, id)).orderBy(desc(invoices.issueDate), desc(invoices.createdAt)) : [],
   ]);
   if (!customer) notFound();
 
   return (
     <CustomerDetail
-      customer={customer}
+      customer={access.finance ? customer : { ...customer, napFee: 0 }}
+      access={access}
       invoices={customerInvoices}
       payments={await withCustomerData("customer-payments", payments)}
       purchases={await withCustomerData("customer-purchases", purchases)}
-      ledger={await loadLedger(customer.accurateId)}
+      ledger={can(admin, "accurate") ? await loadLedger(customer.accurateId) : null}
     />
   );
 }

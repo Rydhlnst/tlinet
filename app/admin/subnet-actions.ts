@@ -2,7 +2,7 @@
 
 import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getAdmin } from "@/lib/auth";
+import { getAdminWith } from "@/lib/auth";
 import type { SaveResult } from "@/lib/cms/store";
 import { requireDb } from "@/lib/db";
 import { customers, subnetAccounts } from "@/lib/db/schema";
@@ -15,7 +15,7 @@ const expired: SaveResult = { ok: false, message: "Sesi berakhir. Silakan masuk 
  * saat mengubah, kata sandi kosong berarti tetap memakai yang lama.
  */
 export async function saveSubnetAccessAction(customerId: string, input: { email: string; password: string; active: boolean; portId: number | null; pingTarget: string }): Promise<SaveResult> {
-  if (!(await getAdmin())) return expired;
+  if (!(await getAdminWith("subnet"))) return expired;
   const db = requireDb();
   const email = String(input.email ?? "").trim().toLowerCase();
   const password = String(input.password ?? "");
@@ -50,7 +50,7 @@ export async function saveSubnetAccessAction(customerId: string, input: { email:
 
 /** Menghapus akses portal pelanggan; sesi yang sedang berjalan ikut berakhir. */
 export async function deleteSubnetAccessAction(customerId: string): Promise<SaveResult> {
-  if (!(await getAdmin())) return expired;
+  if (!(await getAdminWith("subnet"))) return expired;
   await requireDb().delete(subnetAccounts).where(eq(subnetAccounts.customerId, customerId));
   revalidatePath("/admin/subnet");
   return { ok: true, message: "Akses Subnet dihapus." };

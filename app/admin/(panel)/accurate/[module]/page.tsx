@@ -158,7 +158,7 @@ async function Report() {
 }
 
 export default async function AccurateModulePage({ params, searchParams }: PageProps<"/admin/accurate/[module]">) {
-  await requireAdmin();
+  await requireAdmin("accurate");
   const feature = getAccurateModule((await params).module);
   if (!feature) notFound();
   const query = await searchParams;

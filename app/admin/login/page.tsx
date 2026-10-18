@@ -5,12 +5,14 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/login-form";
 import { Brand } from "@/components/site/brand";
 import { getAdmin } from "@/lib/auth";
+import { homePath } from "@/lib/permissions";
 import { getContent } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Masuk Dashboard", robots: { index: false } };
 
 export default async function LoginPage() {
-  if (await getAdmin()) redirect("/admin");
+  const admin = await getAdmin();
+  if (admin) redirect(homePath(admin));
   const settings = await getContent("settings");
 
   return (

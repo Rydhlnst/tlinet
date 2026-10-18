@@ -2,7 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getAdmin } from "@/lib/auth";
+import { getAdminWith } from "@/lib/auth";
 import type { SaveResult } from "@/lib/cms/store";
 import { requireDb } from "@/lib/db";
 import { customers, metroOrders, type MetroStepRecord } from "@/lib/db/schema";
@@ -30,7 +30,7 @@ async function loadOrder(id: string) {
 
 /** Membuat progres baru untuk pelanggan; langkah pertama (Registrasi / Permintaan Upgrade) langsung dicatat. */
 export async function createMetroOrderAction(input: { customerId: string; kind: string; capacity: string; at: string; note: string }): Promise<SaveResult> {
-  const admin = await getAdmin();
+  const admin = await getAdminWith("metro");
   if (!admin) return expired;
   if (!isMetroKind(input.kind)) return { ok: false, message: "Jenis progres tidak dikenal." };
   const db = requireDb();
@@ -59,7 +59,7 @@ export async function createMetroOrderAction(input: { customerId: string; kind: 
  * baru supaya portal dan invoice berikutnya memakai angka yang benar.
  */
 export async function advanceMetroStepAction(id: string, input: { at: string; note: string }): Promise<SaveResult> {
-  const admin = await getAdmin();
+  const admin = await getAdminWith("metro");
   if (!admin) return expired;
   const order = await loadOrder(id);
   if (!order) return { ok: false, message: "Progres tidak ditemukan." };
@@ -87,7 +87,7 @@ export async function advanceMetroStepAction(id: string, input: { at: string; no
 
 /** Membatalkan langkah terakhir yang ditandai (mis. salah klik). Upgrade yang dibatalkan dari "Selesai" mengembalikan kapasitas lama. */
 export async function undoMetroStepAction(id: string): Promise<SaveResult> {
-  if (!(await getAdmin())) return expired;
+  if (!(await getAdminWith("metro"))) return expired;
   const order = await loadOrder(id);
   if (!order) return { ok: false, message: "Progres tidak ditemukan." };
   const { last, completed } = metroProgress(order.kind, order.steps);
@@ -106,7 +106,7 @@ export async function undoMetroStepAction(id: string): Promise<SaveResult> {
 
 /** Menolak pengajuan (pelanggan melihat alasannya di portal). */
 export async function rejectMetroOrderAction(id: string, reason: string): Promise<SaveResult> {
-  if (!(await getAdmin())) return expired;
+  if (!(await getAdminWith("metro"))) return expired;
   const order = await loadOrder(id);
   if (!order) return { ok: false, message: "Progres tidak ditemukan." };
   if (order.status === "done") return { ok: false, message: "Progres yang sudah selesai tidak bisa ditolak." };
@@ -118,14 +118,14 @@ export async function rejectMetroOrderAction(id: string, reason: string): Promis
 }
 
 export async function reopenMetroOrderAction(id: string): Promise<SaveResult> {
-  if (!(await getAdmin())) return expired;
+  if (!(await getAdminWith("metro"))) return expired;
   await requireDb().update(metroOrders).set({ status: "active", rejectReason: "", updatedAt: new Date() }).where(eq(metroOrders.id, id));
   refresh();
   return { ok: true, message: "Pengajuan dibuka kembali." };
 }
 
 export async function deleteMetroOrderAction(id: string): Promise<SaveResult> {
-  if (!(await getAdmin())) return expired;
+  if (!(await getAdminWith("metro"))) return expired;
   await requireDb().delete(metroOrders).where(eq(metroOrders.id, id));
   refresh();
   return { ok: true, message: "Progres dihapus." };

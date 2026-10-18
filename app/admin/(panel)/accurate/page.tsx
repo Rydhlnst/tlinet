@@ -30,7 +30,7 @@ async function connection(): Promise<{ ok: boolean; title: string; detail: strin
 }
 
 export default async function AccuratePage() {
-  await requireAdmin();
+  await requireAdmin("accurate");
   const [status, [linked]] = await Promise.all([connection(), requireDb().select({ value: count() }).from(customers).where(isNotNull(customers.accurateId))]);
   const openUrl = status.host ?? accurateWebUrl;
 

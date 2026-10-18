@@ -18,6 +18,7 @@ import {
   MapPin,
   MapPinned,
   Network,
+  ShieldCheck,
   Route,
   Newspaper,
   Package,
@@ -73,6 +74,7 @@ import {
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { accurateModules } from "@/lib/accurate-features";
+import { can, routePermission, type AdminUser } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 /** `children`: submenu yang bisa dibuka-tutup; induknya sendiri tetap tautan ke halamannya. */
@@ -139,17 +141,31 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/media", label: "Media", icon: FolderOpen, keywords: "gambar unggah foto r2" },
       { href: "/admin/pages/settings", label: "Pengaturan Situs", icon: Settings, keywords: "merek kontak whatsapp footer navigasi seo logo" },
       { href: "/admin/pages/invoice", label: "Pengaturan Invoice", icon: Stamp, keywords: "rekening bank logo catatan ppn kop" },
+      { href: "/admin/users", label: "Pengguna", icon: ShieldCheck, keywords: "akun staf akses hak role rbac login" },
     ],
   },
 ];
+
+/** Menu yang boleh dibuka pengguna ini; grup tanpa menu tersisa ikut disembunyikan. */
+function visibleNav(admin: AdminUser) {
+  return navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items
+        .filter((item) => can(admin, routePermission(item.href)))
+        .map((item) => ({ ...item, children: item.children?.filter((child) => can(admin, routePermission(child.href))) })),
+    }))
+    .filter((group) => group.items.length);
+}
 
 const isActive = (pathname: string, href: string, exact?: boolean) => pathname === href || (!exact && href !== "/admin" && pathname.startsWith(`${href}/`));
 
 const activeClass =
   "data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground";
 
-function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: number }) {
+function AdminSidebar({ admin, brandName, newLeads }: { admin: AdminUser; brandName: string; newLeads: number }) {
   const pathname = usePathname();
+  const groups = visibleNav(admin);
   const { setOpenMobile } = useSidebar();
   // Submenu terbuka sendiri saat salah satu halamannya dibuka; pilihan pengguna menimpa itu.
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
@@ -166,7 +182,7 @@ function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: nu
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {navGroups.map((group) => (
+        {groups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="text-[11px] font-medium tracking-wider uppercase">{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -234,8 +250,9 @@ function AdminSidebar({ brandName, newLeads }: { brandName: string; newLeads: nu
   );
 }
 
-function CommandMenu() {
+function CommandMenu({ admin }: { admin: AdminUser }) {
   const router = useRouter();
+  const groups = visibleNav(admin);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -264,7 +281,7 @@ function CommandMenu() {
         <CommandInput placeholder="Ketik nama menu…" />
         <CommandList>
           <CommandEmpty>Menu tidak ditemukan.</CommandEmpty>
-          {navGroups.map((group) => (
+          {groups.map((group) => (
             <CommandGroup key={group.label} heading={group.label}>
               {group.items
                 .flatMap((item) => [item, ...(item.children ?? [])])
@@ -289,18 +306,18 @@ function CommandMenu() {
   );
 }
 
-type ShellProps = { admin: { email: string; name: string }; brandName: string; newLeads: number; children: ReactNode };
+type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; children: ReactNode };
 
 export function AdminShell({ admin, brandName, newLeads, children }: ShellProps) {
   return (
     <TooltipProvider delayDuration={200}>
       <SidebarProvider>
-        <AdminSidebar brandName={brandName} newLeads={newLeads} />
+        <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} />
         <SidebarInset className="min-w-0 border md:shadow-none">
           <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur md:rounded-t-xl">
             <SidebarTrigger />
             <span className="h-4 w-px bg-border" aria-hidden="true" />
-            <CommandMenu />
+            <CommandMenu admin={admin} />
             <div className="ml-auto flex items-center gap-1">
               <Button asChild variant="ghost" size="icon-lg" aria-label="Buka website publik">
                 <Link href="/" target="_blank">
@@ -321,6 +338,7 @@ export function AdminShell({ admin, brandName, newLeads, children }: ShellProps)
                   <DropdownMenuLabel className="grid gap-0.5">
                     <span className="text-sm font-medium text-foreground">{admin.name}</span>
                     <span className="truncate text-xs font-normal text-muted-foreground">{admin.email}</span>
+                    <span className="text-xs font-normal text-muted-foreground">{admin.role === "owner" ? "Owner · akses penuh" : "Staf · akses terbatas"}</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual, type BinaryLike } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -6,6 +6,7 @@ import { cache } from "react";
 import { secret } from "@/lib/auth";
 import { requireDb } from "@/lib/db";
 import { customers, subnetAccounts } from "@/lib/db/schema";
+import { hashPassword, passwordMatches } from "@/lib/passwords";
 
 /** Portal Subnet: pelanggan masuk dengan email dan kata sandi yang dibuat admin, lalu melihat data dan invoicenya sendiri. */
 
@@ -16,21 +17,8 @@ export const subnetEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** IPv4, IPv6, atau hostname untuk ping.pe. */
 export const pingTargetPattern = /^[a-zA-Z0-9.:-]{2,100}$/;
 
-const scrypt = (password: BinaryLike, salt: BinaryLike) =>
-  new Promise<Buffer>((resolve, reject) => scryptCallback(password, salt, 32, (error, key) => (error ? reject(error) : resolve(key))));
-
-export async function hashSubnetPassword(password: string) {
-  const salt = randomBytes(16);
-  return `scrypt$${salt.toString("base64url")}$${(await scrypt(password, salt)).toString("base64url")}`;
-}
-
-export async function subnetPasswordMatches(password: string, stored: string) {
-  const [kind, salt, hash] = stored.split("$");
-  if (kind !== "scrypt" || !salt || !hash) return false;
-  const expected = Buffer.from(hash, "base64url");
-  const actual = await scrypt(password, Buffer.from(salt, "base64url"));
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-}
+export const hashSubnetPassword = hashPassword;
+export const subnetPasswordMatches = passwordMatches;
 
 /** Hash kata sandi ikut menjadi kunci tanda tangan, sehingga mengganti kata sandi mengakhiri sesi lama pelanggan itu. */
 const sign = (payload: string, passwordHash: string) => createHmac("sha256", `${secret()}:subnet:${passwordHash}`).update(payload).digest("base64url");

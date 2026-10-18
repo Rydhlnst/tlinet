@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { DynamicOptions } from "@/components/admin/field-control";
 import { ResourceManager } from "@/components/admin/resource-manager";
 import { requireAdmin } from "@/lib/auth";
+import { can, entityPermission } from "@/lib/permissions";
 import { customerHistoryKeys, getEntityDef } from "@/lib/cms/entities";
 import { withCustomerData } from "@/lib/cms/linked";
 import { listRecords } from "@/lib/cms/store";
@@ -44,8 +45,9 @@ async function loadOptions(entityKey: string): Promise<DynamicOptions> {
 }
 
 export default async function DataPage({ params }: PageProps<"/admin/data/[entity]">) {
-  await requireAdmin();
-  const entity = getEntityDef((await params).entity);
+  const entityKey = (await params).entity;
+  const admin = await requireAdmin(entityPermission(entityKey));
+  const entity = getEntityDef(entityKey);
   if (!entity) notFound();
   const [rows, options] = await Promise.all([listRecords(entity).then((list) => withCustomerData(entity.key, list)), loadOptions(entity.key)]);
   if (entity.key === "invoices") {
@@ -54,5 +56,9 @@ export default async function DataPage({ params }: PageProps<"/admin/data/[entit
     options.whatsappLinks = (rows as (typeof invoices.$inferSelect)[]).map((row) => ({ value: row.id, label: invoiceWhatsappUrl(row, settings) })).filter((link) => link.label);
   }
 
-  return <ResourceManager key={entity.key} entityKey={entity.key} rows={rows} options={options} />;
+  // Biaya ke NAP (dan selisihnya) hanya untuk yang punya hak Keuangan; tidak ikut dikirim ke peramban staf lain.
+  const hideFinance = entity.key === "customers" && !can(admin, "finance");
+  const visibleRows = hideFinance ? rows.map((row) => ({ ...row, napFee: undefined })) : rows;
+
+  return <ResourceManager key={entity.key} entityKey={entity.key} rows={visibleRows} options={options} hiddenFields={hideFinance ? ["napFee"] : []} />;
 }

@@ -24,7 +24,7 @@ const empty = <span className="text-muted-foreground">—</span>;
  * yang disimpan di sini hanya email, kata sandi, status akses, dan port LibreNMS untuk grafik trafiknya.
  */
 export default async function SubnetPage({ searchParams }: PageProps<"/admin/subnet">) {
-  await requireAdmin();
+  await requireAdmin("subnet");
   const query = (await searchParams).q;
   const keywords = ((Array.isArray(query) ? query[0] : query) ?? "").trim().slice(0, 80);
   const db = requireDb();

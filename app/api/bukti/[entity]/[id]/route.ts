@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
-import { getAdmin } from "@/lib/auth";
+import { getAdminWith } from "@/lib/auth";
+import { entityPermission } from "@/lib/permissions";
 import { db } from "@/lib/db";
 import { customerPayments, customerPurchases, customers, mediaAssets } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
@@ -47,8 +48,8 @@ async function loadImage(url: string): Promise<{ body: BodyInit; type: string } 
  * meninggalkan dashboard. `?download=1` mengirimnya sebagai berkas unduhan.
  */
 export async function GET(request: Request, { params }: RouteContext<"/api/bukti/[entity]/[id]">) {
-  if (!(await getAdmin())) return new Response("Unauthorized", { status: 401 });
   const { entity, id } = await params;
+  if (!(await getAdminWith(entityPermission(entity)))) return new Response("Unauthorized", { status: 401 });
   const proof = await findProof(entity, id, new URL(request.url).searchParams.get("field") ?? "proofUrl");
   if (!proof?.proofUrl) return new Response("Not found", { status: 404 });
 

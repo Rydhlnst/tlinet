@@ -308,3 +308,18 @@ export const metroOrders = pgTable(
   },
   (table) => [index("metro_orders_customer_idx").on(table.customerId, table.createdAt)],
 );
+
+/**
+ * Akun staf dashboard (di bawah owner yang diatur lewat ADMIN_EMAIL). Tiap akun hanya membuka menu yang ada di
+ * `permissions` (lihat lib/permissions.ts). Bukan tabel `admin_users` lama yang masih tertinggal di database.
+ */
+export const staffUsers = pgTable("staff_users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull().default(""),
+  passwordHash: text("password_hash").notNull(),
+  permissions: jsonb("permissions").$type<string[]>().notNull().default([]),
+  active: boolean("active").notNull().default(true),
+  lastLoginAt: timestamp("last_login_at"),
+  ...timestamps,
+});

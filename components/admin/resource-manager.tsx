@@ -60,7 +60,7 @@ function Cell({ column, row, options, entityKey }: { column: Column; row: Row; o
 }
 
 /** Tabel + form samping untuk satu koleksi, dibentuk dari definisi di lib/cms/entities.ts. */
-export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: string; rows: Row[]; options?: DynamicOptions }) {
+export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = [] }: { entityKey: string; rows: Row[]; options?: DynamicOptions; hiddenFields?: string[] }) {
   const entity = getEntityDef(entityKey)!;
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -212,8 +212,8 @@ export function ResourceManager({ entityKey, rows, options = {} }: { entityKey: 
         </Table>
       </div>
 
-      {entity.detailDialog && <RecordDetailDialog entityKey={entity.key} row={viewing} onClose={() => setViewing(null)} onEdit={(row) => setEditing({ ...row })} options={options} />}
-      <RecordSheet entityKey={entity.key} value={editing} setValue={setEditing} options={options} />
+      {entity.detailDialog && <RecordDetailDialog entityKey={entity.key} row={viewing} onClose={() => setViewing(null)} onEdit={(row) => setEditing({ ...row })} options={options} hiddenFields={hiddenFields} />}
+      <RecordSheet entityKey={entity.key} value={editing} setValue={setEditing} options={options} hiddenFields={hiddenFields} />
       <DeleteRecordDialog entityKey={entity.key} row={removing} title={removing ? titleOf(removing) : ""} onClose={() => setRemoving(null)} />
     </div>
   );

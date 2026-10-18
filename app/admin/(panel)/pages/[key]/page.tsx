@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentForm } from "@/components/admin/content-form";
 import { requireAdmin } from "@/lib/auth";
+import { pagePermission } from "@/lib/permissions";
 import { getPageDef } from "@/lib/cms/pages";
 import { getContent } from "@/lib/data";
 
@@ -10,8 +11,9 @@ export async function generateMetadata({ params }: PageProps<"/admin/pages/[key]
 }
 
 export default async function ContentPage({ params }: PageProps<"/admin/pages/[key]">) {
-  await requireAdmin();
-  const page = getPageDef((await params).key);
+  const key = (await params).key;
+  await requireAdmin(pagePermission(key));
+  const page = getPageDef(key);
   if (!page) notFound();
   const content = await getContent(page.key);
 

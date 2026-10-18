@@ -9,6 +9,6 @@ export const metadata: Metadata = { title: "Media" };
 const storageLabels = { r2: "Cloudflare R2", database: "database Neon (R2 belum diatur)", incomplete: "belum siap (variabel R2 belum lengkap)" };
 
 export default async function MediaPage() {
-  await requireAdmin();
+  await requireAdmin("content");
   return <MediaLibrary items={await listMediaAction()} storageLabel={storageLabels[storageMode]} />;
 }

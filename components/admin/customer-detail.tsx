@@ -279,12 +279,15 @@ export function CustomerDetail({
   payments,
   purchases,
   ledger,
+  access = { billing: true, finance: true },
 }: {
   customer: Customer;
   invoices: InvoiceRow[];
   payments: HistoryRow[];
   purchases: PurchaseRow[];
   ledger: LedgerState;
+  /** Bagian yang boleh dilihat pengguna ini (hak akses Invoice & Pembayaran dan Keuangan). */
+  access?: { billing: boolean; finance: boolean };
 }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -420,8 +423,12 @@ export function CustomerDetail({
             items={[
               ["Kapasitas", customer.capacity],
               ["Biaya Bulanan ke ISP", customer.monthlyFee ? formatRupiah(customer.monthlyFee) : ""],
-              ["Biaya Bulanan ke NAP", customer.napFee ? formatRupiah(customer.napFee) : ""],
-              ["Selisih Keuntungan", customer.monthlyFee || customer.napFee ? formatRupiah(customer.monthlyFee - customer.napFee) : ""],
+              ...(access.finance
+                ? ([
+                    ["Biaya Bulanan ke NAP", customer.napFee ? formatRupiah(customer.napFee) : ""],
+                    ["Selisih Keuntungan", customer.monthlyFee || customer.napFee ? formatRupiah(customer.monthlyFee - customer.napFee) : ""],
+                  ] as [string, string][])
+                : []),
               ["No. Pembayaran", customer.paymentNumber],
               ["Vendor", customer.vendor],
               ["IP Address", customer.ipAddress],
@@ -589,39 +596,43 @@ export function CustomerDetail({
         </Panel>
       )}
 
-      <InvoicePanel rows={invoices} customerId={customer.id} />
+      {access.billing && <InvoicePanel rows={invoices} customerId={customer.id} />}
 
-      <HistoryPanel
-        entityKey="customer-payments"
-        icon={ReceiptText}
-        title="History Pembayaran Subnet"
-        noun="Pembayaran"
-        rows={payments}
-        customerId={customer.id}
-        defaults={{ amount: customer.monthlyFee || "" }}
-      />
+      {access.billing && (
+        <HistoryPanel
+          entityKey="customer-payments"
+          icon={ReceiptText}
+          title="History Pembayaran Subnet"
+          noun="Pembayaran"
+          rows={payments}
+          customerId={customer.id}
+          defaults={{ amount: customer.monthlyFee || "" }}
+        />
+      )}
 
-      <HistoryPanel
-        entityKey="customer-purchases"
-        icon={ShoppingBag}
-        title="History Pembelian Perusahaan"
-        noun="Pembelian"
-        rows={purchases}
-        customerId={customer.id}
-        // Pemasok biasanya sama dari bulan ke bulan: ambil dari pembelian terakhir, kalau belum ada dari vendor pelanggan.
-        defaults={{
-          amount: customer.napFee || "",
-          supplierName: purchases[0]?.supplierName || customer.vendor,
-          supplierAddress: purchases[0]?.supplierAddress ?? "",
-          supplierEmail: purchases[0]?.supplierEmail ?? "",
-          serviceName: purchases[0]?.serviceName ?? "",
-          cid: purchases[0]?.cid || customer.cid,
-          siteId: customer.siteId,
-          paymentNumber: purchases[0]?.paymentNumber || customer.paymentNumber,
-        }}
-      />
+      {access.finance && (
+        <HistoryPanel
+          entityKey="customer-purchases"
+          icon={ShoppingBag}
+          title="History Pembelian Perusahaan"
+          noun="Pembelian"
+          rows={purchases}
+          customerId={customer.id}
+          // Pemasok biasanya sama dari bulan ke bulan: ambil dari pembelian terakhir, kalau belum ada dari vendor pelanggan.
+          defaults={{
+            amount: customer.napFee || "",
+            supplierName: purchases[0]?.supplierName || customer.vendor,
+            supplierAddress: purchases[0]?.supplierAddress ?? "",
+            supplierEmail: purchases[0]?.supplierEmail ?? "",
+            serviceName: purchases[0]?.serviceName ?? "",
+            cid: purchases[0]?.cid || customer.cid,
+            siteId: customer.siteId,
+            paymentNumber: purchases[0]?.paymentNumber || customer.paymentNumber,
+          }}
+        />
+      )}
 
-      <RecordSheet entityKey="customers" value={editing} setValue={setEditing} />
+      <RecordSheet entityKey="customers" value={editing} setValue={setEditing} hiddenFields={access.finance ? [] : ["napFee"]} />
 
       <AlertDialog open={removingPhoto !== null} onOpenChange={(open) => !open && !savingPhotos && setRemovingPhoto(null)}>
         <AlertDialogContent>
