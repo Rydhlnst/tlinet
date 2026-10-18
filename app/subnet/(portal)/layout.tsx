@@ -4,7 +4,8 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { initials } from "@/components/admin/detail-panels";
 import { TlinetLogo } from "@/components/site/brand";
-import { SubnetBottomNav, SubnetMobileBar, SubnetTopNav } from "@/components/site/subnet-nav";
+import { AppStatusBar } from "@/components/site/app-status-bar";
+import { PortalBand, SubnetBottomNav, SubnetMobileBar, SubnetTopNav } from "@/components/site/subnet-nav";
 import { Button } from "@/components/ui/button";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
@@ -34,20 +35,22 @@ export default async function SubnetPortalLayout({ children }: LayoutProps<"/sub
   ]);
   const name = customer?.name ?? "";
   const photoUrl = customer?.photos[0] ?? "";
-  const brand = <TlinetLogo priority className="h-7" />;
+  // Logo dibuat putih di atas biru.
+  const brand = <TlinetLogo priority className="h-7 brightness-0 invert" />;
 
   return (
-    <div className="flex flex-1 flex-col bg-muted">
+    <div className="flex flex-1 flex-col bg-neutral-100">
+      <AppStatusBar style="DARK" />
       <SubnetMobileBar brand={brand} name={name} photoUrl={photoUrl} />
 
-      <header className="sticky top-0 z-40 hidden border-b bg-background/90 backdrop-blur-md md:block">
+      <header className="sticky top-0 z-40 hidden bg-brand text-white md:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
           <Link href="/subnet" aria-label={`${settings.brandName} – Beranda portal`}>
-            <TlinetLogo priority className="h-8" />
+            <TlinetLogo priority className="h-8 brightness-0 invert" />
           </Link>
           <SubnetTopNav unpaid={unpaid} />
           <div className="flex items-center gap-2">
-            <Link href="/subnet/profil" aria-label="Profil saya" className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-brand-soft text-sm font-semibold text-brand-ink">
+            <Link href="/subnet/profil" aria-label="Profil saya" className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-white/15 text-sm font-semibold text-white ring-2 ring-white/30">
               {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={photoUrl} alt="" className="size-full object-cover" />
@@ -56,7 +59,7 @@ export default async function SubnetPortalLayout({ children }: LayoutProps<"/sub
               )}
             </Link>
             <form action={subnetLogoutAction} className="hidden lg:block">
-              <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">
+              <Button type="submit" variant="ghost" size="sm" className="text-white/80 hover:bg-white/10 hover:text-white">
                 <LogOut />
                 Keluar
               </Button>
@@ -65,8 +68,11 @@ export default async function SubnetPortalLayout({ children }: LayoutProps<"/sub
         </div>
       </header>
 
-      {/* Di HP isi diberi ruang di bawah supaya tidak tertutup navigasi bawah yang mengambang. */}
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pt-2 pb-32 sm:gap-5 md:px-6 md:pt-8 md:pb-12">{children}</main>
+      <div className="relative flex flex-1 flex-col">
+        <PortalBand />
+        {/* Di HP isi diberi ruang di bawah supaya tidak tertutup navigasi bawah. */}
+        <main className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 px-4 pt-4 pb-28 sm:gap-4 md:px-6 md:pt-8 md:pb-12">{children}</main>
+      </div>
 
       <SubnetBottomNav unpaid={unpaid} />
     </div>

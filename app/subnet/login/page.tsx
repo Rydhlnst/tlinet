@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppDownloadCard } from "@/components/site/app-download";
+import { AppStatusBar } from "@/components/site/app-status-bar";
 import { TlinetLogo } from "@/components/site/brand";
 import { SubnetLoginForm } from "@/components/site/subnet-login-form";
 import { getSubnetUser, inAndroidApp } from "@/lib/subnet";
@@ -15,6 +16,7 @@ export default async function SubnetLoginPage() {
 
   return (
     <main className="pt-safe relative flex flex-1 items-center justify-center overflow-hidden bg-muted px-5 py-16">
+      <AppStatusBar style="LIGHT" />
       <div className="bg-grid absolute inset-0" aria-hidden="true" />
       <div className="relative w-full max-w-sm">
         <div className="rounded-3xl border bg-card p-8 shadow-xl shadow-ink/5">

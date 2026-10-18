@@ -5,6 +5,7 @@ import { cache } from "react";
 import { FitToWidth } from "@/components/admin/fit-to-width";
 import { InvoiceDocument } from "@/components/admin/invoice-document";
 import { PrintButton } from "@/components/admin/print-button";
+import { AppStatusBar } from "@/components/site/app-status-bar";
 import { Badge } from "@/components/ui/badge";
 import { linkCodeMatches } from "@/lib/auth";
 import { getContent } from "@/lib/data";
@@ -32,7 +33,8 @@ export default async function PublicInvoicePage({ params }: PageProps<"/invoice/
   const paid = invoice.status === "paid";
 
   return (
-    <main className="flex-1 bg-muted print:bg-white">
+    <main className="pt-safe flex-1 bg-muted print:bg-white">
+      <AppStatusBar style="LIGHT" />
       <div className="mx-auto flex w-[210mm] max-w-full flex-wrap items-center justify-between gap-3 px-3 py-4 print:hidden">
         <div className="flex items-center gap-2">
           <h1 className="font-semibold">Invoice {invoice.number}</h1>

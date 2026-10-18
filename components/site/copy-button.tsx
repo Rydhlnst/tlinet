@@ -21,7 +21,7 @@ export function CopyButton({ value, label = "Salin", className }: { value: strin
           toast.error("Tidak bisa menyalin. Tekan lama teksnya untuk menyalin.");
         }
       }}
-      className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors", className)}
+      className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors", className)}
     >
       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
       {copied ? "Disalin" : label}

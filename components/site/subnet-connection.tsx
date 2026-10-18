@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChartLine, ChevronRight, Pause, Play, Wifi, WifiOff } from "lucide-react";
+import { ArrowDown, ArrowUp, ChartLine, ChevronRight, Pause, Play } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { formatBitrate } from "@/lib/format";
@@ -141,7 +141,7 @@ function TrafficChart({ points, height, detailed }: { points: Point[]; height: n
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full" style={{ height }} role="img" aria-label="Grafik kecepatan download dan upload">
         <defs>
           <linearGradient id={`${id}-down`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.35" />
+            <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.16" />
             <stop offset="100%" stopColor="var(--brand)" stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -172,93 +172,94 @@ function StatusChip({ up, polledAt, className }: { up: boolean | null; polledAt?
 
 /** Pemakaian terhadap kapasitas langganan, berupa busur 270°. */
 function Gauge({ bps, capacityBps }: { bps: number; capacityBps: number }) {
-  const id = useId();
   const percent = capacityBps > 0 ? Math.min(100, (bps / capacityBps) * 100) : 0;
   const [value, unit] = splitBitrate(bps);
   const arc = "M43.43,156.57 A80,80 0 1 1 156.57,156.57";
   return (
-    <div className="relative mx-auto aspect-[200/170] w-full max-w-64">
+    <div className="relative mx-auto aspect-[200/170] w-full max-w-60">
       <svg viewBox="0 0 200 170" className="size-full" aria-hidden="true">
-        <defs>
-          <linearGradient id={id} x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stopColor="#3d9bff" />
-            <stop offset="100%" stopColor="#1f3fff" />
-          </linearGradient>
-        </defs>
-        <path d={arc} fill="none" stroke="var(--brand-soft)" strokeWidth={14} strokeLinecap="round" />
+        <path d={arc} fill="none" stroke="var(--muted)" strokeWidth={12} strokeLinecap="round" />
         <path
           d={arc}
           fill="none"
-          stroke={`url(#${id})`}
-          strokeWidth={14}
+          stroke="var(--brand)"
+          strokeWidth={12}
           strokeLinecap="round"
           pathLength={100}
           strokeDasharray={`${Math.max(percent, 0.5)} 100`}
           className="transition-[stroke-dasharray] duration-700 ease-out"
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-        <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-          <ArrowDown className="size-3.5 text-brand-ink" />
-          Download
-        </span>
-        <span className="mt-0.5 text-4xl font-bold tracking-tight tabular-nums">{value}</span>
-        <span className="text-sm font-medium text-muted-foreground">{unit}</span>
-        {capacityBps > 0 && <span className="mt-2 rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand-ink tabular-nums">{Math.round(percent)}% dari {formatBitrate(capacityBps)}</span>}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-3">
+        <span className="text-xs text-muted-foreground">Download</span>
+        <span className="mt-0.5 text-4xl font-semibold tracking-tight tabular-nums">{value}</span>
+        <span className="text-sm text-muted-foreground">{unit}</span>
+        {capacityBps > 0 && <span className="mt-2 text-xs text-muted-foreground tabular-nums">{Math.round(percent)}% dari {formatBitrate(capacityBps)}</span>}
       </div>
     </div>
   );
 }
 
-function SpeedTile({ label, bps, tone }: { label: string; bps: number | null; tone: "down" | "up" }) {
+/** Angka kecepatan dengan label dan panah arah, tanpa kotak berwarna. */
+function Speed({ label, bps, tone, size = "md" }: { label: string; bps: number | null; tone: "down" | "up"; size?: "md" | "lg" }) {
   const [value, unit] = bps == null ? ["—", ""] : splitBitrate(bps);
   const Icon = tone === "down" ? ArrowDown : ArrowUp;
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3">
-      <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", tone === "down" ? "bg-brand-soft text-brand-ink" : "bg-emerald-50 text-emerald-600")}>
-        <Icon className="size-4" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[11px] text-muted-foreground">{label}</p>
-        <p className="truncate font-semibold tabular-nums">
-          {value} <span className="text-xs font-medium text-muted-foreground">{unit}</span>
-        </p>
+    <div className="min-w-0">
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Icon className={cn("size-3.5", tone === "down" ? "text-brand" : "text-emerald-600")} />
+        {label}
+      </p>
+      <p className={cn("mt-0.5 truncate font-semibold tracking-tight tabular-nums", size === "lg" ? "text-2xl" : "text-xl")}>
+        {value} <span className="text-sm font-normal text-muted-foreground">{unit}</span>
+      </p>
+    </div>
+  );
+}
+
+/** Bilah tipis pemakaian terhadap kapasitas langganan. */
+function UsageBar({ bps, capacityBps }: { bps: number; capacityBps: number }) {
+  const percent = Math.round(Math.min(100, (bps / capacityBps) * 100));
+  return (
+    <div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-brand transition-all duration-700" style={{ width: `${percent}%` }} />
       </div>
+      <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
+        Pemakaian {percent}% dari {formatBitrate(capacityBps)}
+      </p>
     </div>
   );
 }
 
 type Props = { initial: ConnectionStatus | null; realtime: boolean; capacityBps: number };
 
-/** Kartu ringkas di Beranda: status, kecepatan sekarang, dan grafik kecil. Ketuk untuk membuka tab Koneksi. */
+/** Kartu ringkas di Beranda: status, kecepatan sekarang, dan pemakaian. Grafiknya ada di tab Koneksi. */
 export function ConnectionSummaryCard({ initial, realtime, capacityBps }: Props) {
-  const { status, points, latest } = useLiveTraffic(initial, realtime, 5, 3 * 60_000);
+  const { status, latest } = useLiveTraffic(initial, realtime, 5, 3 * 60_000);
   const up = status ? status.up : null;
   return (
-    <Link href="/subnet/trafik" className="group block overflow-hidden rounded-3xl border bg-card shadow-sm shadow-ink/5 transition-colors active:bg-muted/40">
-      <div className="flex items-center justify-between gap-3 px-4 pt-4">
-        <div className="flex items-center gap-3">
-          <span className={cn("flex size-10 items-center justify-center rounded-2xl", up === false ? "bg-destructive/10 text-destructive" : "bg-brand-soft text-brand-ink")}>
-            {up === false ? <WifiOff className="size-5" /> : <Wifi className="size-5" />}
-          </span>
-          <div>
-            <p className="text-sm font-semibold">Koneksi Internet</p>
-            <StatusChip up={up} className="mt-0.5" />
-          </div>
+    <Link href="/subnet/trafik" className="group block overflow-hidden rounded-2xl border bg-card transition-colors hover:border-foreground/20">
+      <div className="flex items-start justify-between gap-3 px-4 pt-3.5 sm:px-5">
+        <div>
+          <p className="text-[0.9375rem] font-semibold">Koneksi internet</p>
+          <StatusChip up={up} polledAt={status?.polledAt} className="mt-1" />
         </div>
-        <ChevronRight className="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        <span className="flex items-center gap-0.5 text-sm font-medium text-brand-ink">
+          Detail
+          <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 px-4">
-        <SpeedTile label="Download" bps={latest?.outBps ?? null} tone="down" />
-        <SpeedTile label="Upload" bps={latest?.inBps ?? null} tone="up" />
+      <div className="grid grid-cols-2 gap-4 px-4 pt-4 sm:px-5">
+        <Speed label="Download" bps={latest?.outBps ?? null} tone="down" size="lg" />
+        <Speed label="Upload" bps={latest?.inBps ?? null} tone="up" size="lg" />
       </div>
-      <div className="mt-2">
-        {points.length > 1 ? <TrafficChart points={points} height={56} /> : <div className="h-14" />}
-      </div>
-      {capacityBps > 0 && latest && (
-        <div className="border-t px-4 py-2.5 text-xs text-muted-foreground">
-          Pemakaian <span className="font-semibold text-foreground tabular-nums">{Math.round(Math.min(100, (latest.outBps / capacityBps) * 100))}%</span> dari kapasitas {formatBitrate(capacityBps)}
+      {capacityBps > 0 && latest ? (
+        <div className="px-4 pt-4 pb-4 sm:px-5">
+          <UsageBar bps={latest.outBps} capacityBps={capacityBps} />
         </div>
+      ) : (
+        <div className="h-4" />
       )}
     </Link>
   );
@@ -273,7 +274,7 @@ export function ConnectionMonitor({ initial, realtime, capacityBps }: Props) {
   const up = status ? status.up : null;
 
   return (
-    <section className="overflow-hidden rounded-3xl border bg-card shadow-sm shadow-ink/5">
+    <section className="overflow-hidden rounded-2xl border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
         <StatusChip up={up} polledAt={status?.polledAt} />
         {realtime && (
@@ -307,9 +308,9 @@ export function ConnectionMonitor({ initial, realtime, capacityBps }: Props) {
       <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center">
         <div className="flex flex-col gap-4">
           <Gauge bps={latest?.outBps ?? 0} capacityBps={capacityBps} />
-          <div className="grid grid-cols-2 gap-2">
-            <SpeedTile label="Download" bps={latest?.outBps ?? null} tone="down" />
-            <SpeedTile label="Upload" bps={latest?.inBps ?? null} tone="up" />
+          <div className="grid grid-cols-2 gap-4 border-t pt-4">
+            <Speed label="Download" bps={latest?.outBps ?? null} tone="down" />
+            <Speed label="Upload" bps={latest?.inBps ?? null} tone="up" />
           </div>
         </div>
         <div className="flex flex-col gap-3">
@@ -324,7 +325,7 @@ export function ConnectionMonitor({ initial, realtime, capacityBps }: Props) {
               </span>
             </span>
           </div>
-          <div className="relative rounded-2xl bg-muted/40 p-3">
+          <div className="relative rounded-xl border p-3">
             <TrafficChart points={points} height={170} detailed />
             {points.length < 2 && (
               <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">{running ? "Mengukur kecepatan…" : "Dijeda"}</p>
@@ -342,9 +343,7 @@ export function ConnectionMonitor({ initial, realtime, capacityBps }: Props) {
       </div>
 
       <Link href="/subnet/trafik/grafik" className="group flex items-center gap-3 border-t px-5 py-4 transition-colors hover:bg-muted/40 active:bg-muted/60">
-        <span className="flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand-ink">
-          <ChartLine className="size-4" />
-        </span>
+        <ChartLine className="size-5 text-muted-foreground" />
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold">Grafik MRTG lengkap</span>
           <span className="block text-xs text-muted-foreground">Riwayat trafik 1 hari, 1 minggu, dan 1 bulan</span>

@@ -1,19 +1,21 @@
-import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { ChevronRight, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import type { ComponentType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Bagian berbentuk kartu di Portal Subnet. */
+/**
+ * Gaya Portal Subnet: permukaan datar (kartu putih bergaris tipis, tanpa bayangan), judul berupa teks, dan daftar
+ * berbaris pemisah seperti aplikasi bank atau operator, bukan kartu berhias.
+ */
+
+/** Bagian berbentuk kartu. Ikon judul (opsional) tampil polos di depan judul. */
 export function SectionCard({ title, icon: Icon, action, children, className }: { title?: string; icon?: LucideIcon; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("overflow-hidden rounded-3xl border bg-card shadow-sm shadow-ink/5", className)}>
+    <section className={cn("overflow-hidden rounded-2xl border bg-card", className)}>
       {title && (
-        <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-1">
-          <h2 className="flex items-center gap-2.5 text-[0.9375rem] font-semibold">
-            {Icon && (
-              <span className="flex size-8 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                <Icon className="size-4" />
-              </span>
-            )}
+        <div className="flex min-h-12 flex-wrap items-center justify-between gap-3 px-4 pt-3.5 pb-1 sm:px-5">
+          <h2 className="flex items-center gap-2 text-[0.9375rem] font-semibold">
+            {Icon && <Icon className="size-4 text-muted-foreground" />}
             {title}
           </h2>
           {action}
@@ -24,10 +26,20 @@ export function SectionCard({ title, icon: Icon, action, children, className }: 
   );
 }
 
+/** Tautan teks kecil di kanan judul kartu, mis. "Lihat semua". */
+export function CardLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="flex items-center gap-0.5 text-sm font-medium text-brand-ink hover:underline">
+      {children}
+      <ChevronRight className="size-4" />
+    </Link>
+  );
+}
+
 /** Baris label–nilai bergaris pemisah; nilai rata kanan seperti daftar pengaturan di aplikasi. */
 export function DetailRows({ items }: { items: [label: string, value: ReactNode][] }) {
   return (
-    <dl className="divide-y px-5 pb-2">
+    <dl className="divide-y px-4 pb-1 sm:px-5">
       {items.map(([label, value]) => (
         <div key={label} className="flex items-start justify-between gap-4 py-3 text-sm">
           <dt className="shrink-0 text-muted-foreground">{label}</dt>
@@ -38,13 +50,56 @@ export function DetailRows({ items }: { items: [label: string, value: ReactNode]
   );
 }
 
+type RowIcon = LucideIcon | ComponentType<{ className?: string }>;
+
+/** Satu baris menu: ikon polos, judul, keterangan, dan panah. Tanpa `href` baris tampil redup (tidak tersedia). */
+export function ListRow({ href, icon: Icon, title, subtitle, external, trailing }: { href?: string; icon: RowIcon; title: string; subtitle?: ReactNode; external?: boolean; trailing?: ReactNode }) {
+  const body = (
+    <>
+      <Icon className="size-5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{title}</span>
+        {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
+      </span>
+      {trailing}
+      {href && <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" />}
+    </>
+  );
+  const className = "flex min-h-14 items-center gap-3.5 px-4 py-3 sm:px-5";
+  if (!href) return <div className={cn(className, "opacity-55")}>{body}</div>;
+  if (external || /^(https?:|tel:|mailto:)/.test(href)) {
+    return (
+      <a href={href} {...(/^https?:/.test(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})} className={cn(className, "transition-colors hover:bg-muted/60 active:bg-muted")}>
+        {body}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={cn(className, "transition-colors hover:bg-muted/60 active:bg-muted")}>
+      {body}
+    </Link>
+  );
+}
+
+/** Titik status dengan teks, tanpa latar berwarna. */
+export function StatusDot({ tone, children, className }: { tone: "good" | "warn" | "bad" | "muted"; children: ReactNode; className?: string }) {
+  const dot = { good: "bg-emerald-500", warn: "bg-amber-500", bad: "bg-red-500", muted: "bg-muted-foreground/50" }[tone];
+  const text = { good: "text-emerald-700", warn: "text-amber-700", bad: "text-red-700", muted: "text-muted-foreground" }[tone];
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium", text, className)}>
+      <span className={cn("size-1.5 rounded-full", dot)} />
+      {children}
+    </span>
+  );
+}
+
 /** Judul halaman untuk layar lebar; di HP judul tampil di bilah atas. */
 export function PageHeading({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="hidden items-end justify-between gap-4 md:flex">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
+        {description && <p className="mt-1 text-sm text-white/75">{description}</p>}
       </div>
       {action}
     </div>

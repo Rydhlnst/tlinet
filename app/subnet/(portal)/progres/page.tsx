@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { ArrowUpCircle, ChevronDown, Route } from "lucide-react";
+import { ChevronDown, Route } from "lucide-react";
 import type { Metadata } from "next";
 import { MetroSummary, MetroTimeline, type MetroTimelineOrder } from "@/components/site/metro-timeline";
 import { PageHeading, SectionCard } from "@/components/site/subnet-ui";
@@ -53,7 +53,7 @@ export default async function SubnetProgressPage() {
           {active.length ? (
             active.map((order) => (
               <SectionCard key={order.id}>
-                <div className="flex flex-col gap-5 p-5">
+                <div className="flex flex-col gap-5 p-4 sm:p-5">
                   <MetroSummary order={order} />
                   <MetroTimeline order={order} />
                 </div>
@@ -62,9 +62,7 @@ export default async function SubnetProgressPage() {
           ) : (
             <SectionCard>
               <div className="flex flex-col items-center px-6 py-10 text-center">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
-                  <Route className="size-6" />
-                </span>
+                <Route className="size-7 text-muted-foreground" strokeWidth={1.6} />
                 <p className="mt-4 font-semibold">Tidak ada proses yang sedang berjalan</p>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">Progres pemasangan atau upgrade layanan Anda akan tampil di sini, lengkap dengan waktu setiap langkah.</p>
               </div>
@@ -76,7 +74,7 @@ export default async function SubnetProgressPage() {
               <ul className="flex flex-col gap-2 px-3 pb-3">
                 {history.map((order) => (
                   <li key={order.id}>
-                    <details className="group rounded-2xl border bg-background">
+                    <details className="group rounded-xl border bg-background">
                       <summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
                         <div className="min-w-0 flex-1">
                           <MetroSummary order={order} />
@@ -95,7 +93,7 @@ export default async function SubnetProgressPage() {
         </div>
 
         <div className="flex flex-col gap-4 sm:gap-5">
-        <SectionCard title="Ajukan Upgrade" icon={ArrowUpCircle}>
+        <SectionCard title="Ajukan upgrade">
           {installing ? (
             <p className="px-5 pb-5 text-sm text-muted-foreground">Upgrade bisa diajukan setelah pemasangan selesai.</p>
           ) : upgrading ? (
@@ -114,7 +112,7 @@ export default async function SubnetProgressPage() {
                 <p className="font-semibold">Ada pertanyaan soal progres?</p>
                 <p className="mt-1 text-sm text-muted-foreground">Tim Progres Metro kami siap membantu, {localPhone(settings.metroWhatsapp)}.</p>
               </div>
-              <a href={metroChat} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1fa855] text-sm font-semibold text-white transition-colors hover:bg-[#1b974c]">
+              <a href={metroChat} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#1fa855] text-sm font-semibold text-white transition-colors hover:bg-[#1b974c]">
                 <WhatsAppIcon className="size-4" />
                 Chat WhatsApp Progres Metro
               </a>

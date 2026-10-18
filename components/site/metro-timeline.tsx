@@ -18,20 +18,15 @@ export function MetroSummary({ order }: { order: MetroTimelineOrder }) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs font-medium text-muted-foreground">{metroKindLabels[order.kind]}</p>
-          <p className="mt-0.5 text-lg font-bold tracking-tight">{order.kind === "upgrade" ? `${order.previousCapacity || "—"} → ${order.capacity}` : order.capacity || "Layanan internet"}</p>
+          <p className="mt-0.5 text-lg font-semibold tracking-tight">{order.kind === "upgrade" ? `${order.previousCapacity || "—"} → ${order.capacity}` : order.capacity || "Layanan internet"}</p>
         </div>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
-            rejected ? "bg-red-50 text-red-700" : done ? "bg-emerald-50 text-emerald-700" : "bg-secondary text-secondary-foreground",
-          )}
-        >
-          <span className={cn("size-1.5 rounded-full", rejected ? "bg-red-500" : done ? "bg-emerald-500" : "animate-pulse bg-brand")} />
+        <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium", rejected ? "text-red-700" : done ? "text-emerald-700" : "text-brand-ink")}>
+          <span className={cn("size-1.5 rounded-full", rejected ? "bg-red-500" : done ? "bg-emerald-500" : "bg-brand")} />
           {rejected ? "Ditolak" : done ? "Selesai" : "Sedang diproses"}
         </span>
       </div>
       <div className="mt-3 flex items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
           <div className={cn("h-full rounded-full transition-all", rejected ? "bg-red-400" : done ? "bg-emerald-500" : "bg-brand")} style={{ width: `${(progress.completed / progress.total) * 100}%` }} />
         </div>
         <span className="shrink-0 text-xs font-medium text-muted-foreground tabular-nums">
@@ -49,9 +44,9 @@ export function MetroTimeline({ order }: { order: MetroTimelineOrder }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {order.note && <p className="rounded-2xl bg-muted/70 px-4 py-3 text-sm">Catatan Anda: {order.note}</p>}
+      {order.note && <p className="rounded-lg bg-muted/70 px-3 py-2.5 text-sm">Catatan Anda: {order.note}</p>}
       {rejected && (
-        <div className="flex gap-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="flex gap-3 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-800">
           <CircleAlert className="mt-0.5 size-4 shrink-0" />
           <p>
             <span className="font-semibold">Pengajuan ditolak.</span> {order.rejectReason}
@@ -68,7 +63,7 @@ export function MetroTimeline({ order }: { order: MetroTimelineOrder }) {
               <span
                 className={cn(
                   "relative flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                  step.state === "done" ? "bg-emerald-500 text-white" : current ? "bg-ink text-white ring-4 ring-secondary" : "border-2 border-border bg-card text-muted-foreground",
+                  step.state === "done" ? "bg-emerald-500 text-white" : current ? "bg-brand text-white ring-4 ring-brand/15" : "border-2 border-border bg-card text-muted-foreground",
                 )}
               >
                 {step.state === "done" ? <Check className="size-4" strokeWidth={3} /> : index + 1}
@@ -76,7 +71,7 @@ export function MetroTimeline({ order }: { order: MetroTimelineOrder }) {
               <div className="min-w-0 flex-1 pt-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className={cn("text-sm font-semibold", step.state === "pending" && "text-muted-foreground")}>{step.label}</p>
-                  {current && <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-secondary-foreground">Sedang diproses</span>}
+                  {current && <span className="text-[11px] font-medium text-brand-ink">sedang diproses</span>}
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">{step.description}</p>
                 {step.record && (
@@ -85,7 +80,7 @@ export function MetroTimeline({ order }: { order: MetroTimelineOrder }) {
                     {approvalSteps.has(step.key) && <span className="font-normal text-muted-foreground"> · oleh {step.record.by}</span>}
                   </p>
                 )}
-                {step.record?.note && <p className="mt-1 rounded-xl bg-muted/70 px-3 py-2 text-xs">{step.record.note}</p>}
+                {step.record?.note && <p className="mt-1 rounded-lg bg-muted/70 px-3 py-2 text-xs">{step.record.note}</p>}
               </div>
             </li>
           );
