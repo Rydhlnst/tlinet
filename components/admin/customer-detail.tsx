@@ -428,6 +428,16 @@ export function CustomerDetail({
               ["VLAN", customer.vlan],
               ["Tanggal Aktivasi", customer.activationDate ? formatDate(customer.activationDate) : ""],
               ["Status Layanan", statusPill],
+              [
+                "Lokasi Tower",
+                customer.towerLat || customer.towerLng ? (
+                  <a href={`https://www.google.com/maps?q=${customer.towerLat},${customer.towerLng}`} target="_blank" rel="noopener noreferrer" className="text-brand-ink underline-offset-4 hover:underline">
+                    {customer.towerLat}, {customer.towerLng}
+                  </a>
+                ) : (
+                  ""
+                ),
+              ],
             ]}
           />
         </Panel>

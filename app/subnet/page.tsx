@@ -8,6 +8,7 @@ import { customerTones, InfoList, Panel, StatusPill } from "@/components/admin/d
 import { Brand } from "@/components/site/brand";
 import { RealtimeTraffic } from "@/components/site/realtime-traffic";
 import { SubnetPing } from "@/components/site/subnet-ping";
+import { TowerMap } from "@/components/site/tower-map";
 import { SubnetAddressButton, SubnetPhoto } from "@/components/site/subnet-profile";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -146,6 +147,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
   const unpaidTotal = unpaid.reduce((sum, invoice) => sum + invoice.total, 0);
   const hasBank = Boolean(invoiceSettings.bankName && invoiceSettings.bankAccountNumber);
   const wilayah = [customer.district && `Kec. ${customer.district}`, customer.regency, customer.province].filter(Boolean).join(", ");
+  const hasTower = Boolean(customer.towerLat || customer.towerLng);
   const statusPill = <StatusPill tone={customerTones[customer.status] ?? "muted"}>{customerStatusLabels[customer.status] ?? customer.status}</StatusPill>;
 
   return (
@@ -220,8 +222,15 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
                 ["VLAN", customer.vlan],
                 ["Tanggal Aktivasi", customer.activationDate ? formatDate(customer.activationDate) : ""],
                 ["Status Layanan", statusPill],
+                ...(hasTower ? [] : ([["Lokasi Tower", ""]] as [string, string][])),
               ]}
             />
+            {hasTower && (
+              <div className="flex flex-col gap-2 border-t px-5 pt-4 pb-5">
+                <p className="text-sm font-medium">Lokasi Tower</p>
+                <TowerMap lat={customer.towerLat} lng={customer.towerLng} label="Tower" />
+              </div>
+            )}
           </Panel>
         </div>
 
