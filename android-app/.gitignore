@@ -1,0 +1,7 @@
+node_modules/
+# Kunci tanda tangan rilis: simpan di tempat aman, jangan di-commit.
+*.jks
+*.keystore
+keystore.properties
+# Hasil build yang dibagikan ke pelanggan.
+dist/

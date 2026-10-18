@@ -78,7 +78,7 @@ export function SubnetPhoto({ photoUrl, name }: { photoUrl: string; name: string
         type="button"
         size="icon-sm"
         variant="outline"
-        className="absolute -right-1 -bottom-1 rounded-full bg-background shadow-sm"
+        className="absolute -right-1 -bottom-1 rounded-full bg-background text-foreground shadow-sm"
         onClick={() => input.current?.click()}
         disabled={pending}
         aria-label="Ganti foto profil"

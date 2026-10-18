@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual, type BinaryLike } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { secret } from "@/lib/auth";
@@ -75,6 +75,17 @@ export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
   if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   return { customerId: account.customerId, email: account.email, photoUrl: account.photoUrl, portId: account.portId, pingTarget: account.pingTarget };
 });
+
+/**
+ * Berkas APK aplikasi Android TLINET untuk dipasang langsung (tanpa Play Store). Diperbarui dengan menyalin hasil build
+ * android-app/dist ke public/downloads; naikkan juga versinya di sini.
+ */
+export const androidApk = { path: "/downloads/TLINET.apk", version: "1.0.0", size: "3 MB" };
+
+/** Aplikasi Android TLINET menambahkan penanda ini ke user agent WebView-nya (lihat android-app/capacitor.config.json). */
+export async function inAndroidApp() {
+  return ((await headers()).get("user-agent") ?? "").includes("TLINETApp");
+}
 
 export async function requireSubnetUser() {
   const user = await getSubnetUser();

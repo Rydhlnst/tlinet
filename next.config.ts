@@ -11,6 +11,19 @@ const nextConfig: NextConfig = {
   turbopack: { root: process.cwd() },
   // Dibaca CmsImage untuk memutuskan gambar mana yang dilewatkan ke pengoptimal.
   env: { CMS_IMAGE_ORIGIN: cmsImageOrigin },
+  // APK diunduh sebagai berkas (bukan dibuka) dan dikenali Android sebagai paket aplikasi.
+  async headers() {
+    return [
+      {
+        source: "/downloads/:file*.apk",
+        headers: [
+          { key: "Content-Type", value: "application/vnd.android.package-archive" },
+          { key: "Content-Disposition", value: "attachment" },
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [new URL(`${cmsImageOrigin}/uploads/**`)],
     // Gambar yang disimpan di database (/media/<id>) dan aset di public/images.

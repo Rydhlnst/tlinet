@@ -1,0 +1,23 @@
+{
+  "appId": "com.translinkinternasional.tlinet",
+  "appName": "TLINET",
+  "webDir": "www",
+  "appendUserAgent": "TLINETApp/1.0",
+  "backgroundColor": "#ffffff",
+  "server": {
+    "url": "https://www.translinkinternasional.com/subnet",
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover",
+      "style": "LIGHT"
+    }
+  }
+}

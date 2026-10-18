@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Proyek aplikasi Android (Capacitor) punya build sendiri.
+    "android-app/**",
   ]),
 ]);
 

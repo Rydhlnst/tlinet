@@ -41,7 +41,7 @@ export async function updateSubnetPhotoAction(formData: FormData): Promise<Subne
   const photos = [stored.url, ...(customer?.photos ?? []).filter((url) => url !== user.photoUrl)];
   await db.update(customers).set({ photos, updatedAt: new Date() }).where(eq(customers.id, user.customerId));
   await db.update(subnetAccounts).set({ photoUrl: stored.url, updatedAt: new Date() }).where(eq(subnetAccounts.customerId, user.customerId));
-  revalidatePath("/subnet");
+  revalidatePath("/subnet", "layout");
   return { ok: true, message: "Foto profil diperbarui." };
 }
 
@@ -57,7 +57,7 @@ export async function updateSubnetAddressAction(input: { address: string; distri
     .update(customers)
     .set({ ...values, updatedAt: new Date() })
     .where(eq(customers.id, user.customerId));
-  revalidatePath("/subnet");
+  revalidatePath("/subnet", "layout");
   return { ok: true, message: "Alamat diperbarui." };
 }
 

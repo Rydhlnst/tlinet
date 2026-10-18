@@ -180,6 +180,15 @@
 }
 
 @layer components {
+  /* Ruang untuk status bar dan bilah gestur di HP. Aplikasi Android (Capacitor) mengisi --safe-area-inset-*
+     karena WebView lama melaporkan env() sebagai 0. */
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), var(--safe-area-inset-top, 0px));
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom, 0px));
+  }
+
   /* Kisi halus di belakang hero. */
   .bg-grid {
     background-image:

@@ -1,5 +1,5 @@
 import { asc, count, desc, eq, ne, sql } from "drizzle-orm";
-import { ExternalLink, Search } from "lucide-react";
+import { Download, ExternalLink, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SubnetAccessButton, SubnetPortsProvider } from "@/components/admin/subnet-access";
@@ -13,6 +13,7 @@ import { customers, invoices, subnetAccounts } from "@/lib/db/schema";
 import { formatDateTime, formatRupiah } from "@/lib/format";
 import { librenmsConfigured, listLibrenmsPorts, suggestPort } from "@/lib/librenms";
 import { absoluteUrl } from "@/lib/seo";
+import { androidApk } from "@/lib/subnet";
 
 export const metadata: Metadata = { title: "Subnet" };
 
@@ -84,12 +85,21 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
             pelanggan punya akses aktif.
           </p>
         </div>
-        <Button asChild variant="outline" size="lg" className="shrink-0">
-          <Link href="/subnet/login" target="_blank">
-            <ExternalLink />
-            Buka portal
-          </Link>
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {/* Tautan APK bisa dibagikan ke pelanggan lewat WhatsApp. */}
+          <Button asChild variant="outline" size="lg">
+            <a href={androidApk.path} download>
+              <Download />
+              APK Android
+            </a>
+          </Button>
+          <Button asChild variant="outline" size="lg">
+            <Link href="/subnet/login" target="_blank">
+              <ExternalLink />
+              Buka portal
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <SubnetPortsProvider ports={ports.length ? ports : null}>

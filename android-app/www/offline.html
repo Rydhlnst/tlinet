@@ -1,0 +1,83 @@
+<!doctype html>
+<!-- Ditampilkan Capacitor (server.errorPath) bila portal gagal dimuat, mis. saat HP tidak terhubung ke internet. -->
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>TLINET</title>
+    <style>
+      :root {
+        --primary: #2456f5;
+        --foreground: #0f1733;
+        --muted: #5b6581;
+        --soft: #edf2ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: #f7f8fc;
+        color: var(--foreground);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        text-align: center;
+      }
+      .card {
+        width: 100%;
+        max-width: 360px;
+        padding: 32px 24px;
+        border: 1px solid #e3e7f1;
+        border-radius: 24px;
+        background: #fff;
+      }
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        border-radius: 20px;
+        background: var(--soft);
+        color: var(--primary);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+      p {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      button {
+        width: 100%;
+        height: 44px;
+        border: 0;
+        border-radius: 12px;
+        background: var(--primary);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h.01" /><path d="M8.5 16.43a5 5 0 0 1 7 0" /><path d="M5 12.86a10 10 0 0 1 5.17-2.69" /><path d="M19 12.86a10 10 0 0 0-2-1.43" /><path d="M2 8.82a15 15 0 0 1 4.18-2.65" /><path d="M22 8.82a15 15 0 0 0-11.29-3.76" /><path d="m2 2 20 20" />
+        </svg>
+      </div>
+      <h1>Tidak ada koneksi</h1>
+      <p>Portal TLINET tidak bisa dimuat. Periksa koneksi internet HP Anda, lalu coba lagi.</p>
+      <button type="button" onclick="location.replace('https://www.translinkinternasional.com/subnet')">Coba lagi</button>
+    </div>
+  </body>
+</html>
