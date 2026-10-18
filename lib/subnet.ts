@@ -80,7 +80,7 @@ export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
  * Berkas APK aplikasi Android TLINET untuk dipasang langsung (tanpa Play Store). Diperbarui dengan menyalin hasil build
  * android-app/dist ke public/downloads; naikkan juga versinya di sini.
  */
-export const androidApk = { path: "/downloads/TLINET.apk", version: "1.0.0", size: "3 MB" };
+export const androidApk = { path: "/downloads/TLINET.apk", version: "1.0.1", size: "3 MB" };
 
 /** Aplikasi Android TLINET menambahkan penanda ini ke user agent WebView-nya (lihat android-app/capacitor.config.json). */
 export async function inAndroidApp() {

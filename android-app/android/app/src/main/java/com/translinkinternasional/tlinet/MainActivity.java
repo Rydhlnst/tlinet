@@ -4,6 +4,8 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.util.Log;
 import android.print.PrintAttributes;
 import android.print.PrintManager;
 import android.webkit.CookieManager;
@@ -16,11 +18,20 @@ import com.getcapacitor.BridgeActivity;
 /**
  * Aplikasi TLINET membuka Portal Subnet (server.url di capacitor.config.json) di WebView. Di sini ditambahkan yang
  * tidak bisa dilakukan WebView sendiri: mencetak / menyimpan invoice sebagai PDF, membuka berkas unduhan di peramban,
- * dan tombol kembali yang menutup aplikasi dari Beranda.
+ * tombol kembali yang menutup aplikasi dari Beranda, dan memuat ulang portal bila aplikasi dibuka lagi setelah lama di latar.
  */
 public class MainActivity extends BridgeActivity {
 
     private static final String PORTAL_HOME = "/subnet";
+
+    /**
+     * Aplikasi yang hanya diminimalkan tetap menampilkan halaman lama (data maupun tampilan sebelum situs diperbarui).
+     * Setelah selama ini di latar, portal dimuat ulang saat dibuka lagi. Jeda singkat (mis. memilih foto profil atau
+     * membuka WhatsApp) tidak memicu muat ulang supaya isian di halaman tidak hilang.
+     */
+    private static final long RELOAD_AFTER_MS = 5 * 60 * 1000;
+
+    private long pausedAt = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +64,19 @@ public class MainActivity extends BridgeActivity {
         super.onPause();
         // Sesi masuk tersimpan di cookie; tulis ke disk supaya pelanggan tidak perlu masuk lagi setelah aplikasi ditutup.
         CookieManager.getInstance().flush();
+        pausedAt = SystemClock.elapsedRealtime();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (pausedAt == 0) return;
+        long away = SystemClock.elapsedRealtime() - pausedAt;
+        pausedAt = 0;
+        if (away >= RELOAD_AFTER_MS && getBridge() != null) {
+            Log.d("TLINET", "Memuat ulang portal setelah " + (away / 1000) + " detik di latar");
+            getBridge().getWebView().reload();
+        }
     }
 
     private void openExternal(String url) {
