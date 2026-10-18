@@ -3,7 +3,7 @@ import { LogOut } from "lucide-react";
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { initials } from "@/components/admin/detail-panels";
-import { Brand } from "@/components/site/brand";
+import { TlinetLogo } from "@/components/site/brand";
 import { SubnetBottomNav, SubnetMobileBar, SubnetTopNav } from "@/components/site/subnet-nav";
 import { Button } from "@/components/ui/button";
 import { getContent } from "@/lib/data";
@@ -34,7 +34,7 @@ export default async function SubnetPortalLayout({ children }: LayoutProps<"/sub
   ]);
   const name = customer?.name ?? "";
   const photoUrl = customer?.photos[0] ?? "";
-  const brand = <Brand name={settings.brandName} highlight={settings.brandHighlight} logoUrl={settings.logoUrl} className="text-lg" />;
+  const brand = <TlinetLogo priority className="h-7" />;
 
   return (
     <div className="flex flex-1 flex-col bg-muted">
@@ -43,7 +43,7 @@ export default async function SubnetPortalLayout({ children }: LayoutProps<"/sub
       <header className="sticky top-0 z-40 hidden border-b bg-background/90 backdrop-blur-md md:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
           <Link href="/subnet" aria-label={`${settings.brandName} – Beranda portal`}>
-            <Brand name={settings.brandName} highlight={settings.brandHighlight} logoUrl={settings.logoUrl} />
+            <TlinetLogo priority className="h-8" />
           </Link>
           <SubnetTopNav unpaid={unpaid} />
           <div className="flex items-center gap-2">

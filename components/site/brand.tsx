@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { CmsImage } from "./ui";
@@ -47,4 +48,17 @@ export function Brand({ name, logoUrl, highlight = "", inverted = false, classNa
       </span>
     </span>
   );
+}
+
+const logos = {
+  /** Logo lengkap dengan tagline "Internet Cepat, Tanpa Batas", untuk tempat yang lapang (mis. halaman masuk). */
+  full: { src: "/images/brand/tlinet-logo.webp", width: 738, height: 156 },
+  /** Lambang dan tulisan TLINET saja, untuk header; tagline terlalu kecil untuk dibaca di sana. */
+  wordmark: { src: "/images/brand/tlinet-wordmark.webp", width: 738, height: 150 },
+};
+
+/** Logo resmi TLINET (latar transparan, untuk permukaan terang) di Portal Subnet dan aplikasi Android. */
+export function TlinetLogo({ variant = "wordmark", className, priority }: { variant?: keyof typeof logos; className?: string; priority?: boolean }) {
+  const logo = logos[variant];
+  return <Image src={logo.src} alt="TLINET" width={logo.width} height={logo.height} priority={priority} className={cn("h-7 w-auto", className)} />;
 }

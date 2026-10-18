@@ -3,23 +3,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppDownloadCard } from "@/components/site/app-download";
-import { Brand } from "@/components/site/brand";
+import { TlinetLogo } from "@/components/site/brand";
 import { SubnetLoginForm } from "@/components/site/subnet-login-form";
-import { getContent } from "@/lib/data";
 import { getSubnetUser, inAndroidApp } from "@/lib/subnet";
 
 export const metadata: Metadata = { title: "Masuk Portal Subnet", robots: { index: false } };
 
 export default async function SubnetLoginPage() {
   if (await getSubnetUser()) redirect("/subnet");
-  const [settings, inApp] = await Promise.all([getContent("settings"), inAndroidApp()]);
+  const inApp = await inAndroidApp();
 
   return (
     <main className="pt-safe relative flex flex-1 items-center justify-center overflow-hidden bg-muted px-5 py-16">
       <div className="bg-grid absolute inset-0" aria-hidden="true" />
       <div className="relative w-full max-w-sm">
         <div className="rounded-3xl border bg-card p-8 shadow-xl shadow-ink/5">
-          <Brand name={settings.brandName} highlight={settings.brandHighlight} logoUrl={settings.logoUrl} />
+          <TlinetLogo variant="full" priority className="h-12" />
           <h1 className="mt-8 text-xl font-semibold tracking-tight">Portal Subnet</h1>
           <p className="mt-1.5 mb-7 text-sm text-muted-foreground">Masuk untuk memantau koneksi, tagihan, dan layanan internet Anda. Akun diberikan oleh admin TLINET.</p>
           <SubnetLoginForm />
