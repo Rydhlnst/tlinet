@@ -43,6 +43,7 @@ export const defaultContent: ContentMap = {
     email: "noc@translinkinternasional.com",
     whatsappNumber: "6282320003007",
     whatsappMessage: "Halo TLINET, saya mau bertanya mengenai layanan internet fiber.",
+    itSupportWhatsapp: "62882020241755",
     cta: {
       eyebrow: "Koneksi Tercepat di Sulawesi",
       title: "Siap Upgrade Koneksi Internet Anda?",

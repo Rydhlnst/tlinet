@@ -77,7 +77,7 @@ export default async function SubnetBillingPage() {
         </section>
       )}
 
-      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-2">
         <SectionCard title="Invoice" icon={ScrollText}>
           {invoiceList.length ? (
             <ul className="flex flex-col gap-2 p-3">

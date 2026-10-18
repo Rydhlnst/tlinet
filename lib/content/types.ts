@@ -24,6 +24,8 @@ export type SiteSettings = {
   email: string;
   whatsappNumber: string;
   whatsappMessage: string;
+  /** WhatsApp tim IT Support, tampil di portal Subnet (Layanan dan Progres Metro). */
+  itSupportWhatsapp: string;
   cta: SectionHead & { primaryLabel: string; primaryHref: string; secondaryLabel: string };
 };
 

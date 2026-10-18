@@ -52,6 +52,12 @@ export function normalizePhone(value: string) {
   return digits.startsWith("0") ? `62${digits.slice(1)}` : digits;
 }
 
+/** "62882020241755" → "0882020241755", untuk ditampilkan ke pelanggan. */
+export function localPhone(value: string) {
+  const digits = normalizePhone(value);
+  return digits.startsWith("62") ? `0${digits.slice(2)}` : digits;
+}
+
 export function whatsappUrl(number: string, message = "") {
   const base = `https://wa.me/${normalizePhone(number)}`;
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;

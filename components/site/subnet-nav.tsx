@@ -83,6 +83,7 @@ export function SubnetBottomNav({ unpaid }: { unpaid: number }) {
 
 const titles: [prefix: string, title: string][] = [
   ["/subnet/trafik/grafik", "Grafik MRTG"],
+  ["/subnet/progres", "Progres Metro"],
   ["/subnet/trafik", "Koneksi"],
   ["/subnet/tagihan", "Tagihan"],
   ["/subnet/layanan", "Layanan"],
@@ -93,15 +94,16 @@ const titles: [prefix: string, title: string][] = [
 export function SubnetMobileBar({ brand, name, photoUrl }: { brand: ReactNode; name: string; photoUrl: string }) {
   const pathname = usePathname();
   const title = titles.find(([prefix]) => pathname.startsWith(prefix))?.[1];
-  const nested = pathname.startsWith("/subnet/trafik/");
+  // Halaman di luar tab bawah punya tombol kembali ke asalnya.
+  const back = pathname.startsWith("/subnet/trafik/") ? { href: "/subnet/trafik", label: "Kembali ke Koneksi" } : pathname.startsWith("/subnet/progres") ? { href: "/subnet", label: "Kembali ke Beranda" } : null;
 
   return (
     <header className="pt-safe sticky top-0 z-40 bg-muted/85 backdrop-blur-md md:hidden">
       <div className="flex h-14 items-center justify-between gap-3 px-4">
         {title ? (
           <div className="flex min-w-0 items-center gap-1">
-            {nested && (
-              <Link href="/subnet/trafik" aria-label="Kembali ke Koneksi" className="-ml-2 flex size-9 items-center justify-center rounded-full hover:bg-background">
+            {back && (
+              <Link href={back.href} aria-label={back.label} className="-ml-2 flex size-9 items-center justify-center rounded-full hover:bg-background">
                 <ChevronLeft className="size-5" />
               </Link>
             )}

@@ -279,3 +279,32 @@ export const mediaAssets = pgTable("media_assets", {
   data: text("data"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+/** Satu langkah progres yang sudah selesai: waktunya, siapa yang menandai, dan catatan opsional. */
+export type MetroStepRecord = { at: string; by: string; note?: string };
+
+/**
+ * Progres Metro: pemasangan baru atau upgrade kapasitas satu pelanggan, ditampilkan di portal Subnet supaya pelanggan
+ * tahu prosesnya sudah sampai mana. Langkah-langkahnya ada di lib/metro.ts; yang selesai dicatat di `steps`.
+ */
+export const metroOrders = pgTable(
+  "metro_orders",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull(),
+    /** "install" (pemasangan baru) atau "upgrade". */
+    kind: text("kind").notNull(),
+    /** Kapasitas yang dipasang atau diminta, mis. "200 Mbps". */
+    capacity: text("capacity").notNull().default(""),
+    /** Kapasitas sebelum upgrade, dicatat saat permintaan dibuat. */
+    previousCapacity: text("previous_capacity").notNull().default(""),
+    steps: jsonb("steps").$type<Record<string, MetroStepRecord>>().notNull().default({}),
+    /** Catatan dari pelanggan saat mengajukan upgrade. */
+    note: text("note").notNull().default(""),
+    /** "active", "done", atau "rejected". */
+    status: text("status").notNull().default("active"),
+    rejectReason: text("reject_reason").notNull().default(""),
+    ...timestamps,
+  },
+  (table) => [index("metro_orders_customer_idx").on(table.customerId, table.createdAt)],
+);

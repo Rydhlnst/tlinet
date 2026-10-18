@@ -1,10 +1,11 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireDb } from "@/lib/db";
-import { customers, subnetAccounts } from "@/lib/db/schema";
+import { customers, metroOrders, subnetAccounts } from "@/lib/db/schema";
+import { capacityLabel, upgradeOptions } from "@/lib/metro";
 import { createSubnetSession, destroySubnetSession, getSubnetUser, subnetPasswordMatches } from "@/lib/subnet";
 import { storeUpload } from "@/lib/uploads";
 
@@ -59,6 +60,36 @@ export async function updateSubnetAddressAction(input: { address: string; distri
     .where(eq(customers.id, user.customerId));
   revalidatePath("/subnet", "layout");
   return { ok: true, message: "Alamat diperbarui." };
+}
+
+/** Pelanggan mengajukan upgrade kapasitas; masuk ke menu Progres Metro di admin untuk disetujui tim IT. */
+export async function requestUpgradeAction(input: { mbps: number; note: string }): Promise<SubnetResult> {
+  const user = await getSubnetUser();
+  if (!user) return expired;
+  const db = requireDb();
+  const [customer] = await db.select({ name: customers.name, capacity: customers.capacity }).from(customers).where(eq(customers.id, user.customerId)).limit(1);
+  if (!customer) return expired;
+  const mbps = Number(input.mbps);
+  if (!upgradeOptions(customer.capacity).includes(mbps)) return { ok: false, message: "Pilih kapasitas upgrade." };
+  const [open] = await db
+    .select({ id: metroOrders.id })
+    .from(metroOrders)
+    .where(and(eq(metroOrders.customerId, user.customerId), eq(metroOrders.kind, "upgrade"), eq(metroOrders.status, "active")))
+    .limit(1);
+  if (open) return { ok: false, message: "Masih ada permintaan upgrade yang sedang diproses." };
+
+  await db.insert(metroOrders).values({
+    id: crypto.randomUUID(),
+    customerId: user.customerId,
+    kind: "upgrade",
+    capacity: capacityLabel(mbps),
+    previousCapacity: customer.capacity,
+    note: clean(input.note, 300),
+    steps: { permintaan: { at: new Date().toISOString(), by: customer.name } },
+  });
+  revalidatePath("/subnet", "layout");
+  revalidatePath("/admin/metro");
+  return { ok: true, message: "Permintaan upgrade terkirim. Pantau prosesnya di halaman ini." };
 }
 
 export type SubnetFormState = { error?: string };

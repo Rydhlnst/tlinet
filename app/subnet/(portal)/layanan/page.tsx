@@ -11,7 +11,7 @@ import { customerStatusLabels } from "@/lib/cms/entities";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
 import { customers } from "@/lib/db/schema";
-import { formatDate, formatRupiah, whatsappUrl } from "@/lib/format";
+import { formatDate, formatRupiah, localPhone, whatsappUrl } from "@/lib/format";
 import { requireSubnetUser } from "@/lib/subnet";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +63,9 @@ export default async function SubnetServicePage() {
   const chat = settings.whatsappNumber
     ? whatsappUrl(settings.whatsappNumber, `Halo ${settings.brandName}, saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `)
     : "";
+  const itChat = settings.itSupportWhatsapp
+    ? whatsappUrl(settings.itSupportWhatsapp, `Halo IT Support ${settings.brandName}, saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `)
+    : "";
 
   return (
     <>
@@ -98,7 +101,7 @@ export default async function SubnetServicePage() {
         </div>
       </section>
 
-      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-2">
         <SectionCard title="Data Teknis">
           <DetailRows
             items={[
@@ -133,6 +136,7 @@ export default async function SubnetServicePage() {
           <SectionCard title="Bantuan" icon={Headset}>
             <div id="bantuan" className="scroll-mt-24 divide-y pb-1">
               {chat && <ActionRow href={chat} external icon={WhatsAppIcon} tone="green" title="Chat WhatsApp NOC" subtitle="Gangguan, tagihan, dan perubahan layanan" />}
+              {itChat && <ActionRow href={itChat} external icon={WhatsAppIcon} tone="green" title="Chat WhatsApp IT Support" subtitle={`${localPhone(settings.itSupportWhatsapp)} · teknis, upgrade, dan progres`} />}
               {phone && <ActionRow href={`tel:${phone}`} icon={Phone} title="Telepon" subtitle={settings.phone} />}
               {settings.email && <ActionRow href={`mailto:${settings.email}`} icon={Mail} title="Email" subtitle={settings.email} />}
             </div>

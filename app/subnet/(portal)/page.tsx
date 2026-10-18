@@ -1,19 +1,21 @@
-import { desc, eq } from "drizzle-orm";
-import { ChartLine, CircleCheck, FileText, Gauge, Headset, History, MapPin, Package, ReceiptText, Siren, UserRound, Wallet, type LucideIcon } from "lucide-react";
+import { and, desc, eq } from "drizzle-orm";
+import { ArrowUpCircle, ChartLine, ChevronRight, CircleCheck, FileText, Gauge, Headset, History, MapPin, Package, ReceiptText, Route, Siren, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { customerTones, initials, StatusPill } from "@/components/admin/detail-panels";
 import { BrandMark } from "@/components/site/brand";
+import { MetroSummary } from "@/components/site/metro-timeline";
 import { ConnectionSummaryCard } from "@/components/site/subnet-connection";
 import { greeting, SectionCard } from "@/components/site/subnet-ui";
 import { customerStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
-import { customerPayments, customers, invoices } from "@/lib/db/schema";
+import { customerPayments, customers, invoices, metroOrders } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah, parseCapacityBps, whatsappUrl } from "@/lib/format";
 import { invoicePublicPath } from "@/lib/invoices";
 import { getPortTraffic, realtimeConfigured } from "@/lib/librenms";
+import { isMetroKind, metroProgress } from "@/lib/metro";
 import { requireSubnetUser } from "@/lib/subnet";
 import { cn } from "@/lib/utils";
 import { daysUntil, todayWita } from "./dates";
@@ -65,7 +67,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
 
   const user = await requireSubnetUser();
   const db = requireDb();
-  const [settings, [customer], invoiceList, payments, traffic] = await Promise.all([
+  const [settings, [customer], invoiceList, payments, traffic, metroRows] = await Promise.all([
     getContent("settings"),
     db.select().from(customers).where(eq(customers.id, user.customerId)).limit(1),
     db
@@ -75,6 +77,11 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
       .orderBy(desc(invoices.issueDate), desc(invoices.number)),
     db.select().from(customerPayments).where(eq(customerPayments.customerId, user.customerId)).orderBy(desc(customerPayments.period)).limit(3),
     user.portId ? getPortTraffic(user.portId) : null,
+    db
+      .select()
+      .from(metroOrders)
+      .where(and(eq(metroOrders.customerId, user.customerId), eq(metroOrders.status, "active")))
+      .orderBy(desc(metroOrders.createdAt)),
   ]);
   if (!customer) notFound();
 
@@ -85,6 +92,9 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
   const dueIn = nextDue ? daysUntil(nextDue, today) : 0;
   const latestInvoice = invoiceList[0];
   const photoUrl = customer.photos[0] ?? "";
+  const metro = metroRows.find((row) => isMetroKind(row.kind));
+  const metroOrder = metro && isMetroKind(metro.kind) ? { ...metro, kind: metro.kind, status: "active" as const } : null;
+  const metroNext = metroOrder ? metroProgress(metroOrder.kind, metroOrder.steps).next : null;
 
   const chat = (message: string) => (settings.whatsappNumber ? whatsappUrl(settings.whatsappNumber, message) : "/subnet/layanan#bantuan");
   const report = chat(
@@ -177,9 +187,41 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
             <MenuTile href="/subnet/layanan#dokumen" icon={ReceiptText} label="Dokumen" />
             <MenuTile href="/subnet/profil#alamat" icon={MapPin} label="Alamat" />
             <MenuTile href={chat(`Halo ${settings.brandName}, saya ${customer.name}${customer.siteId ? ` (Site ID ${customer.siteId})` : ""}. `)} icon={Headset} label="Hubungi NOC" />
-            <MenuTile href="/subnet/profil" icon={UserRound} label="Profil" />
+            <MenuTile href="/subnet/progres" icon={Route} label="Progres Metro" />
           </div>
         </SectionCard>
+
+        {/* Progres yang berjalan tampil di atas (HP: tepat setelah kartu sambutan); bila tidak ada, ajakan upgrade di bawah. */}
+        {metroOrder ? (
+          <Link href="/subnet/progres" className="group order-1 rounded-3xl border bg-card p-5 shadow-sm shadow-ink/5 transition-colors hover:border-brand/30 lg:order-none">
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <span className="flex size-8 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                <Route className="size-4" />
+              </span>
+              Progres Metro
+            </p>
+            <MetroSummary order={metroOrder} />
+            {metroNext && (
+              <p className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-muted/70 px-3 py-2.5 text-xs">
+                <span>
+                  Sedang diproses: <span className="font-semibold">{metroNext.label}</span>
+                </span>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </p>
+            )}
+          </Link>
+        ) : (
+          <Link href="/subnet/progres" className="group order-6 flex items-center gap-4 rounded-3xl border bg-card p-5 shadow-sm shadow-ink/5 transition-colors hover:border-brand/30 lg:order-none">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
+              <ArrowUpCircle className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">Butuh kecepatan lebih?</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Ajukan upgrade kapasitas dan pantau prosesnya di Progres Metro.</p>
+            </div>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        )}
       </div>
 
       <div className="contents lg:flex lg:flex-col lg:gap-5">

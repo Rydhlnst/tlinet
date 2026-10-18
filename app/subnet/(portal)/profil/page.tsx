@@ -40,7 +40,7 @@ export default async function SubnetProfilePage() {
         </div>
       </section>
 
-      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-2">
         <SectionCard title="Informasi Pribadi" icon={UserRound}>
           <DetailRows
             items={[

@@ -425,6 +425,13 @@ export const pageDefs: PageDef[] = [
             help: "Format internasional tanpa tanda +, mis. 6281234567890.",
           },
           { name: "whatsappMessage", label: "Pesan WhatsApp bawaan", type: "textarea", rows: 2 },
+          {
+            name: "itSupportWhatsapp",
+            label: "WhatsApp IT Support",
+            type: "text",
+            half: true,
+            help: "Tampil di portal Subnet sebagai \"Chat WhatsApp IT Support\". Format internasional tanpa tanda +.",
+          },
         ],
       },
       {

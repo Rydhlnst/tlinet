@@ -18,6 +18,7 @@ import {
   MapPin,
   MapPinned,
   Network,
+  Route,
   Newspaper,
   Package,
   ReceiptText,
@@ -113,6 +114,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/data/customers", label: "Data Pelanggan", icon: Users, keywords: "customer site id cid foto detail" },
       { href: "/admin/subnet", label: "Subnet", icon: Network, keywords: "portal login akses pelanggan username password" },
+      { href: "/admin/metro", label: "Progres Metro", icon: Route, keywords: "pemasangan baru upgrade kapasitas instalasi tahapan status" },
       { href: "/admin/data/customer-payments", label: "History Pembayaran Subnet", icon: ReceiptText, keywords: "tagihan bayar lunas riwayat" },
       { href: "/admin/data/customer-purchases", label: "History Pembelian Perusahaan", icon: ShoppingBag, keywords: "beli nap pemasok biaya riwayat" },
       { href: "/admin/keuntungan", label: "Selisih Keuntungan", icon: TrendingUp, keywords: "profit margin laba biaya isp nap" },
