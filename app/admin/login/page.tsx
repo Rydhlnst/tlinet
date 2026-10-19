@@ -1,9 +1,11 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/login-form";
 import { Brand } from "@/components/site/brand";
+import { adminAppUserAgent } from "@/lib/admin-app";
 import { getAdmin } from "@/lib/auth";
 import { homePath } from "@/lib/permissions";
 import { getContent } from "@/lib/data";
@@ -13,7 +15,9 @@ export const metadata: Metadata = { title: "Masuk Dashboard", robots: { index: f
 export default async function LoginPage() {
   const admin = await getAdmin();
   if (admin) redirect(homePath(admin));
-  const settings = await getContent("settings");
+  const [settings, requestHeaders] = await Promise.all([getContent("settings"), headers()]);
+  // Di aplikasi TLINET Admin hanya dashboard yang dibuka; situs publik tetap di peramban.
+  const inAdminApp = (requestHeaders.get("user-agent") ?? "").includes(adminAppUserAgent);
 
   return (
     <main className="relative flex flex-1 items-center justify-center overflow-hidden bg-muted/40 px-5 py-16">
@@ -25,10 +29,12 @@ export default async function LoginPage() {
           <p className="mt-1.5 mb-7 text-sm text-muted-foreground">Kelola seluruh isi situs dari satu tempat.</p>
           <LoginForm />
         </div>
-        <Link href="/" className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-4" />
-          Kembali ke situs
-        </Link>
+        {!inAdminApp && (
+          <Link href="/" className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="size-4" />
+            Kembali ke situs
+          </Link>
+        )}
       </div>
     </main>
   );

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TLINET Admin</string>
+    <string name="title_activity_main">TLINET Admin</string>
+    <string name="package_name">com.translinkinternasional.tlinet.admin</string>
+    <string name="custom_url_scheme">com.translinkinternasional.tlinet.admin</string>
+</resources>

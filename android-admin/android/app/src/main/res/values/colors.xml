@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Biru TLINET, sama dengan warna primary di situs. -->
+    <color name="colorPrimary">#2456F5</color>
+    <color name="colorPrimaryDark">#1A3FC4</color>
+    <color name="colorAccent">#2456F5</color>
+</resources>

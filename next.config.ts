@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   turbopack: { root: process.cwd() },
   // Dibaca CmsImage untuk memutuskan gambar mana yang dilewatkan ke pengoptimal.
   env: { CMS_IMAGE_ORIGIN: cmsImageOrigin },
+  // Hanya untuk next dev: emulator Android memanggil server lokal lewat 10.0.2.2 saat menguji aplikasi.
+  allowedDevOrigins: ["10.0.2.2"],
+  // APK aplikasi admin tidak ada di public/; berkasnya ikut dibundel hanya untuk rute unduhannya.
+  outputFileTracingIncludes: { "/admin/app": ["./private/**/*"] },
   // APK diunduh sebagai berkas (bukan dibuka) dan dikenali Android sebagai paket aplikasi.
   async headers() {
     return [

@@ -19,6 +19,7 @@ import {
   MapPinned,
   Network,
   ShieldCheck,
+  Smartphone,
   Route,
   Newspaper,
   Package,
@@ -73,6 +74,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { adminApk } from "@/lib/admin-app";
 import { accurateModules } from "@/lib/accurate-features";
 import { can, routePermission, type AdminUser } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -163,7 +165,7 @@ const isActive = (pathname: string, href: string, exact?: boolean) => pathname =
 const activeClass =
   "data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground";
 
-function AdminSidebar({ admin, brandName, newLeads }: { admin: AdminUser; brandName: string; newLeads: number }) {
+function AdminSidebar({ admin, brandName, newLeads, showAppDownload }: { admin: AdminUser; brandName: string; newLeads: number; showAppDownload: boolean }) {
   const pathname = usePathname();
   const groups = visibleNav(admin);
   const { setOpenMobile } = useSidebar();
@@ -239,6 +241,14 @@ function AdminSidebar({ admin, brandName, newLeads }: { admin: AdminUser; brandN
         ))}
       </SidebarContent>
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+        {showAppDownload && (
+          <Button asChild size="lg" className="w-full" title={`Versi ${adminApk.version} · ${adminApk.size} · khusus internal`}>
+            <a href={adminApk.path} download>
+              <Smartphone />
+              Aplikasi Android
+            </a>
+          </Button>
+        )}
         <Button asChild variant="outline" size="lg" className="w-full bg-background">
           <Link href="/" target="_blank">
             Buka website
@@ -306,13 +316,13 @@ function CommandMenu({ admin }: { admin: AdminUser }) {
   );
 }
 
-type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; children: ReactNode };
+type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; showAppDownload: boolean; children: ReactNode };
 
-export function AdminShell({ admin, brandName, newLeads, children }: ShellProps) {
+export function AdminShell({ admin, brandName, newLeads, showAppDownload, children }: ShellProps) {
   return (
     <TooltipProvider delayDuration={200}>
       <SidebarProvider>
-        <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} />
+        <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} showAppDownload={showAppDownload} />
         <SidebarInset className="min-w-0 border md:shadow-none">
           <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur md:rounded-t-xl">
             <SidebarTrigger />
