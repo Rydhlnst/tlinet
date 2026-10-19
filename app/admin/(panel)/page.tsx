@@ -1,10 +1,13 @@
 import { count, desc, eq } from "drizzle-orm";
 import { ArrowRight, CircleAlert, CircleCheck, Inbox, MapPin, Newspaper, Package, type LucideIcon } from "lucide-react";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { accurateMode } from "@/lib/accurate";
+import { adminAppUserAgent } from "@/lib/admin-app";
 import { requireAdmin } from "@/lib/auth";
 import { leadStatusLabels, leadTypeLabels } from "@/lib/cms/entities";
 import { pageDefs } from "@/lib/cms/pages";
@@ -42,6 +45,8 @@ function StatusRow({ ok, title, detail }: { ok: boolean; title: string; detail: 
 
 export default async function DashboardPage() {
   const admin = await requireAdmin("dashboard");
+  // Aplikasi TLINET Admin hanya untuk menu operasional; halaman awalnya Data Pelanggan.
+  if (((await headers()).get("user-agent") ?? "").includes(adminAppUserAgent)) redirect("/admin/data/customers");
   const db = requireDb();
   const [[newLeads], [allLeads], [packageCount], [areaCount], [articleCount], recent, r2Online] = await Promise.all([
     db.select({ value: count() }).from(leads).where(eq(leads.status, "new")),

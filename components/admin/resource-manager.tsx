@@ -1,11 +1,12 @@
 "use client";
 
-import { Check, Ellipsis, ExternalLink, Eye, Minus, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Check, Ellipsis, EllipsisVertical, ExternalLink, Eye, Minus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getEntityDef, type Column } from "@/lib/cms/entities";
@@ -100,11 +101,11 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-2xl font-semibold tracking-tight">{entity.label}</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{entity.description}</p>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 [&>*]:max-md:flex-1">
           {entity.monthly && <MonthlyGenerate entityKey={entity.key} monthly={entity.monthly} rows={rows} />}
           {entity.publicPath && (
             <Button asChild variant="outline" size="lg">
@@ -127,7 +128,7 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
 
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="flex items-center justify-between gap-3 border-b p-3">
-          <div className="relative w-full max-w-xs">
+          <div className="relative w-full md:max-w-xs">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Cari ${entity.singular}…`} className="pl-8" />
           </div>
@@ -135,7 +136,98 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
             {visible.length} dari {rows.length} data
           </p>
         </div>
-        <Table>
+        {/* HP: satu kartu per baris, tanpa tabel lebar yang harus digeser ke samping. */}
+        <ul className="divide-y md:hidden">
+          {visible.map((row) => {
+            const image = entity.columns.find((column) => column.type === "image");
+            const [first, ...rest] = entity.columns.filter((column) => column.type !== "image");
+            const badges = rest.filter((column) => column.type === "badge");
+            const details = rest.filter((column) => column.type !== "badge").slice(0, 4);
+            return (
+              <li key={row.id} className="flex items-start gap-3 px-4 py-3 active:bg-muted/60" onClick={() => openRow(row)}>
+                {image && (
+                  <div className="shrink-0">
+                    <Cell column={image} row={row} options={options} entityKey={entity.key} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 text-sm font-semibold [&_*]:truncate">{first && <Cell column={first} row={row} options={options} entityKey={entity.key} />}</div>
+                    {badges.length > 0 && (
+                      <div className="flex shrink-0 gap-1">
+                        {badges.map((column) => (
+                          <Cell key={column.key} column={column} row={row} options={options} entityKey={entity.key} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {details.length > 0 && (
+                    <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      {details.map((column) => (
+                        <div key={column.key} className="min-w-0" onClick={column.type === "whatsapp" || column.type === "proof" ? (event) => event.stopPropagation() : undefined}>
+                          <dt className="text-muted-foreground">{column.label}</dt>
+                          <dd className="truncate font-medium [&_*]:truncate">
+                            <Cell column={column} row={row} options={options} entityKey={entity.key} />
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
+                <div onClick={(event) => event.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon-sm" className="-mr-2" aria-label={`Aksi untuk ${titleOf(row)}`}>
+                        <EllipsisVertical />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      {entity.detailPath && (
+                        <DropdownMenuItem asChild>
+                          <Link href={detailHref(row)}>
+                            <Eye />
+                            Lihat detail
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {entity.detailDialog && (
+                        <DropdownMenuItem onSelect={() => setViewing(row)}>
+                          <Ellipsis />
+                          Lihat detail
+                        </DropdownMenuItem>
+                      )}
+                      {whatsappOf(row) && (
+                        <DropdownMenuItem asChild>
+                          <a href={whatsappOf(row)} target="_blank" rel="noopener noreferrer">
+                            <WhatsAppIcon className="text-[#1fa855]" />
+                            Kirim WhatsApp
+                          </a>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onSelect={() => setEditing({ ...row })}>
+                        <Pencil />
+                        Ubah
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(row)}>
+                        <Trash2 />
+                        Hapus
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </li>
+            );
+          })}
+          {visible.length === 0 && <li className="px-4 py-12 text-center text-sm text-muted-foreground">{rows.length ? "Tidak ada data yang cocok dengan pencarian." : `Belum ada ${entity.singular}.`}</li>}
+          {amountKey && visible.length > 0 && (
+            <li className="flex items-center justify-between px-4 py-3 text-sm font-semibold">
+              <span>Jumlah ({visible.length})</span>
+              <span className="tabular-nums">{formatRupiah(amountTotal)}</span>
+            </li>
+          )}
+        </ul>
+
+        <Table className="max-md:hidden">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {entity.columns.map((column) => (

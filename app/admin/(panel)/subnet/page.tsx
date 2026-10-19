@@ -78,7 +78,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-2xl font-semibold tracking-tight">Subnet</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, grafik trafik, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length}{" "}
@@ -113,7 +113,46 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
             {rows.length} dari {all.length} pelanggan
           </p>
         </div>
-        <Table>
+        {/* HP: satu kartu per pelanggan, tombol aksinya di bawah. */}
+        <ul className="divide-y md:hidden">
+          {rows.map((row) => {
+            const stats = statsOf.get(row.id);
+            return (
+              <li key={row.id} className="flex flex-col gap-2.5 px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <Link href={`/admin/data/customers/${row.id}`} className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">{row.title}</span>
+                    {row.company && <span className="block truncate text-xs text-muted-foreground">{row.name}</span>}
+                  </Link>
+                  {row.email ? <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Aktif" : "Nonaktif"}</Badge> : <Badge variant="outline">Belum ada</Badge>}
+                </div>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                  <div className="min-w-0">
+                    <dt className="text-muted-foreground">Site ID</dt>
+                    <dd className="truncate font-medium">{row.siteId || "—"}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-muted-foreground">Invoice</dt>
+                    <dd className="truncate font-medium">{stats ? `${stats.total} invoice${stats.unpaid ? ` · ${stats.unpaid} unpaid` : ""}` : "—"}</dd>
+                  </div>
+                  <div className="col-span-2 min-w-0">
+                    <dt className="text-muted-foreground">Email</dt>
+                    <dd className="truncate font-medium">{row.email || "—"}</dd>
+                  </div>
+                </dl>
+                <div className="[&_button]:w-full">
+                  <SubnetAccessButton
+                    customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", portId: suggestPort(row.vlan, ports)?.portId ?? null, ip: row.ipAddress.split(/[\s/,]/)[0] ?? "" }}
+                    account={row.email ? { email: row.email, active: Boolean(row.active), portId: row.portId, pingTarget: row.pingTarget ?? "" } : null}
+                    portalUrl={portalUrl}
+                  />
+                </div>
+              </li>
+            );
+          })}
+          {rows.length === 0 && <li className="px-4 py-12 text-center text-sm text-muted-foreground">{keywords ? "Tidak ada pelanggan yang cocok dengan pencarian." : "Belum ada pelanggan."}</li>}
+        </ul>
+        <Table className="max-md:hidden">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-4">Pelanggan</TableHead>

@@ -92,7 +92,33 @@ async function ResourceList({ feature, resource, keywords, page }: { feature: Ac
               {accurateWriteEnabled && getAccurateForm(resource.path) && <AccurateFormButton path={resource.path} />}
             </div>
           </div>
-          <Table>
+          {/* HP: satu kartu per data; kolom pertama jadi judul, beberapa kolom berikutnya jadi rincian. */}
+          <ul className="divide-y md:hidden">
+            {data.rows.map((row) => {
+              const [head, ...rest] = resource.columns;
+              return (
+                <li key={String(row.id)} className="px-4 py-3">
+                  {head && (
+                    <p className="truncate text-sm font-semibold">
+                      <Cell column={head} row={row} />
+                    </p>
+                  )}
+                  <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    {rest.slice(0, 4).map((column) => (
+                      <div key={column.key} className="min-w-0">
+                        <dt className="text-muted-foreground">{column.label}</dt>
+                        <dd className="truncate font-medium">
+                          <Cell column={column} row={row} />
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </li>
+              );
+            })}
+            {data.rows.length === 0 && <li className="px-4 py-12 text-center text-sm text-muted-foreground">{keywords ? "Tidak ada data yang cocok dengan pencarian." : `Belum ada data ${resource.label.toLowerCase()} di Accurate.`}</li>}
+          </ul>
+          <Table className="max-md:hidden">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 {resource.columns.map((column) => (
@@ -178,7 +204,7 @@ export default async function AccurateModulePage({ params, searchParams }: PageP
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-ink">
+          <span className="hidden size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-ink md:flex">
             <Icon className="size-5" />
           </span>
           <div>

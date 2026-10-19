@@ -19,6 +19,7 @@ import {
   MapPinned,
   Network,
   ShieldCheck,
+  LayoutGrid,
   Smartphone,
   Route,
   Newspaper,
@@ -73,6 +74,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { adminApk } from "@/lib/admin-app";
 import { accurateModules } from "@/lib/accurate-features";
@@ -149,8 +151,9 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 ];
 
 /** Menu yang boleh dibuka pengguna ini; grup tanpa menu tersisa ikut disembunyikan. */
-function visibleNav(admin: AdminUser) {
+function visibleNav(admin: AdminUser, operationalOnly = false) {
   return navGroups
+    .filter((group) => !operationalOnly || group.label === "Operasional")
     .map((group) => ({
       ...group,
       items: group.items
@@ -165,9 +168,10 @@ const isActive = (pathname: string, href: string, exact?: boolean) => pathname =
 const activeClass =
   "data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground";
 
-function AdminSidebar({ admin, brandName, newLeads, showAppDownload }: { admin: AdminUser; brandName: string; newLeads: number; showAppDownload: boolean }) {
+function AdminSidebar({ admin, brandName, newLeads, appMode }: { admin: AdminUser; brandName: string; newLeads: number; appMode: boolean }) {
   const pathname = usePathname();
-  const groups = visibleNav(admin);
+  const groups = visibleNav(admin, appMode);
+  const showAppDownload = !appMode;
   const { setOpenMobile } = useSidebar();
   // Submenu terbuka sendiri saat salah satu halamannya dibuka; pilihan pengguna menimpa itu.
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
@@ -260,9 +264,9 @@ function AdminSidebar({ admin, brandName, newLeads, showAppDownload }: { admin: 
   );
 }
 
-function CommandMenu({ admin }: { admin: AdminUser }) {
+function CommandMenu({ admin, appMode }: { admin: AdminUser; appMode: boolean }) {
   const router = useRouter();
-  const groups = visibleNav(admin);
+  const groups = visibleNav(admin, appMode);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -316,20 +320,146 @@ function CommandMenu({ admin }: { admin: AdminUser }) {
   );
 }
 
-type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; showAppDownload: boolean; children: ReactNode };
+/** Tab bawah di HP: menu operasional yang paling sering dibuka, dengan label pendek. */
+const tabLabels: Record<string, string> = {
+  "/admin/data/customers": "Pelanggan",
+  "/admin/subnet": "Subnet",
+  "/admin/metro": "Metro",
+  "/admin/data/invoices": "Invoice",
+  "/admin/data/customer-payments": "Pembayaran",
+  "/admin/keuntungan": "Keuntungan",
+};
 
-export function AdminShell({ admin, brandName, newLeads, showAppDownload, children }: ShellProps) {
+/**
+ * Navigasi HP (dan aplikasi TLINET Admin): judul halaman di atas, tab bawah untuk menu utama, dan "Menu" untuk sisanya.
+ * Di aplikasi hanya menu operasional yang tampil.
+ */
+function MobileNav({ admin, appMode }: { admin: AdminUser; appMode: boolean }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const groups = visibleNav(admin, appMode);
+  const all = groups.flatMap((group) => group.items);
+  // Urutan prioritas mengikuti tabLabels, bukan urutan sidebar.
+  const tabs = Object.keys(tabLabels)
+    .map((href) => all.find((item) => item.href === href))
+    .filter((item) => item !== undefined)
+    .slice(0, 4);
+  const tabHrefs = new Set(tabs.map((item) => item.href));
+  const activeTab = tabs.find((item) => isActive(pathname, item.href));
+
+  return (
+    <>
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Menu utama">
+        <ul className="mx-auto grid h-16 max-w-lg" style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}>
+          {tabs.map(({ href, icon: Icon }) => {
+            const active = isActive(pathname, href);
+            return (
+              <li key={href}>
+                <Link href={href} aria-current={active ? "page" : undefined} className={cn("relative flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium", active ? "text-primary" : "text-muted-foreground")}>
+                  {active && <span className="absolute inset-x-4 top-0 h-0.5 rounded-b-full bg-primary" aria-hidden="true" />}
+                  <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} />
+                  {tabLabels[href]}
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className={cn("relative flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium", !activeTab ? "text-primary" : "text-muted-foreground")}
+            >
+              {!activeTab && <span className="absolute inset-x-4 top-0 h-0.5 rounded-b-full bg-primary" aria-hidden="true" />}
+              <LayoutGrid className="size-5" strokeWidth={!activeTab ? 2.2 : 1.8} />
+              Menu
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] gap-0 overflow-y-auto rounded-t-2xl pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          <SheetHeader className="pb-2">
+            <SheetTitle>Menu</SheetTitle>
+            <SheetDescription className="sr-only">Semua menu dashboard yang bisa Anda buka.</SheetDescription>
+          </SheetHeader>
+          {groups.map((group) => {
+            // Menu yang sudah ada di tab bawah tidak diulang. Submenu (mis. modul Accurate) dibuka dari halaman induknya.
+            const items = group.items.filter((item) => !tabHrefs.has(item.href));
+            if (!items.length) return null;
+            return (
+              <div key={group.label} className="px-4 pb-3">
+                {!appMode && <p className="px-1 pb-1 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">{group.label}</p>}
+                <ul className="overflow-hidden rounded-xl border">
+                  {items.map(({ href, label, icon: Icon }, index, list) => (
+                    <li key={href} className={cn(index < list.length - 1 && "border-b")}>
+                      <Link href={href} onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-3 py-3 text-sm", isActive(pathname, href) ? "bg-primary/5 font-semibold text-primary" : "hover:bg-muted")}>
+                        <Icon className="size-[18px] shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate">{label}</span>
+                        <ChevronRight className="size-4 text-muted-foreground/60" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+          <div className="flex flex-col gap-2 px-4 pt-1">
+            {!appMode && (
+              <Button asChild variant="outline" className="w-full">
+                <a href={adminApk.path} download>
+                  <Smartphone />
+                  Unduh aplikasi Android
+                </a>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className="w-full text-destructive hover:text-destructive"
+              onClick={() => {
+                void logoutAction();
+              }}
+            >
+              <LogOut />
+              Keluar ({admin.name})
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
+/** Judul halaman yang sedang dibuka, dari label menunya. */
+function useCurrentTitle(admin: AdminUser, appMode: boolean) {
+  const pathname = usePathname();
+  const items = visibleNav(admin, appMode).flatMap((group) => group.items.flatMap((item) => [item, ...(item.children ?? [])]));
+  const match = items.filter((item) => isActive(pathname, item.href)).sort((a, b) => b.href.length - a.href.length)[0];
+  return match?.label ?? "Dashboard";
+}
+
+type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; appMode: boolean; children: ReactNode };
+
+export function AdminShell({ admin, brandName, newLeads, appMode, children }: ShellProps) {
+  const title = useCurrentTitle(admin, appMode);
   return (
     <TooltipProvider delayDuration={200}>
       <SidebarProvider>
-        <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} showAppDownload={showAppDownload} />
+        <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} appMode={appMode} />
         <SidebarInset className="min-w-0 border md:shadow-none">
           <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur md:rounded-t-xl">
-            <SidebarTrigger />
-            <span className="h-4 w-px bg-border" aria-hidden="true" />
-            <CommandMenu admin={admin} />
+            {/* HP: logo dan judul halaman; menu lewat tab bawah. Layar lebar: sidebar dan pencarian menu. */}
+            <div className="flex min-w-0 items-center gap-2.5 md:hidden">
+              <BrandMark className="size-6" />
+              <span className="truncate text-base font-semibold">{title}</span>
+            </div>
+            <SidebarTrigger className="hidden md:inline-flex" />
+            <span className="hidden h-4 w-px bg-border md:block" aria-hidden="true" />
+            <div className="hidden min-w-0 flex-1 md:block">
+              <CommandMenu admin={admin} appMode={appMode} />
+            </div>
             <div className="ml-auto flex items-center gap-1">
-              <Button asChild variant="ghost" size="icon-lg" aria-label="Buka website publik">
+              <Button asChild variant="ghost" size="icon-lg" aria-label="Buka website publik" className="hidden md:inline-flex">
                 <Link href="/" target="_blank">
                   <ExternalLink />
                 </Link>
@@ -365,9 +495,10 @@ export function AdminShell({ admin, brandName, newLeads, showAppDownload, childr
             </div>
           </header>
           {/* Lebar isi mengikuti layar agar tabel berkolom banyak tidak terpotong; dibatasi supaya form tidak melar di monitor sangat lebar. */}
-          <RouteFade lift className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-6 p-4 md:p-8">
+          <RouteFade lift className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-5 p-4 pb-24 md:gap-6 md:p-8">
             {children}
           </RouteFade>
+          <MobileNav admin={admin} appMode={appMode} />
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

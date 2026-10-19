@@ -41,7 +41,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-2xl font-semibold tracking-tight">Progres Metro</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Tahapan pemasangan baru dan upgrade kapasitas. Setiap langkah yang ditandai selesai di sini langsung terlihat pelanggan di portal Subnet, lengkap dengan hari, tanggal, dan jamnya. Permintaan upgrade dari
@@ -52,7 +52,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card">
-        <nav className="flex gap-1 border-b p-2" aria-label="Saring status">
+        <nav className="flex gap-1 overflow-x-auto border-b p-2" aria-label="Saring status">
           {filters.map((item) => (
             <Link
               key={item.key}
@@ -65,7 +65,38 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
             </Link>
           ))}
         </nav>
-        <Table>
+        {/* HP: satu kartu per progres. */}
+        <ul className="divide-y md:hidden">
+          {rows.map(({ order, name, company }) => {
+            const kind = order.kind as "install" | "upgrade";
+            const progress = metroProgress(kind, order.steps);
+            return (
+              <li key={order.id} className="flex flex-col gap-2.5 px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{company || name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {metroKindLabels[kind]} · {kind === "upgrade" ? `${order.previousCapacity || "?"} → ${order.capacity}` : order.capacity || "—"}
+                    </p>
+                  </div>
+                  {order.status === "rejected" ? <Badge variant="destructive">Ditolak</Badge> : progress.next ? <Badge variant="secondary">{progress.completed}/{progress.total}</Badge> : <Badge className="bg-emerald-600 hover:bg-emerald-600">Selesai</Badge>}
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className={cn("h-full rounded-full", order.status === "done" ? "bg-emerald-500" : "bg-brand")} style={{ width: `${(progress.completed / progress.total) * 100}%` }} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-xs text-muted-foreground">{progress.next && order.status !== "rejected" ? <>Berikutnya: <span className="font-medium text-foreground">{progress.next.label}</span></> : formatDateTime(order.updatedAt)}</p>
+                  <MetroOrderButton
+                    customerTitle={company || name}
+                    order={{ id: order.id, kind, capacity: order.capacity, previousCapacity: order.previousCapacity, steps: order.steps, status: order.status as MetroStatus, rejectReason: order.rejectReason, note: order.note }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+          {rows.length === 0 && <li className="px-4 py-12 text-center text-sm text-muted-foreground">{filter.status === "active" ? "Tidak ada progres yang sedang berjalan." : "Belum ada progres."}</li>}
+        </ul>
+        <Table className="max-md:hidden">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-4">Pelanggan</TableHead>

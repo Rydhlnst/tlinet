@@ -62,7 +62,7 @@ export default async function ProfitPage({ searchParams }: PageProps<"/admin/keu
 
   return (
     <>
-      <div>
+      <div className="hidden md:block">
         <h1 className="text-2xl font-semibold tracking-tight">Selisih Keuntungan</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           Keuntungan per bulan tiap pelanggan: biaya bulanan ke ISP dikurangi biaya bulanan ke NAP. Angkanya otomatis mengikuti Data Pelanggan.
@@ -85,7 +85,30 @@ export default async function ProfitPage({ searchParams }: PageProps<"/admin/keu
             {rows.length} dari {all.length} pelanggan
           </p>
         </div>
-        <Table>
+        {/* HP: satu kartu per pelanggan dengan angka utamanya. */}
+        <ul className="divide-y md:hidden">
+          {rows.map((row) => (
+            <li key={row.id}>
+              <Link href={`/admin/data/customers/${row.id}`} className="flex flex-col gap-2 px-4 py-3 active:bg-muted/60">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{row.company || row.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{[row.company && row.name, row.siteId].filter(Boolean).join(" · ") || "—"}</p>
+                  </div>
+                  <p className={cn("shrink-0 text-sm font-semibold tabular-nums", row.filled ? (row.profit < 0 ? "text-destructive" : "text-emerald-700") : "font-normal text-muted-foreground")}>
+                    {row.filled ? formatRupiah(row.profit) : "Belum diisi"}
+                  </p>
+                </div>
+                <div className="flex gap-4 text-xs text-muted-foreground tabular-nums">
+                  <span>ISP {money(row.ispFee)}</span>
+                  <span>NAP {money(row.napFee)}</span>
+                </div>
+              </Link>
+            </li>
+          ))}
+          {rows.length === 0 && <li className="px-4 py-12 text-center text-sm text-muted-foreground">{keywords ? "Tidak ada pelanggan yang cocok dengan pencarian." : "Belum ada pelanggan."}</li>}
+        </ul>
+        <Table className="max-md:hidden">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-4">PT</TableHead>
