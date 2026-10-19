@@ -11,7 +11,7 @@ import { requireAdmin } from "@/lib/auth";
 import { requireDb } from "@/lib/db";
 import { customers, invoices, subnetAccounts } from "@/lib/db/schema";
 import { formatDateTime, formatRupiah } from "@/lib/format";
-import { librenmsConfigured, listLibrenmsPorts, suggestPort } from "@/lib/librenms";
+import { librenmsConfigured, listLibrenmsPorts, listLibrenmsQos, suggestPort, suggestQos, type LibrenmsPort, type LibrenmsQos } from "@/lib/librenms";
 import { absoluteUrl } from "@/lib/seo";
 import { androidApk } from "@/lib/subnet";
 
@@ -23,13 +23,25 @@ const empty = <span className="text-muted-foreground">—</span>;
  * Akses portal Subnet per pelanggan. Daftar pelanggannya dari Data Pelanggan dan jumlah invoicenya dari menu Invoice;
  * yang disimpan di sini hanya email, kata sandi, status akses, dan port LibreNMS untuk grafik trafiknya.
  */
+type SourceRow = { title: string; name: string; vlan: string; portId: number | null; qosId: number | null; qosDeviceId: number | null };
+
+/** Usulan sumber grafik untuk akses baru: port dari nomor VLAN, kalau tidak ada antrean QoS bernama sama dengan pelanggan. */
+function suggestSource(row: SourceRow, ports: LibrenmsPort[], qos: LibrenmsQos[]) {
+  const port = suggestPort(row.vlan, ports);
+  if (port) return { portId: port.portId };
+  const match = suggestQos([row.title, row.name], qos);
+  return match ? { qosDeviceId: match.deviceId, qosId: match.qosId } : null;
+}
+
+const accountSource = (row: SourceRow) => (row.portId ? { portId: row.portId } : row.qosId && row.qosDeviceId ? { qosDeviceId: row.qosDeviceId, qosId: row.qosId } : null);
+
 export default async function SubnetPage({ searchParams }: PageProps<"/admin/subnet">) {
   await requireAdmin("subnet");
   const query = (await searchParams).q;
   const keywords = ((Array.isArray(query) ? query[0] : query) ?? "").trim().slice(0, 80);
   const db = requireDb();
 
-  const [all, invoiceStats, invoiceEmails, ports] = await Promise.all([
+  const [all, invoiceStats, invoiceEmails, ports, qosList] = await Promise.all([
     db
       .select({
         id: customers.id,
@@ -42,6 +54,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         pingTarget: subnetAccounts.pingTarget,
         email: subnetAccounts.email,
         portId: subnetAccounts.librenmsPortId,
+        qosId: subnetAccounts.librenmsQosId,
+        qosDeviceId: subnetAccounts.librenmsQosDeviceId,
         active: subnetAccounts.active,
         lastLoginAt: subnetAccounts.lastLoginAt,
       })
@@ -60,8 +74,10 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
     // Usulan email akses: email di invoice terbaru pelanggan.
     db.select({ customerId: invoices.customerId, email: invoices.email }).from(invoices).where(ne(invoices.email, "")).orderBy(desc(invoices.issueDate)),
     librenmsConfigured() ? listLibrenmsPorts() : Promise.resolve([]),
+    listLibrenmsQos().catch(() => []),
   ]);
   const portName = new Map(ports.map((port) => [port.portId, port.name]));
+  const qosName = new Map(qosList.map((item) => [item.qosId, item.name]));
   const emailOf = new Map<string, string>();
   for (const row of invoiceEmails) if (!emailOf.has(row.customerId)) emailOf.set(row.customerId, row.email);
   const statsOf = new Map(invoiceStats.map((row) => [row.customerId, row]));
@@ -102,7 +118,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         </div>
       </div>
 
-      <SubnetPortsProvider ports={ports.length ? ports : null}>
+      <SubnetPortsProvider ports={ports.length ? ports : null} qos={qosList}>
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="flex items-center justify-between gap-3 border-b p-3">
           <form className="relative w-full max-w-xs" role="search">
@@ -142,8 +158,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                 </dl>
                 <div className="[&_button]:w-full">
                   <SubnetAccessButton
-                    customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", portId: suggestPort(row.vlan, ports)?.portId ?? null, ip: row.ipAddress.split(/[\s/,]/)[0] ?? "" }}
-                    account={row.email ? { email: row.email, active: Boolean(row.active), portId: row.portId, pingTarget: row.pingTarget ?? "" } : null}
+                    customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", source: suggestSource(row, ports, qosList), ip: row.ipAddress.split(/[\s/,]/)[0] ?? "" }}
+                    account={row.email ? { email: row.email, active: Boolean(row.active), source: accountSource(row), pingTarget: row.pingTarget ?? "" } : null}
                     portalUrl={portalUrl}
                   />
                 </div>
@@ -181,8 +197,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                   <TableCell>
                     {row.email ? <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Aktif" : "Nonaktif"}</Badge> : <Badge variant="outline">Belum ada</Badge>}
                   </TableCell>
-                  <TableCell className="max-w-48 truncate text-xs" title={row.portId ? portName.get(row.portId) : undefined}>
-                    {row.portId ? (portName.get(row.portId) ?? `Port #${row.portId}`) : empty}
+                  <TableCell className="max-w-48 truncate text-xs" title={row.portId ? portName.get(row.portId) : row.qosId ? qosName.get(row.qosId) : undefined}>
+                    {row.portId ? (portName.get(row.portId) ?? `Port #${row.portId}`) : row.qosId ? `QoS · ${qosName.get(row.qosId) ?? `#${row.qosId}`}` : empty}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {stats ? (
@@ -197,8 +213,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                   <TableCell className="whitespace-nowrap text-muted-foreground">{row.lastLoginAt ? formatDateTime(row.lastLoginAt) : "—"}</TableCell>
                   <TableCell className="pr-4 text-right">
                     <SubnetAccessButton
-                      customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", portId: suggestPort(row.vlan, ports)?.portId ?? null, ip: row.ipAddress.split(/[\s/,]/)[0] ?? "" }}
-                      account={row.email ? { email: row.email, active: Boolean(row.active), portId: row.portId, pingTarget: row.pingTarget ?? "" } : null}
+                      customer={{ id: row.id, title: row.title, phone: row.phone, email: emailOf.get(row.id) ?? "", source: suggestSource(row, ports, qosList), ip: row.ipAddress.split(/[\s/,]/)[0] ?? "" }}
+                      account={row.email ? { email: row.email, active: Boolean(row.active), source: accountSource(row), pingTarget: row.pingTarget ?? "" } : null}
                       portalUrl={portalUrl}
                     />
                   </TableCell>

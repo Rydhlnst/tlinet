@@ -195,11 +195,26 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
 
         <div className="contents lg:flex lg:flex-col lg:gap-4">
           <div className="order-2 lg:order-none">
-            <ConnectionSummaryCard
-              initial={traffic ? { up: traffic.up, inBps: traffic.inBps, outBps: traffic.outBps, polledAt: traffic.polledAt?.getTime() ?? null } : null}
-              realtime={Boolean(user.portId) && realtimeConfigured()}
-              capacityBps={parseCapacityBps(customer.capacity)}
-            />
+            {!user.portId && user.qos ? (
+              // Pelanggan dengan antrean QoS: grafik MRTG harian sebagai ringkasan, tanpa pembacaan langsung.
+              <Link href="/subnet/trafik" className="group block overflow-hidden rounded-2xl border bg-card transition-colors hover:border-foreground/20">
+                <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-3 sm:px-5">
+                  <p className="text-[0.9375rem] font-semibold">Trafik internet</p>
+                  <span className="flex items-center gap-0.5 text-sm font-medium text-brand-ink">
+                    Detail
+                    <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/subnet/traffic?range=day" alt="Grafik trafik 1 hari terakhir" width={1000} height={300} className="h-auto w-full border-t bg-white" />
+              </Link>
+            ) : (
+              <ConnectionSummaryCard
+                initial={traffic ? { up: traffic.up, inBps: traffic.inBps, outBps: traffic.outBps, polledAt: traffic.polledAt?.getTime() ?? null } : null}
+                realtime={Boolean(user.portId) && realtimeConfigured()}
+                capacityBps={parseCapacityBps(customer.capacity)}
+              />
+            )}
           </div>
 
           <SectionCard title="Tagihan" action={<CardLink href="/subnet/tagihan">Semua</CardLink>} className="order-3 lg:order-none">

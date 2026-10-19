@@ -38,7 +38,8 @@ export async function destroySubnetSession() {
   (await cookies()).delete(sessionCookie);
 }
 
-export type SubnetUser = { customerId: string; email: string; photoUrl: string; portId: number | null; pingTarget: string };
+/** `qos`: antrean QoS LibreNMS sebagai sumber grafik bila pelanggan tidak punya port VLAN (`portId`). */
+export type SubnetUser = { customerId: string; email: string; photoUrl: string; portId: number | null; qos: { deviceId: number; qosId: number } | null; pingTarget: string };
 
 /** Pelanggan yang sedang masuk ke portal, atau `null`. Akun yang dinonaktifkan atau dihapus admin langsung keluar. */
 export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
@@ -53,7 +54,7 @@ export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
   if (typeof session.id !== "string" || typeof session.exp !== "number" || session.exp <= Date.now()) return null;
 
   const [account] = await requireDb()
-    .select({ customerId: subnetAccounts.customerId, email: subnetAccounts.email, passwordHash: subnetAccounts.passwordHash, active: subnetAccounts.active, photoUrl: subnetAccounts.photoUrl, portId: subnetAccounts.librenmsPortId, pingTarget: subnetAccounts.pingTarget })
+    .select({ customerId: subnetAccounts.customerId, email: subnetAccounts.email, passwordHash: subnetAccounts.passwordHash, active: subnetAccounts.active, photoUrl: subnetAccounts.photoUrl, portId: subnetAccounts.librenmsPortId, qosId: subnetAccounts.librenmsQosId, qosDeviceId: subnetAccounts.librenmsQosDeviceId, pingTarget: subnetAccounts.pingTarget })
     .from(subnetAccounts)
     .innerJoin(customers, eq(customers.id, subnetAccounts.customerId))
     .where(eq(subnetAccounts.customerId, session.id))
@@ -61,7 +62,8 @@ export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
   if (!account?.active) return null;
   const expected = sign(payload, account.passwordHash);
   if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
-  return { customerId: account.customerId, email: account.email, photoUrl: account.photoUrl, portId: account.portId, pingTarget: account.pingTarget };
+  const qos = account.qosId && account.qosDeviceId ? { deviceId: account.qosDeviceId, qosId: account.qosId } : null;
+  return { customerId: account.customerId, email: account.email, photoUrl: account.photoUrl, portId: account.portId, qos, pingTarget: account.pingTarget };
 });
 
 /**

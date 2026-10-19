@@ -194,3 +194,76 @@ export async function getRealtimeCounters(portId: number): Promise<{ time: numbe
   }
   return null;
 }
+
+/** Halaman web LibreNMS dengan sesi login; masuk ulang sekali bila sesinya kedaluwarsa. `null` bila gagal. */
+async function webFetch(path: string, timeoutMs = 15_000): Promise<Response | null> {
+  if (!realtimeConfigured()) return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const cookie = await sessionCookie(attempt > 0);
+    if (!cookie) return null;
+    try {
+      const response = await fetch(`${baseUrl}${path}`, { headers: { Cookie: cookie }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(timeoutMs) });
+      if (response.status === 302 || response.status === 401 || response.status === 419) continue;
+      return response.ok ? response : null;
+    } catch (error) {
+      console.error("[librenms] web", path, error);
+      return null;
+    }
+  }
+  return null;
+}
+
+/*
+ * QoS: antrean Simple Queue MikroTik yang dipantau LibreNMS (tab QoS di halaman perangkat), dipakai untuk pelanggan
+ * yang tidak punya port VLAN sendiri. API LibreNMS belum menyediakan QoS, jadi daftar dan grafiknya dibaca dari
+ * halaman web dengan user yang sama seperti Real time.
+ */
+
+export type LibrenmsQos = { qosId: number; deviceId: number; device: string; name: string };
+
+let qosCache: { list: LibrenmsQos[]; expires: number } | null = null;
+
+/** Semua antrean QoS di semua perangkat, untuk dipilih admin. Disimpan 5 menit. */
+export async function listLibrenmsQos(): Promise<LibrenmsQos[]> {
+  if (!realtimeConfigured()) return [];
+  if (qosCache && qosCache.expires > Date.now()) return qosCache.list;
+  const devices = (await json<{ devices?: RawDevice[] }>("/devices?type=all", 300))?.devices ?? [];
+  let incomplete = !devices.length;
+  const lists = await Promise.all(
+    devices.map(async (device) => {
+      const html = await (await webFetch(`/device/${device.device_id}/qos`))?.text().catch(() => "");
+      if (!html) {
+        incomplete = true;
+        return [];
+      }
+      const label = `${device.sysName || device.hostname} (${device.hostname})`;
+      const seen = new Map<number, LibrenmsQos>();
+      for (const match of html.matchAll(/\/device\/(\d+)\/qos\/show=(\d+)"[^>]*>([^<]+)</g)) {
+        const qosId = Number(match[2]);
+        const name = match[3].replace(/&amp;/g, "&").trim();
+        if (Number(match[1]) === device.device_id && name && !seen.has(qosId)) seen.set(qosId, { qosId, deviceId: device.device_id, device: label, name });
+      }
+      return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name, "id", { numeric: true }));
+    }),
+  );
+  const list = lists.flat();
+  // Daftar yang tidak lengkap (ada perangkat yang gagal dibaca) hanya disimpan sebentar supaya cepat dicoba lagi.
+  qosCache = { list, expires: Date.now() + (incomplete ? 30_000 : 5 * 60_000) };
+  return list;
+}
+
+/** Usulan antrean QoS dari nama pelanggan (PT atau nama), mis. "PT BULUKUMBA FIBER OPTIC" ↔ "PT.BULUKUMBA FIBER OPTIC". */
+export function suggestQos(names: string[], list: LibrenmsQos[]) {
+  const key = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const wanted = names.map(key).filter((value) => value.length >= 4);
+  return list.find((qos) => wanted.includes(key(qos.name)));
+}
+
+/** Grafik trafik antrean QoS (SVG dari LibreNMS), atau `null` bila gagal diambil. */
+export async function getQosGraph(deviceId: number, qosId: number, range: TrafficRange) {
+  const from = Math.floor(Date.now() / 300_000) * 300 - trafficRanges[range].seconds;
+  const response = await webFetch(`/graph?type=device_qos_routeros_simple_traffic&device=${deviceId}&qos_id=${qosId}&from=${from}&width=1000&height=300`, 20_000);
+  const type = response?.headers.get("content-type") ?? "";
+  if (!response || !type.startsWith("image/")) return null;
+  return { body: await response.arrayBuffer(), type };
+}

@@ -14,7 +14,7 @@ const expired: SaveResult = { ok: false, message: "Sesi berakhir. Silakan masuk 
  * Membuat atau mengubah akses portal Subnet satu pelanggan. Kata sandi wajib saat akses baru dibuat;
  * saat mengubah, kata sandi kosong berarti tetap memakai yang lama.
  */
-export async function saveSubnetAccessAction(customerId: string, input: { email: string; password: string; active: boolean; portId: number | null; pingTarget: string }): Promise<SaveResult> {
+export async function saveSubnetAccessAction(customerId: string, input: { email: string; password: string; active: boolean; source: { portId: number } | { qosDeviceId: number; qosId: number } | null; pingTarget: string }): Promise<SaveResult> {
   if (!(await getAdminWith("subnet"))) return expired;
   const db = requireDb();
   const email = String(input.email ?? "").trim().toLowerCase();
@@ -37,8 +37,12 @@ export async function saveSubnetAccessAction(customerId: string, input: { email:
   const pingTarget = String(input.pingTarget ?? "").trim();
   if (pingTarget && !pingTargetPattern.test(pingTarget)) return { ok: false, message: "IP untuk ping.pe tidak valid. Isi satu alamat IP atau hostname, tanpa spasi atau garis miring." };
 
-  const portId = Number.isInteger(input.portId) && Number(input.portId) > 0 ? Number(input.portId) : null;
-  const values = { email, active: Boolean(input.active), librenmsPortId: portId, pingTarget, updatedAt: new Date(), ...(password ? { passwordHash: await hashSubnetPassword(password) } : {}) };
+  const positive = (value: unknown) => (Number.isInteger(value) && Number(value) > 0 ? Number(value) : null);
+  const source = input.source;
+  const portId = source && "portId" in source ? positive(source.portId) : null;
+  const qosId = source && "qosId" in source ? positive(source.qosId) : null;
+  const qosDeviceId = qosId && source && "qosDeviceId" in source ? positive(source.qosDeviceId) : null;
+  const values = { email, active: Boolean(input.active), librenmsPortId: portId, librenmsQosId: qosDeviceId ? qosId : null, librenmsQosDeviceId: qosDeviceId, pingTarget, updatedAt: new Date(), ...(password ? { passwordHash: await hashSubnetPassword(password) } : {}) };
   if (existing) {
     await db.update(subnetAccounts).set(values).where(eq(subnetAccounts.customerId, customerId));
   } else {
