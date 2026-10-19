@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 
 declare global {
   interface Window {
-    /** Disediakan aplikasi Android TLINET: WebView tidak mendukung window.print(), jadi cetak lewat Android. */
-    TLINETAndroid?: { print(title: string): void };
+    /**
+     * Disediakan aplikasi Android TLINET: WebView tidak mendukung window.print() maupun Notification API, jadi cetak dan
+     * notifikasi lewat Android. `notify` baru ada sejak aplikasi pelanggan 1.0.2.
+     */
+    TLINETAndroid?: { print(title: string): void; notify?(title: string, body: string): void };
   }
 }
 

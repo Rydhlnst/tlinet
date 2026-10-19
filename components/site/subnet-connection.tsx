@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChartLine, ChevronRight, Pause, Play } from "lucide-react";
+import { ArrowDown, ArrowUp, Bell, ChartLine, ChevronRight, Pause, Play, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
-import { formatBitrate } from "@/lib/format";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { formatBitrate, trafficStopped } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** Status port dari LibreNMS (lihat /subnet/status). Download = trafik keluar port menuju pelanggan. */
@@ -25,6 +25,105 @@ function rate(previous: Counters, current: Counters): Point | null {
   return { time: current.time * 1000, inBps: (Number(inDiff) * 8) / seconds, outBps: (Number(outDiff) * 8) / seconds };
 }
 
+/** Bacaan langsung harus sepi selama ini sebelum koneksi dinyatakan down, supaya jeda sesaat tidak memicu alarm. */
+const quietForMs = 30_000;
+
+/** up: trafik jalan. noTraffic: port menyala tapi trafik tidak jalan. portDown: port mati. `null`: belum terbaca. */
+type Health = { state: "up" | "noTraffic" | "portDown"; since: number | null } | null;
+
+function connectionHealth(status: ConnectionStatus | null, points: Point[], live: boolean): Health {
+  if (!status) return null;
+  if (!status.up) return { state: "portDown", since: status.polledAt };
+  if (live && points.length >= 2) {
+    const latest = points[points.length - 1];
+    if (!trafficStopped(latest)) return { state: "up", since: null };
+    let since = latest.time;
+    for (let index = points.length - 1; index >= 0 && trafficStopped(points[index]); index--) since = points[index].time;
+    return latest.time - since >= quietForMs ? { state: "noTraffic", since } : { state: "up", since: null };
+  }
+  // Bacaan LibreNMS sudah rata-rata ±5 menit, jadi satu bacaan sepi sudah cukup.
+  return trafficStopped(status) ? { state: "noTraffic", since: status.polledAt } : { state: "up", since: null };
+}
+
+const alertKey = "tlinet:connection-alert";
+
+/** Notifikasi sistem: lewat aplikasi Android TLINET (1.0.2 ke atas), atau Notification API peramban bila diizinkan. */
+function showNotification(title: string, body: string) {
+  if (typeof window.TLINETAndroid?.notify === "function") return window.TLINETAndroid.notify(title, body);
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    new Notification(title, { body, tag: "tlinet-connection" });
+  } catch {
+    // Chrome di Android hanya mengizinkan notifikasi lewat service worker.
+  }
+}
+
+/** Satu notifikasi saat koneksi menjadi down dan satu saat pulih; tidak diulang bila halaman dimuat ulang. */
+function useDownAlert(health: Health) {
+  const state = health?.state;
+  useEffect(() => {
+    if (!state) return;
+    const current = state === "up" ? "up" : "down";
+    let previous: string | null = null;
+    try {
+      previous = localStorage.getItem(alertKey);
+      localStorage.setItem(alertKey, current);
+    } catch {
+      // Tanpa penyimpanan, notifikasi tetap muncul sekali per perubahan selama halaman terbuka.
+    }
+    if (previous === current) return;
+    if (current === "down") {
+      showNotification(
+        "Koneksi internet down",
+        `${state === "portDown" ? "Port koneksi Anda terputus" : "Trafik internet Anda tidak jalan"}. Hubungi IT Support TLINET bila belum pulih.`,
+      );
+    } else if (previous === "down") {
+      showNotification("Koneksi kembali normal", "Trafik internet Anda sudah jalan lagi.");
+    }
+  }, [state]);
+}
+
+const noopSubscribe = () => () => {};
+
+/** Tombol izin notifikasi untuk portal di peramban; aplikasi Android meminta izinnya sendiri saat dibuka. */
+function NotificationButton() {
+  const [, refresh] = useState(0);
+  const permission = useSyncExternalStore(
+    noopSubscribe,
+    () => ("Notification" in window && !window.TLINETAndroid ? Notification.permission : "unsupported"),
+    () => "unsupported",
+  );
+  if (permission !== "default") return null;
+  return (
+    <button
+      type="button"
+      onClick={() => void Notification.requestPermission().then(() => refresh((value) => value + 1))}
+      className="flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-muted"
+    >
+      <Bell className="size-3.5" />
+      Aktifkan notifikasi down
+    </button>
+  );
+}
+
+function DownBanner({ health, reportHref }: { health: Health; reportHref?: string }) {
+  if (!health || health.state === "up") return null;
+  return (
+    <div role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive sm:px-5">
+      <TriangleAlert className="size-4 shrink-0" />
+      <p className="min-w-0 flex-1">
+        <span className="font-semibold">Koneksi down.</span> {health.state === "portDown" ? "Port koneksi Anda terputus" : "Trafik internet tidak jalan"}
+        {health.since ? ` sejak ${timeFormat.format(health.since)} WITA` : ""}.
+      </p>
+      {reportHref && (
+        <a href={reportHref} target="_blank" rel="noopener" className="rounded-full bg-destructive px-3 py-1.5 text-xs font-semibold text-white">
+          Lapor gangguan
+        </a>
+      )}
+    </div>
+  );
+}
+
 /** "87,9 Mbps" → ["87,9", "Mbps"], untuk angka besar dengan satuan kecil. */
 const splitBitrate = (bps: number) => {
   const text = formatBitrate(bps);
@@ -34,7 +133,8 @@ const splitBitrate = (bps: number) => {
 
 /**
  * Kecepatan langsung port pelanggan. Bila Real time tersedia, penghitung router dibaca tiap beberapa detik; jika tidak,
- * kecepatan terakhir dari LibreNMS (diperbarui tiap ±5 menit). Status naik/turun selalu dari LibreNMS.
+ * kecepatan terakhir dari LibreNMS (diperbarui tiap ±5 menit). Port mati dibaca dari LibreNMS; trafik yang berhenti
+ * (lihat `trafficStopped`) juga dihitung down, karena port VLAN bisa tetap menyala walau koneksi pelanggan mati.
  */
 function useLiveTraffic(initial: ConnectionStatus | null, realtime: boolean, seconds: number, autoPauseMs: number) {
   const [status, setStatus] = useState(initial);
@@ -45,8 +145,8 @@ function useLiveTraffic(initial: ConnectionStatus | null, realtime: boolean, sec
 
   useEffect(() => {
     let stopped = false;
+    // Tetap diperiksa saat aplikasi di latar supaya notifikasi down tetap muncul.
     const refresh = async () => {
-      if (document.hidden) return;
       try {
         const response = await fetch("/subnet/status", { cache: "no-store" });
         if (!response.ok) return;
@@ -103,7 +203,9 @@ function useLiveTraffic(initial: ConnectionStatus | null, realtime: boolean, sec
   }, [realtime, running, seconds, autoPauseMs]);
 
   const latest = points.at(-1) ?? null;
-  return { status, points, latest, running, setRunning, error };
+  const health = connectionHealth(status, points, realtime && running);
+  useDownAlert(health);
+  return { status, health, points, latest, running, setRunning, error };
 }
 
 /** Garis halus melewati titik-titik (kurva kuadrat di antara titik tengah). */
@@ -157,14 +259,15 @@ function TrafficChart({ points, height, detailed }: { points: Point[]; height: n
   );
 }
 
-function StatusChip({ up, polledAt, className }: { up: boolean | null; polledAt?: number | null; className?: string }) {
+function StatusChip({ health, polledAt, className }: { health: Health; polledAt?: number | null; className?: string }) {
+  const up = health ? health.state === "up" : null;
   return (
     <span className={cn("inline-flex items-center gap-2 text-xs font-semibold", className)}>
       <span className="relative flex size-2.5">
         {up && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
         <span className={cn("relative inline-flex size-2.5 rounded-full", up ? "bg-emerald-500" : up === false ? "bg-destructive" : "bg-muted-foreground")} />
       </span>
-      {up ? "Terhubung" : up === false ? "Terputus" : "Belum terbaca"}
+      {up ? "Terhubung" : health?.state === "noTraffic" ? "Down · trafik tidak jalan" : health?.state === "portDown" ? "Down · terputus" : "Belum terbaca"}
       {polledAt ? <span className="font-normal text-muted-foreground">· {timeFormat.format(polledAt)} WITA</span> : null}
     </span>
   );
@@ -232,18 +335,18 @@ function UsageBar({ bps, capacityBps }: { bps: number; capacityBps: number }) {
   );
 }
 
-type Props = { initial: ConnectionStatus | null; realtime: boolean; capacityBps: number };
+type Props = { initial: ConnectionStatus | null; realtime: boolean; capacityBps: number; reportHref?: string };
 
 /** Kartu ringkas di Beranda: status, kecepatan sekarang, dan pemakaian. Grafiknya ada di tab Koneksi. */
 export function ConnectionSummaryCard({ initial, realtime, capacityBps }: Props) {
-  const { status, latest } = useLiveTraffic(initial, realtime, 5, 3 * 60_000);
-  const up = status ? status.up : null;
+  const { status, health, latest } = useLiveTraffic(initial, realtime, 5, 3 * 60_000);
   return (
     <Link href="/subnet/trafik" className="group block overflow-hidden rounded-2xl border bg-card transition-colors hover:border-foreground/20">
+      <DownBanner health={health} />
       <div className="flex items-start justify-between gap-3 px-4 pt-3.5 sm:px-5">
         <div>
           <p className="text-[0.9375rem] font-semibold">Koneksi internet</p>
-          <StatusChip up={up} polledAt={status?.polledAt} className="mt-1" />
+          <StatusChip health={health} polledAt={status?.polledAt} className="mt-1" />
         </div>
         <span className="flex items-center gap-0.5 text-sm font-medium text-brand-ink">
           Detail
@@ -268,15 +371,15 @@ export function ConnectionSummaryCard({ initial, realtime, capacityBps }: Props)
 const intervals = [2, 5, 15];
 
 /** Tab Koneksi: status, pengukur pemakaian, dan grafik langsung. Grafik MRTG lengkap ada di halaman detail. */
-export function ConnectionMonitor({ initial, realtime, capacityBps }: Props) {
+export function ConnectionMonitor({ initial, realtime, capacityBps, reportHref }: Props) {
   const [seconds, setSeconds] = useState(2);
-  const { status, points, latest, running, setRunning, error } = useLiveTraffic(initial, realtime, seconds, 10 * 60_000);
-  const up = status ? status.up : null;
+  const { status, health, points, latest, running, setRunning, error } = useLiveTraffic(initial, realtime, seconds, 10 * 60_000);
 
   return (
     <section className="overflow-hidden rounded-2xl border bg-card">
+      <DownBanner health={health} reportHref={reportHref} />
       <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
-        <StatusChip up={up} polledAt={status?.polledAt} />
+        <StatusChip health={health} polledAt={status?.polledAt} />
         {realtime && (
           <div className="flex items-center gap-1 rounded-full bg-muted p-1">
             {intervals.map((value) => (
@@ -339,6 +442,7 @@ export function ConnectionMonitor({ initial, realtime, capacityBps }: Props) {
                   : "Dijeda. Tekan tombol putar untuk melanjutkan."
                 : "Diperbarui dari sistem monitoring TLINET setiap beberapa menit.")}
           </p>
+          <NotificationButton />
         </div>
       </div>
 

@@ -435,6 +435,7 @@ export function CustomerDetail({
               ["VLAN", customer.vlan],
               ["Tanggal Aktivasi", customer.activationDate ? formatDate(customer.activationDate) : ""],
               ["Status Layanan", statusPill],
+              ["Nama Tower", customer.towerName],
               [
                 "Lokasi Tower",
                 customer.towerLat || customer.towerLng ? (

@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import { ArrowUpCircle, ChartLine, ChevronRight, FileText, Gauge, Headset, History, MapPin, Package, Route, Siren, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowUpCircle, ChartLine, ChevronRight, FileText, Gauge, Headset, History, MapPin, Package, RadioTower, Route, Siren, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -11,7 +11,7 @@ import { customerStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
 import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
 import { customerPayments, customers, invoices, metroOrders } from "@/lib/db/schema";
-import { formatDate, formatMonth, formatRupiah, parseCapacityBps, whatsappUrl } from "@/lib/format";
+import { formatDate, formatMonth, formatRupiah, parseCapacityBps, trafficStopped, whatsappUrl } from "@/lib/format";
 import { invoicePublicPath } from "@/lib/invoices";
 import { getPortTraffic, realtimeConfigured } from "@/lib/librenms";
 import { isMetroKind, metroProgress } from "@/lib/metro";
@@ -92,7 +92,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
       customer.siteId && `Site ID: ${customer.siteId}`,
       customer.cid && `CID: ${customer.cid}`,
       customer.ipAddress && `IP: ${customer.ipAddress}`,
-      traffic && `Status di portal: ${traffic.up ? "Terhubung" : "Terputus"}`,
+      traffic && `Status di portal: ${!traffic.up ? "Terputus" : trafficStopped(traffic) ? "Down (trafik tidak jalan)" : "Terhubung"}`,
       "Keluhan: ",
     ]
       .filter(Boolean)
@@ -184,6 +184,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
             <div className="divide-y">
               <ListRow href="/subnet/tagihan#riwayat" icon={History} title="Riwayat pembayaran" />
               <ListRow href="/subnet/trafik/grafik" icon={ChartLine} title="Grafik MRTG" subtitle="Trafik 1 hari, 1 minggu, 1 bulan" />
+              <ListRow href="/subnet/tower" icon={RadioTower} title="Lokasi tower" subtitle={customer.towerName || "Titik tower dan status koneksi"} />
               {!metroOrder && <ListRow href="/subnet/progres" icon={ArrowUpCircle} title="Ajukan upgrade kapasitas" subtitle="Pantau prosesnya di Progres Metro" />}
               {metroOrder && <ListRow href="/subnet/progres" icon={Route} title="Progres Metro" />}
               <ListRow href="/subnet/layanan" icon={Package} title="Detail layanan" subtitle="Data teknis dan dokumen kontrak" />

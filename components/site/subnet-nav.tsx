@@ -88,6 +88,7 @@ export function SubnetBottomNav({ unpaid }: { unpaid: number }) {
 const titles: [prefix: string, title: string][] = [
   ["/subnet/trafik/grafik", "Grafik MRTG"],
   ["/subnet/progres", "Progres Metro"],
+  ["/subnet/tower", "Lokasi Tower"],
   ["/subnet/trafik", "Koneksi"],
   ["/subnet/tagihan", "Tagihan"],
   ["/subnet/layanan", "Layanan"],
@@ -99,7 +100,7 @@ export function SubnetMobileBar({ brand, name, photoUrl }: { brand: ReactNode; n
   const pathname = usePathname();
   const title = titles.find(([prefix]) => pathname.startsWith(prefix))?.[1];
   // Halaman di luar tab bawah punya tombol kembali ke asalnya.
-  const back = pathname.startsWith("/subnet/trafik/") ? { href: "/subnet/trafik", label: "Kembali ke Koneksi" } : pathname.startsWith("/subnet/progres") ? { href: "/subnet", label: "Kembali ke Beranda" } : null;
+  const back = pathname.startsWith("/subnet/trafik/") ? { href: "/subnet/trafik", label: "Kembali ke Koneksi" } : pathname.startsWith("/subnet/progres") || pathname.startsWith("/subnet/tower") ? { href: "/subnet", label: "Kembali ke Beranda" } : null;
 
   return (
     <header className="pt-safe sticky top-0 z-40 bg-brand text-white md:hidden">

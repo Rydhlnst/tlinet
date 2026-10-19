@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ikon kecil notifikasi (status bar): lambang TLINET satu warna, sama dengan ic_launcher_monochrome tanpa ruang tepi. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M9.5,2a7.5,7.5 0,1 1,0 15a7.5,7.5 0,1 1,0 -15z" />
+    <path
+        android:pathData="M14.5,32L30,8.5"
+        android:strokeWidth="13"
+        android:strokeLineCap="round"
+        android:strokeColor="#FFFFFFFF" />
+</vector>

@@ -38,4 +38,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Notifikasi koneksi down (Android 13+ meminta izin ke pengguna saat aplikasi dibuka). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

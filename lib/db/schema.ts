@@ -147,6 +147,8 @@ export const customers = pgTable(
     pksUrl: text("pks_url").notNull().default(""),
     status: text("status").notNull().default("active"),
     activationDate: text("activation_date").notNull().default(""),
+    /** Nama tower yang melayani pelanggan, mis. "Tower Gantarang Keke". */
+    towerName: text("tower_name").notNull().default(""),
     /** Koordinat tower yang melayani pelanggan, tampil sebagai peta di portal Subnet. (0, 0) berarti belum diisi. */
     towerLat: doublePrecision("tower_lat").notNull().default(0),
     towerLng: doublePrecision("tower_lng").notNull().default(0),

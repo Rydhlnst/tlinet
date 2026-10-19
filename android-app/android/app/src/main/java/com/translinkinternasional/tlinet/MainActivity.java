@@ -1,8 +1,14 @@
 package com.translinkinternasional.tlinet;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -13,16 +19,23 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
 
 /**
  * Aplikasi TLINET membuka Portal Subnet (server.url di capacitor.config.json) di WebView. Di sini ditambahkan yang
- * tidak bisa dilakukan WebView sendiri: mencetak / menyimpan invoice sebagai PDF, membuka berkas unduhan di peramban,
- * tombol kembali yang menutup aplikasi dari Beranda, dan memuat ulang portal bila aplikasi dibuka lagi setelah lama di latar.
+ * tidak bisa dilakukan WebView sendiri: mencetak / menyimpan invoice sebagai PDF, notifikasi koneksi down, membuka berkas
+ * unduhan di peramban, tombol kembali yang menutup aplikasi dari Beranda, dan memuat ulang portal bila aplikasi dibuka lagi
+ * setelah lama di latar.
  */
 public class MainActivity extends BridgeActivity {
 
     private static final String PORTAL_HOME = "/subnet";
+    private static final String CONNECTION_CHANNEL = "connection";
+    private static final int CONNECTION_NOTIFICATION = 1;
 
     /**
      * Aplikasi yang hanya diminimalkan tetap menampilkan halaman lama (data maupun tampilan sebelum situs diperbarui).
@@ -38,8 +51,9 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         WebView webView = getBridge().getWebView();
 
-        // Dipakai PrintButton di halaman invoice: window.print() tidak berfungsi di WebView.
-        webView.addJavascriptInterface(new PrintBridge(webView), "TLINETAndroid");
+        // window.print() dan Notification API tidak berfungsi di WebView: halaman memanggil TLINETAndroid.print / notify.
+        webView.addJavascriptInterface(new AppBridge(webView), "TLINETAndroid");
+        setupNotifications();
 
         // PDF dan berkas lain tidak bisa ditampilkan WebView; serahkan ke peramban atau penampil PDF.
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> openExternal(url));
@@ -79,6 +93,40 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    /** Saluran notifikasi koneksi, dan izin notifikasi yang wajib diminta di Android 13 ke atas. */
+    private void setupNotifications() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CONNECTION_CHANNEL, "Status koneksi", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Pemberitahuan saat koneksi internet down dan saat kembali normal.");
+            getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.POST_NOTIFICATIONS }, 1);
+        }
+    }
+
+    private void showNotification(String title, String body) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        // Mengetuk notifikasi membuka aplikasi (halaman yang sedang terbuka, karena launchMode singleTask).
+        Intent intent = new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent open = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CONNECTION_CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_tlinet)
+            .setColor(0xFF1D4ED8)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(open)
+            .setAutoCancel(true);
+        // Satu nomor notifikasi: "kembali normal" menggantikan peringatan down sebelumnya.
+        NotificationManagerCompat.from(this).notify(CONNECTION_NOTIFICATION, builder.build());
+    }
+
     private void openExternal(String url) {
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
@@ -87,11 +135,11 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    private class PrintBridge {
+    private class AppBridge {
 
         private final WebView webView;
 
-        PrintBridge(WebView webView) {
+        AppBridge(WebView webView) {
             this.webView = webView;
         }
 
@@ -103,6 +151,12 @@ public class MainActivity extends BridgeActivity {
                 PrintAttributes attributes = new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build();
                 printManager.print(jobName, webView.createPrintDocumentAdapter(jobName), attributes);
             });
+        }
+
+        @JavascriptInterface
+        public void notify(String title, String body) {
+            if (title == null || title.isEmpty()) return;
+            runOnUiThread(() -> showNotification(title, body == null ? "" : body));
         }
     }
 }

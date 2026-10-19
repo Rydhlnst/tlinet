@@ -6,9 +6,10 @@ import { QosLiveCard } from "@/components/site/qos-live-graph";
 import { ConnectionMonitor } from "@/components/site/subnet-connection";
 import { SubnetPing } from "@/components/site/subnet-ping";
 import { PageHeading, SectionCard } from "@/components/site/subnet-ui";
+import { getContent } from "@/lib/data";
 import { requireDb } from "@/lib/db";
 import { customers } from "@/lib/db/schema";
-import { parseCapacityBps } from "@/lib/format";
+import { parseCapacityBps, whatsappUrl } from "@/lib/format";
 import { getPortTraffic, realtimeConfigured } from "@/lib/librenms";
 import { requireSubnetUser } from "@/lib/subnet";
 
@@ -17,10 +18,31 @@ export const metadata: Metadata = { title: "Koneksi · Portal Subnet" };
 export default async function SubnetConnectionPage({ searchParams }: PageProps<"/subnet/trafik">) {
   const user = await requireSubnetUser();
   const range = parseRange((await searchParams).rentang);
-  const [[customer], traffic] = await Promise.all([
-    requireDb().select({ capacity: customers.capacity }).from(customers).where(eq(customers.id, user.customerId)).limit(1),
+  const [[customer], traffic, settings] = await Promise.all([
+    requireDb()
+      .select({ capacity: customers.capacity, name: customers.name, siteId: customers.siteId, cid: customers.cid, ipAddress: customers.ipAddress })
+      .from(customers)
+      .where(eq(customers.id, user.customerId))
+      .limit(1),
     user.portId ? getPortTraffic(user.portId) : null,
+    getContent("settings"),
   ]);
+  // Tombol "Lapor gangguan" pada peringatan down: ke IT Support Jaringan, atau Customer Service bila nomornya kosong.
+  const supportNumber = settings.itSupportWhatsapp || settings.whatsappNumber;
+  const reportHref = supportNumber
+    ? whatsappUrl(
+        supportNumber,
+        [
+          `Halo IT Support Jaringan ${settings.brandName}, koneksi saya down (trafik tidak jalan).`,
+          customer?.name && `Nama: ${customer.name}`,
+          customer?.siteId && `Site ID: ${customer.siteId}`,
+          customer?.cid && `CID: ${customer.cid}`,
+          customer?.ipAddress && `IP: ${customer.ipAddress}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      )
+    : "/subnet/layanan#bantuan";
 
   return (
     <>
@@ -30,6 +52,7 @@ export default async function SubnetConnectionPage({ searchParams }: PageProps<"
           initial={traffic ? { up: traffic.up, inBps: traffic.inBps, outBps: traffic.outBps, polledAt: traffic.polledAt?.getTime() ?? null } : null}
           realtime={realtimeConfigured()}
           capacityBps={parseCapacityBps(customer?.capacity ?? "")}
+          reportHref={reportHref}
         />
       ) : user.qos ? (
         // Antrean QoS tidak punya Real time di LibreNMS: grafik 2 jam terakhir yang diperbarui otomatis, lalu riwayat MRTG.

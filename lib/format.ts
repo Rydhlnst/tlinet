@@ -68,6 +68,13 @@ export function resolveHref(href: string, whatsapp: string) {
   return href === "whatsapp" ? whatsapp : href || "#";
 }
 
+/**
+ * Port VLAN bisa tetap "up" walau koneksi pelanggan mati. Bila unduh dan unggah sama-sama di bawah 10 Kbps, trafiknya
+ * dianggap tidak jalan (down); koneksi hidup selalu punya sedikit trafik latar.
+ */
+export const noTrafficBps = 10_000;
+export const trafficStopped = (traffic: { inBps: number; outBps: number }) => traffic.inBps < noTrafficBps && traffic.outBps < noTrafficBps;
+
 /** "112,09 Mbps" dari bit per detik. */
 export function formatBitrate(bps: number) {
   const units = ["bps", "Kbps", "Mbps", "Gbps"];
