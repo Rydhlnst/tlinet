@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { Gauge } from "lucide-react";
 import type { Metadata } from "next";
 import { MrtgGraphCard, parseRange } from "@/components/site/mrtg-graph";
+import { QosLiveCard } from "@/components/site/qos-live-graph";
 import { ConnectionMonitor } from "@/components/site/subnet-connection";
 import { SubnetPing } from "@/components/site/subnet-ping";
 import { PageHeading, SectionCard } from "@/components/site/subnet-ui";
@@ -31,8 +32,11 @@ export default async function SubnetConnectionPage({ searchParams }: PageProps<"
           capacityBps={parseCapacityBps(customer?.capacity ?? "")}
         />
       ) : user.qos ? (
-        // Antrean QoS tidak punya pembacaan langsung di LibreNMS; yang tampil grafik MRTG-nya.
-        <MrtgGraphCard range={range} basePath="/subnet/trafik" source="Antrean QoS" />
+        // Antrean QoS tidak punya Real time di LibreNMS: grafik 2 jam terakhir yang diperbarui otomatis, lalu riwayat MRTG.
+        <>
+          <QosLiveCard />
+          <MrtgGraphCard range={range} basePath="/subnet/trafik" source="Antrean QoS" />
+        </>
       ) : (
         <SectionCard>
           <p className="px-5 py-14 text-center text-sm text-muted-foreground">Monitoring koneksi belum diatur. Silakan hubungi admin TLINET.</p>

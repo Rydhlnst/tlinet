@@ -196,17 +196,17 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
         <div className="contents lg:flex lg:flex-col lg:gap-4">
           <div className="order-2 lg:order-none">
             {!user.portId && user.qos ? (
-              // Pelanggan dengan antrean QoS: grafik MRTG harian sebagai ringkasan, tanpa pembacaan langsung.
+              // Pelanggan dengan antrean QoS: grafik 2 jam terakhir sebagai ringkasan (antrean tidak punya Real time di LibreNMS).
               <Link href="/subnet/trafik" className="group block overflow-hidden rounded-2xl border bg-card transition-colors hover:border-foreground/20">
                 <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-3 sm:px-5">
-                  <p className="text-[0.9375rem] font-semibold">Trafik internet</p>
+                  <p className="text-[0.9375rem] font-semibold">Trafik terkini</p>
                   <span className="flex items-center gap-0.5 text-sm font-medium text-brand-ink">
                     Detail
                     <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
                   </span>
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/subnet/traffic?range=day" alt="Grafik trafik 1 hari terakhir" width={1000} height={300} className="h-auto w-full border-t bg-white" />
+                <img src="/subnet/traffic?range=live" alt="Grafik trafik 2 jam terakhir" width={1000} height={300} className="h-auto w-full border-t bg-white" />
               </Link>
             ) : (
               <ConnectionSummaryCard

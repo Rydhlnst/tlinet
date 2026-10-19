@@ -259,9 +259,12 @@ export function suggestQos(names: string[], list: LibrenmsQos[]) {
   return list.find((qos) => wanted.includes(key(qos.name)));
 }
 
+/** Rentang grafik "terkini" antrean QoS: 2 jam terakhir, pengganti Real time yang tidak ada untuk antrean di LibreNMS. */
+export const qosLiveSeconds = 2 * 3600;
+
 /** Grafik trafik antrean QoS (SVG dari LibreNMS), atau `null` bila gagal diambil. */
-export async function getQosGraph(deviceId: number, qosId: number, range: TrafficRange) {
-  const from = Math.floor(Date.now() / 300_000) * 300 - trafficRanges[range].seconds;
+export async function getQosGraph(deviceId: number, qosId: number, range: TrafficRange | "live") {
+  const from = range === "live" ? Math.floor(Date.now() / 60_000) * 60 - qosLiveSeconds : Math.floor(Date.now() / 300_000) * 300 - trafficRanges[range].seconds;
   const response = await webFetch(`/graph?type=device_qos_routeros_simple_traffic&device=${deviceId}&qos_id=${qosId}&from=${from}&width=1000&height=300`, 20_000);
   const type = response?.headers.get("content-type") ?? "";
   if (!response || !type.startsWith("image/")) return null;
