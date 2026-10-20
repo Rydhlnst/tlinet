@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteCommunityMessageAction, postCommunityAdminAction, setChatMutedAction } from "@/app/admin/community-actions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { SaveResult } from "@/lib/cms/store";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ export type ModerationMessage = {
   at: number;
   deleted: boolean;
   muted: boolean;
+  photoUrl: string;
 };
 
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -67,7 +69,7 @@ export function CommunityModeration({ messages }: { messages: ModerationMessage[
           value={draft}
           onChange={(event) => setDraft(event.target.value.slice(0, 1000))}
           rows={1}
-          placeholder="Tulis pengumuman atau balasan sebagai Admin TLINET…"
+          placeholder="Tulis pengumuman atau balasan sebagai PT.Trans Link Internasional…"
           aria-label="Pesan admin"
           className="field-sizing-content max-h-40 min-h-10 w-full min-w-0 flex-1 resize-none rounded-xl border bg-background px-3.5 py-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
         />
@@ -81,14 +83,16 @@ export function CommunityModeration({ messages }: { messages: ModerationMessage[
         <ul className="divide-y">
           {messages.map((message) => (
             <li key={message.id} className={cn("flex items-start gap-3 px-4 py-3 sm:px-5", message.deleted && "opacity-55")}>
-              <span
-                className={cn(
-                  "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                  message.admin ? "bg-brand text-white" : "bg-brand-soft text-brand-ink",
-                )}
-              >
-                {message.admin ? <ShieldCheck className="size-4" /> : initials(message.name)}
-              </span>
+              {message.admin ? (
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+                  <ShieldCheck className="size-4" />
+                </span>
+              ) : (
+                <Avatar className="size-9">
+                  {message.photoUrl && <AvatarImage src={message.photoUrl} alt="" />}
+                  <AvatarFallback className="bg-brand-soft text-xs font-semibold text-brand-ink">{initials(message.name)}</AvatarFallback>
+                </Avatar>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
                   <span className="font-semibold">{message.name}</span>

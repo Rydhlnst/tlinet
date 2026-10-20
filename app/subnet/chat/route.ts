@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { listCommunityMessages, postCustomerMessage } from "@/lib/community";
+import { listCommunityMessages, markForumRead, postCustomerMessage } from "@/lib/community";
 import { requireDb } from "@/lib/db";
 import { subnetAccounts } from "@/lib/db/schema";
 import { getSubnetUser } from "@/lib/subnet";
@@ -10,8 +10,10 @@ const noStore = { "Cache-Control": "no-store" };
 export async function GET() {
   const user = await getSubnetUser();
   if (!user) return Response.json({ error: "Sesi berakhir." }, { status: 401 });
-  const [messages, [account]] = await Promise.all([
+  // Forum hanya dibaca ulang selama halamannya terlihat, jadi setiap pembacaan berarti pesannya sudah dilihat.
+  const [messages, , [account]] = await Promise.all([
     listCommunityMessages(user.customerId),
+    markForumRead(user.customerId),
     requireDb().select({ muted: subnetAccounts.chatMuted }).from(subnetAccounts).where(eq(subnetAccounts.customerId, user.customerId)).limit(1),
   ]);
   return Response.json({ messages, muted: Boolean(account?.muted) }, { headers: noStore });

@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, Bell, ChartLine, ChevronRight, Pause, Play, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { showNotification } from "@/components/site/app-notify";
 import { formatBitrate, trafficStopped } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -48,17 +49,6 @@ function connectionHealth(status: ConnectionStatus | null, points: Point[], live
 }
 
 const alertKey = "tlinet:connection-alert";
-
-/** Notifikasi sistem: lewat aplikasi Android TLINET (1.0.2 ke atas), atau Notification API peramban bila diizinkan. */
-function showNotification(title: string, body: string) {
-  if (typeof window.TLINETAndroid?.notify === "function") return window.TLINETAndroid.notify(title, body);
-  if (!("Notification" in window) || Notification.permission !== "granted") return;
-  try {
-    new Notification(title, { body, tag: "tlinet-connection" });
-  } catch {
-    // Chrome di Android hanya mengizinkan notifikasi lewat service worker.
-  }
-}
 
 /** Satu notifikasi saat koneksi menjadi down dan satu saat pulih; tidak diulang bila halaman dimuat ulang. */
 function useDownAlert(health: Health) {

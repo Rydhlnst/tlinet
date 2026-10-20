@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, count, desc, eq, gte, isNull, ne } from "drizzle-orm";
+import { and, count, desc, eq, gt, gte, isNull, ne, or } from "drizzle-orm";
 import { requireDb } from "@/lib/db";
 import { communityMessages, customers, mediaAssets, subnetAccounts } from "@/lib/db/schema";
 import { deleteR2Object, isR2Url } from "@/lib/storage";
@@ -17,6 +17,8 @@ export const communityCooldownMs = 2000;
 export const communityImageMaxBytes = 600 * 1024;
 export const communityImagesPerDay = 30;
 const historySize = 80;
+/** Nama yang tampil untuk semua pesan admin, termasuk pesan lama yang tersimpan dengan nama sebelumnya. */
+export const forumAdminName = "PT.Trans Link Internasional";
 
 /** `mine`: dikirim oleh pelanggan yang sedang melihat. Nama pelanggan ditampilkan sebagai nama PT-nya. */
 export type ChatMessage = { id: string; mine: boolean; admin: boolean; name: string; photoUrl: string; body: string; imageUrl: string; at: number };
@@ -47,7 +49,7 @@ export async function listCommunityMessages(viewerCustomerId: string | null): Pr
     id: row.id,
     mine: Boolean(viewerCustomerId && row.customerId === viewerCustomerId),
     admin: row.isAdmin,
-    name: row.isAdmin ? row.authorName || "Admin TLINET" : row.company || row.name || row.authorName || "Pelanggan",
+    name: row.isAdmin ? forumAdminName : row.company || row.name || row.authorName || "Pelanggan",
     photoUrl: row.isAdmin ? "" : row.photoUrl || row.photos?.[0] || "",
     body: row.body,
     imageUrl: row.imageUrl,
@@ -115,6 +117,46 @@ export async function postCustomerMessage(customerId: string, input: unknown, im
   }
   await db.insert(communityMessages).values({ id: randomUUID(), customerId, body: cleaned.body, imageUrl });
   return { ok: true };
+}
+
+/** Pesan baru dari orang lain sejak pelanggan terakhir membuka Forum, untuk titik merah dan notifikasi. */
+export type ForumUnread = { count: number; latest: { id: string; name: string; text: string; at: number } | null };
+
+/** Tanpa catatan buka Forum (belum pernah membuka), hanya pesan 3 hari terakhir yang dihitung. */
+const unreadWindowMs = 3 * 86_400_000;
+
+export async function forumUnread(customerId: string): Promise<ForumUnread> {
+  const db = requireDb();
+  const [account] = await db.select({ readAt: subnetAccounts.forumReadAt }).from(subnetAccounts).where(eq(subnetAccounts.customerId, customerId)).limit(1);
+  const since = account?.readAt ?? new Date(Date.now() - unreadWindowMs);
+  // Pesan admin (customerId kosong) juga dihitung; pesan sendiri tidak.
+  const fromOthers = and(isNull(communityMessages.deletedAt), gt(communityMessages.createdAt, since), or(isNull(communityMessages.customerId), ne(communityMessages.customerId, customerId)));
+  const [[{ value }], [latest]] = await Promise.all([
+    db.select({ value: count() }).from(communityMessages).where(fromOthers),
+    db
+      .select({ id: communityMessages.id, isAdmin: communityMessages.isAdmin, body: communityMessages.body, imageUrl: communityMessages.imageUrl, createdAt: communityMessages.createdAt, company: customers.company, name: customers.name })
+      .from(communityMessages)
+      .leftJoin(customers, eq(customers.id, communityMessages.customerId))
+      .where(fromOthers)
+      .orderBy(desc(communityMessages.createdAt))
+      .limit(1),
+  ]);
+  return {
+    count: value,
+    latest: latest
+      ? {
+          id: latest.id,
+          name: latest.isAdmin ? forumAdminName : latest.company || latest.name || "Pelanggan",
+          text: latest.body ? latest.body.slice(0, 120) : latest.imageUrl ? "📷 Gambar" : "",
+          at: latest.createdAt.getTime(),
+        }
+      : null,
+  };
+}
+
+/** Menandai Forum sudah dibaca: dipanggil setiap Forum terbuka dan memuat pesan. */
+export async function markForumRead(customerId: string) {
+  await requireDb().update(subnetAccounts).set({ forumReadAt: new Date() }).where(eq(subnetAccounts.customerId, customerId));
 }
 
 /** Menyimpan pesan admin (pengumuman atau balasan), tampil dengan nama `authorName`. */

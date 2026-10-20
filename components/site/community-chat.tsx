@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, LoaderCircle, MessagesSquare, SendHorizontal, ShieldCheck, VolumeX, X } from "lucide-react";
+import { ImagePlus, LoaderCircle, MessagesSquare, SendHorizontal, ShieldCheck, Smile, VolumeX, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { initials } from "@/components/admin/detail-panels";
 import type { ChatMessage } from "@/lib/community";
@@ -74,6 +74,18 @@ async function compressImage(file: File): Promise<Blob> {
   }
 }
 
+/** Emoji yang sering dipakai, tanpa pustaka tambahan: huruf emoji bawaan perangkat. */
+const emojiGroups: { label: string; items: string[] }[] = [
+  { label: "Wajah", items: ["😀", "😁", "😂", "🤣", "😊", "🙂", "😉", "😍", "😘", "😎", "🤩", "🥳", "😇", "🤗", "🤔", "😅", "😬", "😮", "😴", "😢", "😭", "😡", "🙄", "😷"] },
+  { label: "Tangan", items: ["👍", "👎", "👏", "🙏", "💪", "🤝", "👋", "🙌", "👌", "✌️", "🤞", "☝️"] },
+  { label: "Lainnya", items: ["❤️", "🔥", "💯", "🎉", "✅", "❌", "⚠️", "💡", "📶", "🌐", "📡", "💻", "📱", "🔌", "⚡", "🚀", "⏳", "📍", "☕", "🌙"] },
+];
+
+/** Mencatat waktu aktivitas terakhir (menentukan jeda baca ulang); di luar komponen supaya aman dipanggil dari handler mana pun. */
+const touch = (ref: { current: number }) => {
+  ref.current = Date.now();
+};
+
 const formatKb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
 const nearBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160;
@@ -116,6 +128,7 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
   // Gambar yang sudah diperkecil dan siap dikirim, dengan pratinjaunya.
   const [attachment, setAttachment] = useState<{ blob: Blob; preview: string } | null>(null);
   const [preparing, setPreparing] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   // Terakhir ada pesan baru, pesan terkirim, atau pengguna mengetik; menentukan jeda baca ulang.
   const lastActivity = useRef(0);
 
@@ -169,6 +182,21 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
     };
   }, []);
 
+  /** Menyisipkan emoji di posisi kursor (atau di akhir), lalu kursor diletakkan setelahnya. */
+  function insertEmoji(emoji: string) {
+    const field = input.current;
+    const start = field?.selectionStart ?? draft.length;
+    const end = field?.selectionEnd ?? draft.length;
+    const next = (draft.slice(0, start) + emoji + draft.slice(end)).slice(0, maxLength);
+    setDraft(next);
+    touch(lastActivity);
+    requestAnimationFrame(() => {
+      field?.focus();
+      const caret = Math.min(start + emoji.length, next.length);
+      field?.setSelectionRange(caret, caret);
+    });
+  }
+
   function clearAttachment() {
     if (attachment) URL.revokeObjectURL(attachment.preview);
     setAttachment(null);
@@ -214,6 +242,7 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
         return;
       }
       setDraft("");
+      setEmojiOpen(false);
       clearAttachment();
       lastActivity.current = Date.now();
       signature.current = data.messages.map((message) => message.id).join(",");
@@ -304,6 +333,28 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
               void send();
             }}
           >
+            {emojiOpen && (
+              <div className="max-h-56 overflow-y-auto rounded-xl border bg-card p-2 shadow-sm" role="dialog" aria-label="Pilih emoji">
+                {emojiGroups.map((group) => (
+                  <div key={group.label} className="mb-1 last:mb-0">
+                    <p className="px-1 pb-1 text-[0.625rem] font-semibold tracking-wide text-muted-foreground uppercase">{group.label}</p>
+                    <div className="grid grid-cols-8 gap-0.5 sm:grid-cols-12">
+                      {group.items.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => insertEmoji(emoji)}
+                          aria-label={`Sisipkan ${emoji}`}
+                          className="flex aspect-square items-center justify-center rounded-lg text-xl hover:bg-muted active:scale-90"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {(attachment || preparing) && (
               <div className="flex items-center gap-3 rounded-xl border bg-muted/50 p-2">
                 {attachment ? (
@@ -332,6 +383,15 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
                 className="flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40"
               >
                 <ImagePlus className="size-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setEmojiOpen((open) => !open)}
+                aria-label={emojiOpen ? "Tutup emoji" : "Pilih emoji"}
+                aria-pressed={emojiOpen}
+                className={cn("-ml-1 flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-muted", emojiOpen ? "text-brand-ink" : "text-muted-foreground")}
+              >
+                <Smile className="size-5" />
               </button>
               <textarea
                 ref={input}

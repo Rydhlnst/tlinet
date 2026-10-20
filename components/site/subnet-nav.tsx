@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { initials } from "@/components/admin/detail-panels";
+import { ForumBadge } from "@/components/site/forum-unread";
 import { cn } from "@/lib/utils";
 
 const tabs: { href: string; label: string; icon: LucideIcon }[] = [
@@ -122,8 +123,9 @@ export function SubnetMobileBar({ brand, name, photoUrl }: { brand: ReactNode; n
         )}
         <div className="flex shrink-0 items-center gap-1">
           {!pathname.startsWith("/subnet/forum") && (
-            <Link href="/subnet/forum" aria-label="Forum Subnet" className="flex size-9 items-center justify-center rounded-full hover:bg-white/10">
+            <Link href="/subnet/forum" aria-label="Forum Subnet" className="relative flex size-9 items-center justify-center rounded-full hover:bg-white/10">
               <MessagesSquare className="size-5" />
+              <ForumBadge />
             </Link>
           )}
           <Link href="/subnet/profil" aria-label="Profil saya" className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-xs font-semibold text-white ring-2 ring-white/30">

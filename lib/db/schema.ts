@@ -197,6 +197,8 @@ export const subnetAccounts = pgTable("subnet_accounts", {
   pingTarget: text("ping_target").notNull().default(""),
   /** Dibisukan admin di Forum Subnet: masih bisa membaca, tidak bisa mengirim pesan. */
   chatMuted: boolean("chat_muted").notNull().default(false),
+  /** Terakhir pelanggan membuka Forum; pesan orang lain setelahnya dihitung belum dibaca (titik merah dan notifikasi). */
+  forumReadAt: timestamp("forum_read_at"),
   ...timestamps,
 });
 

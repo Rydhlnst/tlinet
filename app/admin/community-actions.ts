@@ -4,17 +4,17 @@ import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAdminWith } from "@/lib/auth";
 import type { SaveResult } from "@/lib/cms/store";
-import { postAdminMessage, removeCommunityImage } from "@/lib/community";
+import { forumAdminName, postAdminMessage, removeCommunityImage } from "@/lib/community";
 import { requireDb } from "@/lib/db";
 import { communityMessages, subnetAccounts } from "@/lib/db/schema";
 
 const expired: SaveResult = { ok: false, message: "Sesi berakhir. Silakan masuk kembali." };
 const path = "/admin/forum";
 
-/** Pesan admin di Forum Subnet (pengumuman atau balasan), tampil sebagai "Admin TLINET". */
+/** Pesan admin di Forum Subnet (pengumuman atau balasan), tampil sebagai PT.Trans Link Internasional. */
 export async function postCommunityAdminAction(body: string): Promise<SaveResult> {
   if (!(await getAdminWith("subnet"))) return expired;
-  const result = await postAdminMessage("Admin TLINET", body);
+  const result = await postAdminMessage(forumAdminName, body);
   if (!result.ok) return { ok: false, message: result.error };
   revalidatePath(path);
   return { ok: true, message: "Pesan terkirim ke Forum." };
