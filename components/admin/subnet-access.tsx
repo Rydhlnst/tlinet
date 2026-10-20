@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDeleteDialog } from "./confirm-delete";
 import { whatsappUrl } from "@/lib/format";
 
 /** `email`, `portId`, dan `ip`: usulan untuk akses baru, dari invoice terakhir, nomor VLAN, dan IP Address pelanggan. */
@@ -83,14 +84,11 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
   }
 
   function remove() {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
     startTransition(async () => {
       const result = await deleteSubnetAccessAction(customer.id);
       if (result.ok) {
         toast.success(result.message);
+        setConfirmDelete(false);
         setOpen(false);
         router.refresh();
       } else {
@@ -244,9 +242,9 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
               </label>
               <DialogFooter className="gap-2 sm:justify-between">
                 {account ? (
-                  <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={remove} disabled={pending}>
+                  <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setConfirmDelete(true)} disabled={pending}>
                     <Trash2 />
-                    {confirmDelete ? "Klik lagi untuk menghapus" : "Hapus akses"}
+                    Hapus akses
                   </Button>
                 ) : (
                   <span />
@@ -258,6 +256,14 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
               </DialogFooter>
             </form>
           )}
+          <ConfirmDeleteDialog
+            open={confirmDelete}
+            title="akses portal ini"
+            description={`${customer.title} tidak bisa masuk lagi ke portal Subnet dan aplikasi TLINET. Data pelanggannya tidak ikut terhapus, dan aksesnya bisa dikembalikan dari Tempat Sampah selama 30 hari.`}
+            pending={pending}
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={remove}
+          />
         </DialogContent>
       </Dialog>
     </>

@@ -37,6 +37,7 @@ import {
   Stamp,
   Sun,
   Tags,
+  Trash2,
   TrendingUp,
   Users,
   type LucideIcon,
@@ -135,6 +136,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/data/employees", label: "Data Karyawan", icon: IdCard, keywords: "pegawai staf jabatan rekening" },
       { href: "/admin/data/salaries", label: "Gaji Karyawan", icon: Banknote, keywords: "payroll upah slip lembur bonus potongan" },
       { href: "/admin/data/invoices", label: "Invoice", icon: ScrollText, keywords: "tagihan faktur cetak pdf" },
+      { href: "/admin/sampah", label: "Tempat Sampah", icon: Trash2, keywords: "hapus dihapus kembalikan pulihkan restore recycle" },
     ],
   },
   {

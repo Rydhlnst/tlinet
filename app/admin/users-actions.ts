@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminWith } from "@/lib/auth";
 import type { SaveResult } from "@/lib/cms/store";
 import { requireDb } from "@/lib/db";
+import { moveToTrash, snapshotRows } from "@/lib/trash";
 import { staffUsers } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/passwords";
 import { isStaffPermission } from "@/lib/permissions";
@@ -50,7 +51,12 @@ export async function saveStaffUserAction(id: string | null, input: StaffUserInp
 
 /** Menghapus akun staf; sesi yang sedang berjalan ikut berakhir. */
 export async function deleteStaffUserAction(id: string): Promise<SaveResult> {
-  if (!(await getAdminWith("users"))) return forbidden;
+  const admin = await getAdminWith("users");
+  if (!admin) return forbidden;
+  const saved = await snapshotRows("staffUsers", eq(staffUsers.id, id));
+  const user = saved.rows[0] as { name?: string; email?: string } | undefined;
+  if (!user) return { ok: false, message: "Pengguna tidak ditemukan." };
+  await moveToTrash({ kind: "staff", label: "Akun staf", title: user.name ? `${user.name} · ${user.email}` : String(user.email ?? ""), permission: "users", deletedBy: admin.name || admin.email, tables: [saved] });
   await requireDb().delete(staffUsers).where(eq(staffUsers.id, id));
   revalidatePath("/admin/users");
   return { ok: true, message: "Pengguna dihapus." };

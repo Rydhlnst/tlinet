@@ -16,16 +16,20 @@ export const permissionDefs = [
   { key: "settings", label: "Pengaturan situs & invoice" },
 ] as const;
 
-/** `users` (mengelola akun staf) hanya untuk owner dan tidak bisa diberikan ke staf. */
-export type Permission = (typeof permissionDefs)[number]["key"] | "users";
-export type StaffPermission = Exclude<Permission, "users">;
+/**
+ * `users` (mengelola akun staf) hanya untuk owner dan tidak bisa diberikan ke staf. `any`: semua pengguna dashboard
+ * (mis. Tempat Sampah, yang isinya tetap disaring per hak akses).
+ */
+export type Permission = (typeof permissionDefs)[number]["key"] | "users" | "any";
+export type StaffPermission = Exclude<Permission, "users" | "any">;
 
 export const staffPermissionKeys = permissionDefs.map((item) => item.key) as StaffPermission[];
 export const isStaffPermission = (value: unknown): value is StaffPermission => staffPermissionKeys.includes(value as StaffPermission);
 
 export type AdminUser = { email: string; name: string; role: "owner" | "staff"; permissions: StaffPermission[] };
 
-export const can = (user: Pick<AdminUser, "role" | "permissions">, permission: Permission) => user.role === "owner" || (permission !== "users" && user.permissions.includes(permission));
+export const can = (user: Pick<AdminUser, "role" | "permissions">, permission: Permission) =>
+  user.role === "owner" || permission === "any" || (permission !== "users" && user.permissions.includes(permission));
 
 /** Data CMS per jenis data (lib/cms/entities). Entitas yang tidak dikenal hanya untuk owner. */
 const entityPermissions: Record<string, StaffPermission> = {
@@ -54,7 +58,7 @@ export function routePermission(pathname: string): Permission {
   const [, , section, key] = pathname.split("/");
   if (section === "data") return entityPermission(key ?? "");
   if (section === "pages") return pagePermission(key ?? "");
-  const sections: Record<string, Permission> = { media: "content", subnet: "subnet", forum: "subnet", metro: "metro", keuntungan: "finance", accurate: "accurate", invoice: "billing", users: "users" };
+  const sections: Record<string, Permission> = { media: "content", subnet: "subnet", forum: "subnet", sampah: "any", metro: "metro", keuntungan: "finance", accurate: "accurate", invoice: "billing", users: "users" };
   return sections[section ?? ""] ?? "users";
 }
 

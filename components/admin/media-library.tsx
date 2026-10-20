@@ -133,9 +133,9 @@ export function MediaLibrary({ items, storageLabel }: { items: MediaItem[]; stor
       <AlertDialog open={removing !== null} onOpenChange={(open) => !open && !pending && setRemoving(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus gambar ini?</AlertDialogTitle>
+            <AlertDialogTitle>Apakah Anda yakin mau menghapus gambar ini?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{removing?.filename}” dihapus permanen. Konten yang masih memakai gambar ini akan menampilkan gambar rusak.
+              “{removing?.filename}” dipindahkan ke Tempat Sampah (bisa dikembalikan selama 30 hari). Selama itu konten yang memakai gambar ini masih menampilkannya.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

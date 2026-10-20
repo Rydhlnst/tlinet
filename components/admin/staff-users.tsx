@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDeleteDialog } from "./confirm-delete";
 import { permissionDefs } from "@/lib/permissions";
 
 export type StaffUserView = { id: string; email: string; name: string; permissions: string[]; active: boolean };
@@ -68,6 +69,7 @@ export function StaffUserButton({ user, loginUrl }: { user?: StaffUserView; logi
         return;
       }
       toast.success(result.message);
+      setConfirmDelete(false);
       setOpen(false);
       router.refresh();
     });
@@ -172,16 +174,10 @@ export function StaffUserButton({ user, loginUrl }: { user?: StaffUserView; logi
 
               <DialogFooter className="gap-2 sm:justify-between">
                 {user ? (
-                  confirmDelete ? (
-                    <Button type="button" variant="destructive" disabled={pending} onClick={remove}>
-                      Yakin hapus?
-                    </Button>
-                  ) : (
-                    <Button type="button" variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
-                      <Trash2 />
-                      Hapus
-                    </Button>
-                  )
+                  <Button type="button" variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 />
+                    Hapus
+                  </Button>
                 ) : (
                   <span />
                 )}
@@ -192,6 +188,14 @@ export function StaffUserButton({ user, loginUrl }: { user?: StaffUserView; logi
               </DialogFooter>
             </form>
           )}
+          <ConfirmDeleteDialog
+            open={confirmDelete}
+            title="akun staf ini"
+            description={user ? `${user.name || user.email} tidak bisa masuk lagi ke dashboard dan sesinya langsung berakhir. Akunnya masih bisa dikembalikan dari Tempat Sampah selama 30 hari.` : undefined}
+            pending={pending}
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={remove}
+          />
         </DialogContent>
       </Dialog>
     </>

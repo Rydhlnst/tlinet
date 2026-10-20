@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Pencil } from "lucide-react";
+import { LoaderCircle, Pencil, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
@@ -117,8 +117,11 @@ export function DeleteRecordDialog({ entityKey, row, title, onClose }: { entityK
     <AlertDialog open={row !== null} onOpenChange={(open) => !open && !pending && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Hapus {entity.singular} ini?</AlertDialogTitle>
-          <AlertDialogDescription>“{title}” akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.</AlertDialogDescription>
+          <span className="mx-auto mb-1 flex size-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 sm:mx-0 dark:bg-rose-500/20 dark:text-rose-300">
+            <TriangleAlert className="size-6" />
+          </span>
+          <AlertDialogTitle>Apakah Anda yakin mau menghapus {entity.singular} ini?</AlertDialogTitle>
+          <AlertDialogDescription>“{title}” dipindahkan ke Tempat Sampah dan masih bisa dikembalikan selama 30 hari.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Batal</AlertDialogCancel>
@@ -131,7 +134,7 @@ export function DeleteRecordDialog({ entityKey, row, title, onClose }: { entityK
             }}
           >
             {pending && <LoaderCircle className="animate-spin" />}
-            Hapus
+            Ya, hapus
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

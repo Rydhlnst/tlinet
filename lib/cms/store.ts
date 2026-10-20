@@ -2,8 +2,10 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
-import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, employees, faqs, invoices, leads, packageCategories, packages, salaryPayments, siteContent, subnetAccounts } from "@/lib/db/schema";
-import { slugify } from "@/lib/format";
+import { articles, clients, communityMessages, coverageAreas, customerPayments, customerPurchases, customers, employees, faqs, invoices, leads, packageCategories, packages, salaryPayments, siteContent, subnetAccounts } from "@/lib/db/schema";
+import { entityPermission } from "@/lib/permissions";
+import { moveToTrash, snapshotRows } from "@/lib/trash";
+import { formatMonth, slugify } from "@/lib/format";
 import { deleteInvoicePayment, deleteInvoicePurchase, syncInvoicePayment, syncInvoicePurchase, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { prepareInvoice } from "@/lib/invoices";
 import { customerHistoryKeys, type EntityDef } from "./entities";
@@ -169,7 +171,42 @@ export async function generateNextMonth(entity: EntityDef, source: string, custo
   return { ok: true, message: `${created} ${entity.monthly.noun ?? "tagihan"} dibuat.${failures.length ? ` ${failures.length} gagal: ${failures[0]}` : ""}` };
 }
 
-export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveResult> {
+/** Nama tabel di Tempat Sampah (lib/trash) untuk tiap jenis data. */
+const trashTable: Record<string, Parameters<typeof snapshotRows>[0]> = {
+  packages: "packages",
+  "package-categories": "packageCategories",
+  "coverage-areas": "coverageAreas",
+  faqs: "faqs",
+  articles: "articles",
+  clients: "clients",
+  leads: "leads",
+  customers: "customers",
+  "customer-payments": "customerPayments",
+  "customer-purchases": "customerPurchases",
+  invoices: "invoices",
+  employees: "employees",
+  salaries: "salaryPayments",
+};
+
+/** Judul baris di Tempat Sampah: nama PT, nomor invoice, judul, atau nama, ditambah bulan untuk riwayat bulanan. */
+async function trashTitle(row: Record<string, unknown>) {
+  const text = (key: string) => String(row[key] ?? "").trim();
+  let owner = "";
+  if (text("customerId")) {
+    const [customer] = await requireDb().select({ company: customers.company, name: customers.name }).from(customers).where(eq(customers.id, text("customerId"))).limit(1);
+    owner = customer ? customer.company || customer.name : "";
+  }
+  if (text("employeeId")) {
+    const [employee] = await requireDb().select({ name: employees.name }).from(employees).where(eq(employees.id, text("employeeId"))).limit(1);
+    owner = employee?.name ?? "";
+  }
+  const main = text("number") || text("company") || text("supplierName") || owner || text("title") || text("name") || text("question");
+  const period = text("period");
+  return [main, text("number") && owner, period && formatMonth(period)].filter(Boolean).join(" · ");
+}
+
+/** Menghapus satu data. Salinannya (beserta data yang ikut terhapus atau berubah) masuk Tempat Sampah supaya bisa dikembalikan. */
+export async function deleteRecord(entity: EntityDef, id: string, deletedBy = ""): Promise<SaveResult> {
   const db = requireDb();
   if (entity.key === "package-categories") {
     const used = await db.select({ id: packages.id }).from(packages).where(eq(packages.categoryId, id)).limit(1);
@@ -179,6 +216,21 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
   if (entity.key === "employees") {
     const used = await db.select({ id: salaryPayments.id }).from(salaryPayments).where(eq(salaryPayments.employeeId, id)).limit(1);
     if (used.length) return { ok: false, message: "Karyawan ini sudah punya riwayat gaji. Ubah statusnya menjadi Nonaktif." };
+  }
+  const name = trashTable[entity.key];
+  const saved = name ? [await snapshotRows(name, eq(tables[entity.key].id, id))] : [];
+  if (name && !saved[0].rows.length) return { ok: false, message: "Data tidak ditemukan. Muat ulang halaman lalu coba lagi." };
+  if (entity.key === "invoices") {
+    saved.push(await snapshotRows("customerPayments", eq(customerPayments.invoiceId, id)), await snapshotRows("customerPurchases", eq(customerPurchases.invoiceId, id)));
+  }
+  if (entity.key === "customers") {
+    saved.push(
+      await snapshotRows("customerPayments", eq(customerPayments.customerId, id)),
+      await snapshotRows("customerPurchases", eq(customerPurchases.customerId, id)),
+      await snapshotRows("subnetAccounts", eq(subnetAccounts.customerId, id)),
+      // Pesan Forum ikut terhapus oleh database (foreign key) bersama pelanggannya.
+      await snapshotRows("communityMessages", eq(communityMessages.customerId, id)),
+    );
   }
   if (entity.key === "invoices") {
     await deleteInvoicePayment(id);
@@ -191,7 +243,10 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
     await db.delete(subnetAccounts).where(eq(subnetAccounts.customerId, id));
   }
   await db.delete(tables[entity.key]).where(eq(tables[entity.key].id, id));
-  return { ok: true, message: "Data dihapus." };
+  if (saved.length) {
+    await moveToTrash({ kind: entity.key, label: entity.singular[0].toUpperCase() + entity.singular.slice(1), title: await trashTitle(saved[0].rows[0]), permission: entityPermission(entity.key), deletedBy, tables: saved });
+  }
+  return { ok: true, message: "Data dipindahkan ke Tempat Sampah. Masih bisa dikembalikan selama 30 hari." };
 }
 
 const maxCustomerPhotos = 30;

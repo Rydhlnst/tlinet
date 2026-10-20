@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminWith } from "@/lib/auth";
 import type { SaveResult } from "@/lib/cms/store";
 import { requireDb } from "@/lib/db";
+import { moveToTrash, snapshotRows } from "@/lib/trash";
 import { customers, subnetAccounts } from "@/lib/db/schema";
 import { hashSubnetPassword, minSubnetPasswordLength, pingTargetPattern, subnetEmailPattern } from "@/lib/subnet";
 
@@ -54,7 +55,13 @@ export async function saveSubnetAccessAction(customerId: string, input: { email:
 
 /** Menghapus akses portal pelanggan; sesi yang sedang berjalan ikut berakhir. */
 export async function deleteSubnetAccessAction(customerId: string): Promise<SaveResult> {
-  if (!(await getAdminWith("subnet"))) return expired;
+  const admin = await getAdminWith("subnet");
+  if (!admin) return expired;
+  const saved = await snapshotRows("subnetAccounts", eq(subnetAccounts.customerId, customerId));
+  const account = saved.rows[0] as { email?: string } | undefined;
+  if (!account) return { ok: false, message: "Akses Subnet tidak ditemukan." };
+  const [customer] = await requireDb().select({ company: customers.company, name: customers.name }).from(customers).where(eq(customers.id, customerId)).limit(1);
+  await moveToTrash({ kind: "subnet-access", label: "Akses Subnet", title: [customer?.company || customer?.name, account.email].filter(Boolean).join(" · "), permission: "subnet", deletedBy: admin.name || admin.email, tables: [saved] });
   await requireDb().delete(subnetAccounts).where(eq(subnetAccounts.customerId, customerId));
   revalidatePath("/admin/subnet");
   return { ok: true, message: "Akses Subnet dihapus." };

@@ -16,7 +16,7 @@ import { db } from "@/lib/db";
 import { customerPayments, customerPurchases, customers, invoices, mediaAssets, salaryPayments, staffUsers } from "@/lib/db/schema";
 import { syncInvoicePayment, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { can, entityPermission, homePath, isStaffPermission, pagePermission } from "@/lib/permissions";
-import { deleteR2Object } from "@/lib/storage";
+import { moveToTrash, snapshotRows } from "@/lib/trash";
 
 export type FormState = { error?: string };
 
@@ -90,10 +90,11 @@ export async function generateNextMonthAction(entityKey: string, source: string,
 }
 
 export async function deleteRecordAction(entityKey: string, id: string): Promise<SaveResult> {
-  if (!(await getAdminWith(entityPermission(entityKey)))) return expired;
+  const admin = await getAdminWith(entityPermission(entityKey));
+  if (!admin) return expired;
   const entity = getEntityDef(entityKey);
   if (!entity) return { ok: false, message: "Jenis data tidak dikenal." };
-  const result = await deleteRecord(entity, id);
+  const result = await deleteRecord(entity, id, admin.name || admin.email);
   if (result.ok && !entity.internal) refreshSite();
   return result;
 }
@@ -175,15 +176,14 @@ export async function listMediaAction(): Promise<MediaItem[]> {
 }
 
 export async function deleteMediaAction(id: string): Promise<SaveResult> {
-  if (!(await getAdminWith("content"))) return expired;
+  const admin = await getAdminWith("content");
+  if (!admin) return expired;
   if (!db) return { ok: false, message: "Database belum diatur." };
-  const [asset] = await db.select({ url: mediaAssets.url }).from(mediaAssets).where(eq(mediaAssets.id, id)).limit(1);
+  const saved = await snapshotRows("mediaAssets", eq(mediaAssets.id, id));
+  const asset = saved.rows[0] as { url?: string; filename?: string } | undefined;
   if (!asset) return { ok: false, message: "Media tidak ditemukan." };
-  try {
-    await deleteR2Object(asset.url);
-  } catch {
-    return { ok: false, message: "Media tidak dapat dihapus dari penyimpanan. Coba lagi." };
-  }
+  // Berkas di R2 tetap disimpan selama di Tempat Sampah; baru dibuang saat sampah dikosongkan.
+  await moveToTrash({ kind: "media", label: "Media", title: asset.filename || "Gambar", permission: "content", deletedBy: admin.name || admin.email, tables: [saved], files: [asset.url ?? ""] });
   await db.delete(mediaAssets).where(eq(mediaAssets.id, id));
-  return { ok: true, message: "Media dihapus." };
+  return { ok: true, message: "Media dipindahkan ke Tempat Sampah." };
 }

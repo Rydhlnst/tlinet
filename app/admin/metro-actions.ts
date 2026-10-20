@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminWith } from "@/lib/auth";
 import type { SaveResult } from "@/lib/cms/store";
 import { requireDb } from "@/lib/db";
+import { moveToTrash, snapshotRows } from "@/lib/trash";
 import { customers, metroOrders, type MetroStepRecord } from "@/lib/db/schema";
 import { fromWitaInput, isMetroKind, metroProgress, metroSteps, type MetroKind } from "@/lib/metro";
 
@@ -125,7 +126,20 @@ export async function reopenMetroOrderAction(id: string): Promise<SaveResult> {
 }
 
 export async function deleteMetroOrderAction(id: string): Promise<SaveResult> {
-  if (!(await getAdminWith("metro"))) return expired;
+  const admin = await getAdminWith("metro");
+  if (!admin) return expired;
+  const saved = await snapshotRows("metroOrders", eq(metroOrders.id, id));
+  const order = saved.rows[0] as { customerId?: string; kind?: string } | undefined;
+  if (!order) return { ok: false, message: "Progres tidak ditemukan." };
+  const [customer] = await requireDb().select({ company: customers.company, name: customers.name }).from(customers).where(eq(customers.id, String(order.customerId ?? ""))).limit(1);
+  await moveToTrash({
+    kind: "metro",
+    label: "Progres Metro",
+    title: [customer?.company || customer?.name, order.kind === "upgrade" ? "Upgrade kapasitas" : "Pemasangan baru"].filter(Boolean).join(" · "),
+    permission: "metro",
+    deletedBy: admin.name || admin.email,
+    tables: [saved],
+  });
   await requireDb().delete(metroOrders).where(eq(metroOrders.id, id));
   refresh();
   return { ok: true, message: "Progres dihapus." };

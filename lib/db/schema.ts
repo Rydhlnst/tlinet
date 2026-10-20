@@ -303,6 +303,24 @@ export const salaryPayments = pgTable(
   (table) => [index("salary_payments_employee_idx").on(table.employeeId, table.period)],
 );
 
+/** Isi tempat sampah: salinan baris yang dihapus per tabel, dipulihkan apa adanya saat dikembalikan. */
+export type TrashSnapshot = { tables: { table: string; rows: Record<string, unknown>[] }[]; files?: string[] };
+
+/**
+ * Tempat Sampah dashboard: setiap penghapusan disimpan di sini (beserta data yang ikut terhapus, mis. pembayaran milik
+ * pelanggan) supaya bisa dikembalikan. `permission` adalah hak akses yang dibutuhkan untuk melihat dan mengembalikannya.
+ */
+export const trashItems = pgTable("trash_items", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  label: text("label").notNull(),
+  title: text("title").notNull(),
+  permission: text("permission").notNull().default("users"),
+  snapshot: jsonb("snapshot").$type<TrashSnapshot>().notNull(),
+  deletedBy: text("deleted_by").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export type InvoiceItem = { description: string; note: string; quantity: number; unitPrice: number };
 
 /**

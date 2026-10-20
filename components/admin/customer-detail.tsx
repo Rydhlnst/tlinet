@@ -645,7 +645,7 @@ export function CustomerDetail({
       <AlertDialog open={removingPhoto !== null} onOpenChange={(open) => !open && !savingPhotos && setRemovingPhoto(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus foto ini?</AlertDialogTitle>
+            <AlertDialogTitle>Apakah Anda yakin mau menghapus foto ini?</AlertDialogTitle>
             <AlertDialogDescription>Foto dilepas dari pelanggan ini. Berkasnya tetap ada di menu Media sampai dihapus dari sana.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

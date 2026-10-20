@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { MetroStepRecord } from "@/lib/db/schema";
 import type { SaveResult } from "@/lib/cms/store";
 import { formatStepTime, metroKindLabels, metroProgress, toWitaInput, type MetroKind, type MetroStatus } from "@/lib/metro";
+import { ConfirmDeleteDialog } from "./confirm-delete";
 import { cn } from "@/lib/utils";
 
 export type MetroCustomerOption = { id: string; title: string; capacity: string };
@@ -272,17 +273,27 @@ export function MetroOrderButton({ order, customerTitle }: { order: MetroOrderVi
                 </Button>
               )}
             </div>
-            {confirmDelete ? (
-              <Button variant="destructive" size="sm" disabled={pending} onClick={() => run(() => deleteMetroOrderAction(order.id), () => setOpen(false))}>
-                Yakin hapus?
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setConfirmDelete(true)}>
-                <Trash2 />
-                Hapus
-              </Button>
-            )}
+            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setConfirmDelete(true)}>
+              <Trash2 />
+              Hapus
+            </Button>
           </DialogFooter>
+          <ConfirmDeleteDialog
+            open={confirmDelete}
+            title="progres ini"
+            description={`Progres ${customerTitle} hilang dari dashboard dan portal pelanggan, tapi masih bisa dikembalikan dari Tempat Sampah selama 30 hari.`}
+            pending={pending}
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={() =>
+              run(
+                () => deleteMetroOrderAction(order.id),
+                () => {
+                  setConfirmDelete(false);
+                  setOpen(false);
+                },
+              )
+            }
+          />
         </DialogContent>
       </Dialog>
     </>
