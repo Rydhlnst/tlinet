@@ -1,6 +1,9 @@
 import { count, desc, eq, inArray } from "drizzle-orm";
 import {
+  ArrowDownLeft,
   ArrowRight,
+  ArrowUpRight,
+  Banknote,
   CalendarDays,
   ChartColumn,
   CircleAlert,
@@ -18,7 +21,9 @@ import {
   Package,
   PieChart,
   ReceiptText,
+  Scale,
   ServerCog,
+  ShoppingBag,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -33,7 +38,7 @@ import { adminAppUserAgent } from "@/lib/admin-app";
 import { requireAdmin } from "@/lib/auth";
 import { invoiceStatusLabels } from "@/lib/cms/entities";
 import { requireDb } from "@/lib/db";
-import { articles, coverageAreas, customers, invoices, leads, packages } from "@/lib/db/schema";
+import { articles, coverageAreas, customerPayments, customerPurchases, customers, employees, invoices, leads, packages, salaryPayments } from "@/lib/db/schema";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { pingR2, storageMode } from "@/lib/storage";
@@ -87,8 +92,18 @@ function Panel({ title, icon: Icon, description, action, children, className }: 
 }
 
 /** Batang berpasangan per bulan: total tagihan (biru) dan yang sudah dibayar (hijau). */
-function TransactionChart({ data }: { data: { month: string; total: number; paid: number }[] }) {
-  const max = Math.max(1, ...data.map((item) => item.total));
+type ChartSeries = { label: string; bar: string; dot: string };
+
+const seriesStyle = {
+  blue: { bar: "from-blue-600 to-blue-400 shadow-[0_0_14px_-4px_rgba(59,130,246,0.7)]", dot: "bg-blue-500" },
+  green: { bar: "from-emerald-600 to-emerald-400 shadow-[0_0_14px_-4px_rgba(16,185,129,0.7)]", dot: "bg-emerald-500" },
+  red: { bar: "from-rose-600 to-rose-400 shadow-[0_0_14px_-4px_rgba(244,63,94,0.6)]", dot: "bg-rose-500" },
+};
+const chartSeries = (label: string, tone: keyof typeof seriesStyle): ChartSeries => ({ label, ...seriesStyle[tone] });
+
+/** Batang per bulan untuk satu atau dua deret nilai rupiah (mis. tagihan vs pembayaran, uang masuk vs keluar). */
+function BarChart({ data, series }: { data: { month: string; values: number[] }[]; series: ChartSeries[] }) {
+  const max = Math.max(1, ...data.flatMap((item) => item.values));
   // Skala sumbu dalam juta, dibulatkan ke 1/2/5 × 10^n supaya garisnya rapi.
   const power = 10 ** Math.floor(Math.log10(max));
   const top = ([1, 2, 5, 10].find((step) => step * power >= max) ?? 10) * power;
@@ -96,13 +111,12 @@ function TransactionChart({ data }: { data: { month: string; total: number; paid
   const label = (value: number) => (value >= 1_000_000 ? `${(value / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} jt` : value.toLocaleString("id-ID"));
   return (
     <div>
-      <div className="mb-3 flex gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-blue-500" /> Total tagihan
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-emerald-500" /> Pembayaran
-        </span>
+      <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+        {series.map((item) => (
+          <span key={item.label} className="flex items-center gap-1.5">
+            <span className={cn("size-2.5 rounded-full", item.dot)} /> {item.label}
+          </span>
+        ))}
       </div>
       <div className="flex gap-3">
         <div className="flex h-48 flex-col-reverse justify-between pb-6 text-right text-[10px] text-muted-foreground tabular-nums">
@@ -121,16 +135,14 @@ function TransactionChart({ data }: { data: { month: string; total: number; paid
           {data.map((item) => (
             <div key={item.month} className="relative flex flex-col items-center">
               <div className="flex h-[calc(100%-1.5rem)] w-full items-end justify-center gap-1.5">
-                <div
-                  className="w-1/3 max-w-7 rounded-t-md bg-gradient-to-t from-blue-600 to-blue-400 shadow-[0_0_14px_-4px_rgba(59,130,246,0.7)]"
-                  style={{ height: `${(item.total / top) * 100}%` }}
-                  title={`Total ${formatRupiah(item.total)}`}
-                />
-                <div
-                  className="w-1/3 max-w-7 rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-[0_0_14px_-4px_rgba(16,185,129,0.7)]"
-                  style={{ height: `${(item.paid / top) * 100}%` }}
-                  title={`Dibayar ${formatRupiah(item.paid)}`}
-                />
+                {item.values.map((value, index) => (
+                  <div
+                    key={series[index]?.label ?? index}
+                    className={cn("w-1/3 max-w-7 rounded-t-md bg-gradient-to-t", series[index]?.bar)}
+                    style={{ height: `${(value / top) * 100}%` }}
+                    title={`${series[index]?.label}: ${formatRupiah(value)}`}
+                  />
+                ))}
               </div>
               <span className="mt-2 text-[11px] whitespace-nowrap text-muted-foreground">{monthLabel.format(new Date(`${item.month}-01T00:00:00Z`))}</span>
             </div>
@@ -138,6 +150,26 @@ function TransactionChart({ data }: { data: { month: string; total: number; paid
         </div>
       </div>
     </div>
+  );
+}
+
+/** Baris rincian nominal di panel Pembelian dan Gaji. */
+function MoneyRows({ rows }: { rows: { label: string; value: number; hint?: string; tone?: "good" | "warn" }[] }) {
+  return (
+    <ul className="flex flex-col gap-3">
+      {rows.map((row) => (
+        <li key={row.label} className="flex items-start justify-between gap-3">
+          <span className="min-w-0 text-sm">
+            <span className="flex items-center gap-2">
+              {row.tone && <span className={cn("size-2 shrink-0 rounded-full", row.tone === "good" ? "bg-emerald-500" : "bg-amber-500")} />}
+              {row.label}
+            </span>
+            {row.hint && <span className="block text-xs text-muted-foreground">{row.hint}</span>}
+          </span>
+          <span className="shrink-0 text-sm font-semibold tabular-nums">{formatRupiah(row.value)}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -205,6 +237,8 @@ export default async function DashboardPage() {
   // Aplikasi TLINET Admin hanya untuk menu operasional; halaman awalnya Data Pelanggan.
   if (((await headers()).get("user-agent") ?? "").includes(adminAppUserAgent)) redirect("/admin/data/customers");
   const billing = can(admin, "billing");
+  // Pembelian dan gaji termasuk data Keuangan; uang masuk (pembayaran pelanggan) termasuk Invoice & History Pembayaran.
+  const finance = can(admin, "finance");
   const db = requireDb();
   const [[newLeads], [packageCount], [areaCount], [articleCount], invoiceRows, recentLeads, recentArticles, recentPackages, r2Online] = await Promise.all([
     db.select({ value: count() }).from(leads).where(eq(leads.status, "new")),
@@ -223,6 +257,20 @@ export default async function DashboardPage() {
     storageMode === "r2" ? pingR2() : Promise.resolve(false),
   ]);
 
+  type MoneyRow = { amount: number; status: string; paidDate: string; period: string };
+  const [paymentRows, purchaseRows, salaryRows, [activeEmployees]]: [MoneyRow[], MoneyRow[], MoneyRow[], { value: number }[]] = await Promise.all([
+    billing && finance
+      ? db.select({ amount: customerPayments.amount, status: customerPayments.status, paidDate: customerPayments.paidDate, period: customerPayments.period }).from(customerPayments)
+      : Promise.resolve([]),
+    finance
+      ? db.select({ amount: customerPurchases.amount, status: customerPurchases.status, paidDate: customerPurchases.paidDate, period: customerPurchases.period }).from(customerPurchases)
+      : Promise.resolve([]),
+    finance
+      ? db.select({ amount: salaryPayments.amount, status: salaryPayments.status, paidDate: salaryPayments.paidDate, period: salaryPayments.period }).from(salaryPayments)
+      : Promise.resolve([]),
+    finance ? db.select({ value: count() }).from(employees).where(eq(employees.status, "active")) : Promise.resolve([{ value: 0 }]),
+  ]);
+
   const recentInvoices = invoiceRows.slice(0, 5);
   const customerIds = [...new Set(recentInvoices.map((invoice) => invoice.customerId).filter(Boolean))];
   const names = customerIds.length ? await db.select({ id: customers.id, company: customers.company, name: customers.name }).from(customers).where(inArray(customers.id, customerIds)) : [];
@@ -237,6 +285,25 @@ export default async function DashboardPage() {
     return { month, total: list.reduce((sum, item) => sum + item.total, 0), paid: list.filter((item) => item.status === "paid").reduce((sum, item) => sum + item.total, 0), count: list.length };
   });
   const [previous, current] = series.slice(-2);
+
+  // Arus kas dihitung di bulan uangnya berpindah: tanggal bayar, atau bulan tagihannya bila tanggal bayar kosong.
+  const cashMonth = (row: MoneyRow) => (row.paidDate || row.period).slice(0, 7);
+  const total = (list: MoneyRow[]) => list.reduce((sum, row) => sum + row.amount, 0);
+  const paidIn = (list: MoneyRow[], month: string) => total(list.filter((row) => row.status === "paid" && cashMonth(row) === month));
+  const cash = months.map((month) => {
+    const purchases = paidIn(purchaseRows, month);
+    const salaries = paidIn(salaryRows, month);
+    return { month, in: paidIn(paymentRows, month), out: purchases + salaries, purchases, salaries };
+  });
+  const [cashBefore, cashNow] = cash.slice(-2);
+  const net = cashNow.in - cashNow.out;
+  const unpaidOut = [...purchaseRows, ...salaryRows].filter((row) => row.status !== "paid");
+  const thisMonth = months.at(-1)!;
+  const ofMonth = (list: MoneyRow[]) => list.filter((row) => row.period.slice(0, 7) === thisMonth);
+  const purchasesNow = ofMonth(purchaseRows);
+  const salariesNow = ofMonth(salaryRows);
+  const paidOf = (list: MoneyRow[]) => total(list.filter((row) => row.status === "paid"));
+  const unpaidOf = (list: MoneyRow[]) => list.filter((row) => row.status !== "paid");
   const paidRows = invoiceRows.filter((invoice) => invoice.status === "paid");
   const unpaidRows = invoiceRows.filter((invoice) => invoice.status !== "paid");
   const sum = (list: typeof invoiceRows) => list.reduce((total, item) => total + item.total, 0);
@@ -303,11 +370,110 @@ export default async function DashboardPage() {
         </StatGrid>
       )}
 
+      {finance && (
+        <section className="flex flex-col gap-4" aria-labelledby="arus-kas">
+          <h2 id="arus-kas" className="flex flex-wrap items-baseline gap-x-2 text-lg font-bold tracking-tight">
+            Arus Kas
+            <span className="text-sm font-normal text-muted-foreground">{monthLabel.format(new Date(`${thisMonth}-01T00:00:00Z`))} · uang yang sudah dibayar</span>
+          </h2>
+          <StatGrid>
+            {billing && (
+              <StatCard
+                tone="green"
+                icon={ArrowDownLeft}
+                label="Uang Masuk"
+                value={formatRupiah(cashNow.in)}
+                hint={<>Pembayaran pelanggan{trend(change(cashNow.in, cashBefore.in))}</>}
+                spark={cash.map((item) => item.in)}
+                href="/admin/data/customer-payments"
+              />
+            )}
+            <StatCard
+              tone="red"
+              icon={ArrowUpRight}
+              label="Uang Keluar"
+              value={formatRupiah(cashNow.out)}
+              hint={`Pemasok ${formatRupiah(cashNow.purchases)} · Gaji ${formatRupiah(cashNow.salaries)}`}
+              spark={cash.map((item) => item.out)}
+              href="/admin/data/customer-purchases"
+            />
+            {billing && (
+              <StatCard
+                tone={net < 0 ? "orange" : "blue"}
+                icon={Scale}
+                label={net < 0 ? "Defisit Bulan Ini" : "Saldo Bersih Bulan Ini"}
+                value={formatRupiah(net)}
+                hint="Uang masuk dikurangi uang keluar"
+                spark={cash.map((item) => Math.max(0, item.in - item.out))}
+              />
+            )}
+            <StatCard
+              tone="amber"
+              icon={Clock}
+              label="Belum Dibayar ke Luar"
+              value={formatRupiah(total(unpaidOut))}
+              hint={`${unpaidOut.length} tagihan pemasok dan gaji`}
+              href="/admin/data/customer-purchases"
+            />
+          </StatGrid>
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)]">
+            <Panel title="Grafik Arus Kas" icon={ChartColumn} description="Uang masuk dan uang keluar 6 bulan terakhir, menurut tanggal bayar.">
+              <BarChart
+                data={cash.map((item) => ({ month: item.month, values: billing ? [item.in, item.out] : [item.out] }))}
+                series={billing ? [chartSeries("Uang masuk", "green"), chartSeries("Uang keluar", "red")] : [chartSeries("Uang keluar", "red")]}
+              />
+            </Panel>
+            <Panel
+              title="Pembelian Perusahaan"
+              icon={ShoppingBag}
+              description={`Tagihan pemasok ${monthLabel.format(new Date(`${thisMonth}-01T00:00:00Z`))}`}
+              action={
+                <Button asChild variant="outline" size="sm" className="rounded-full">
+                  <Link href="/admin/data/customer-purchases">
+                    Lihat
+                    <ArrowRight />
+                  </Link>
+                </Button>
+              }
+            >
+              <MoneyRows
+                rows={[
+                  { label: "Total tagihan", value: total(purchasesNow), hint: `${purchasesNow.length} pembelian` },
+                  { label: "Sudah lunas", value: paidOf(purchasesNow), tone: "good" },
+                  { label: "Belum lunas", value: total(unpaidOf(purchasesNow)), hint: `${unpaidOf(purchasesNow).length} pembelian`, tone: "warn" },
+                ]}
+              />
+            </Panel>
+            <Panel
+              title="Gaji Karyawan"
+              icon={Banknote}
+              description={`Gaji ${monthLabel.format(new Date(`${thisMonth}-01T00:00:00Z`))} · ${activeEmployees.value} karyawan aktif`}
+              action={
+                <Button asChild variant="outline" size="sm" className="rounded-full">
+                  <Link href="/admin/data/salaries">
+                    Lihat
+                    <ArrowRight />
+                  </Link>
+                </Button>
+              }
+            >
+              <MoneyRows
+                rows={[
+                  { label: "Total gaji bersih", value: total(salariesNow), hint: `${salariesNow.length} karyawan` },
+                  { label: "Sudah dibayar", value: paidOf(salariesNow), tone: "good" },
+                  { label: "Belum dibayar", value: total(unpaidOf(salariesNow)), hint: `${unpaidOf(salariesNow).length} karyawan`, tone: "warn" },
+                ]}
+              />
+            </Panel>
+          </div>
+        </section>
+      )}
+
       <div className={cn("grid gap-6", billing ? "xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)]" : "lg:grid-cols-2")}>
         {billing && (
           <>
             <Panel title="Grafik Transaksi" icon={ChartColumn} description="Perbandingan total tagihan dan pembayaran 6 bulan terakhir.">
-              <TransactionChart data={series} />
+              <BarChart data={series.map((item) => ({ month: item.month, values: [item.total, item.paid] }))} series={[chartSeries("Total tagihan", "blue"), chartSeries("Pembayaran", "green")]} />
             </Panel>
             <Panel title="Status Pembayaran" icon={PieChart}>
               <PaymentDonut paid={paidRows.length} unpaid={unpaidRows.length} />
