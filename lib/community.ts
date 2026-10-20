@@ -21,7 +21,8 @@ const historySize = 80;
 export const forumAdminName = "PT.Trans Link Internasional";
 
 /** `mine`: dikirim oleh pelanggan yang sedang melihat. Nama pelanggan ditampilkan sebagai nama PT-nya. */
-export type ChatMessage = { id: string; mine: boolean; admin: boolean; name: string; photoUrl: string; body: string; imageUrl: string; at: number };
+/** `region`: kabupaten pengirim, satu-satunya data lain yang tampil di kartu profil Forum. */
+export type ChatMessage = { id: string; mine: boolean; admin: boolean; name: string; photoUrl: string; region: string; body: string; imageUrl: string; at: number };
 
 /** Pesan terbaru yang belum dihapus, dari yang terlama ke yang terbaru. */
 export async function listCommunityMessages(viewerCustomerId: string | null): Promise<ChatMessage[]> {
@@ -36,6 +37,7 @@ export async function listCommunityMessages(viewerCustomerId: string | null): Pr
       createdAt: communityMessages.createdAt,
       company: customers.company,
       name: customers.name,
+      regency: customers.regency,
       photos: customers.photos,
       photoUrl: subnetAccounts.photoUrl,
     })
@@ -51,6 +53,7 @@ export async function listCommunityMessages(viewerCustomerId: string | null): Pr
     admin: row.isAdmin,
     name: row.isAdmin ? forumAdminName : row.company || row.name || row.authorName || "Pelanggan",
     photoUrl: row.isAdmin ? "" : row.photoUrl || row.photos?.[0] || "",
+    region: row.isAdmin ? "" : (row.regency ?? "").trim(),
     body: row.body,
     imageUrl: row.imageUrl,
     at: row.createdAt.getTime(),

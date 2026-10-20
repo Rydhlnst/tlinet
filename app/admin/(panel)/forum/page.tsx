@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { CommunityModeration } from "@/components/admin/community-moderation";
 import { PageHero, StatCard } from "@/components/admin/page-hero";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { forumAdminName } from "@/lib/community";
 import { requireDb } from "@/lib/db";
 import { communityMessages, customers, subnetAccounts } from "@/lib/db/schema";
@@ -14,7 +15,7 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000);
 
 /** Moderasi chat grup pelanggan Subnet: pesan terbaru (termasuk yang sudah dihapus), pengumuman admin, dan bisukan. */
 export default async function CommunityPage() {
-  await requireAdmin("subnet");
+  const admin = await requireAdmin("subnet");
   const db = requireDb();
   const weekAgo = daysAgo(7);
   const [rows, recent, muted] = await Promise.all([
@@ -57,6 +58,8 @@ export default async function CommunityPage() {
         <StatCard tone="amber" icon={VolumeX} label="Dibisukan" value={muted.length} hint="Hanya bisa membaca" />
       </div>
       <CommunityModeration
+        // Foto dan nama pelanggan membuka detailnya di Data Pelanggan, bagi yang punya hak akses ke sana.
+        customerLinks={can(admin, "customers")}
         messages={rows.map((row) => ({
           id: row.id,
           customerId: row.customerId,

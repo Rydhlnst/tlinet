@@ -1,8 +1,9 @@
 "use client";
 
-import { ImagePlus, LoaderCircle, MessagesSquare, SendHorizontal, ShieldCheck, Smile, VolumeX, X } from "lucide-react";
+import { ImagePlus, LoaderCircle, MapPin, MessagesSquare, SendHorizontal, ShieldCheck, Smile, VolumeX, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { initials } from "@/components/admin/detail-panels";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { ChatMessage } from "@/lib/community";
 import { cn } from "@/lib/utils";
 
@@ -91,6 +92,55 @@ const formatKb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB
 const nearBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160;
 const scrollToEnd = (smooth: boolean) => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth ? "smooth" : "auto" });
 
+/**
+ * Kartu profil anggota Forum: foto besar, nama PT, dan kabupatennya. Data lain (kontak, alamat, tagihan) tidak
+ * pernah dikirim ke pelanggan lain.
+ */
+function ProfileCard({ message, onClose }: { message: ChatMessage | null; onClose: () => void }) {
+  return (
+    <Dialog open={Boolean(message)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-2xl">
+        {message && (
+          <>
+            <div className="flex justify-center pt-2">
+              {message.admin ? (
+                <span className="flex size-28 items-center justify-center rounded-full bg-brand text-white">
+                  <ShieldCheck className="size-12" />
+                </span>
+              ) : message.photoUrl ? (
+                <a href={message.photoUrl} target="_blank" rel="noopener" title="Buka foto ukuran penuh">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={message.photoUrl} alt={`Foto profil ${message.name}`} className="size-28 rounded-full object-cover ring-4 ring-brand-soft" />
+                </a>
+              ) : (
+                <span className="flex size-28 items-center justify-center rounded-full bg-brand-soft text-3xl font-semibold text-brand-ink">{initials(message.name)}</span>
+              )}
+            </div>
+            <DialogHeader className="items-center text-center">
+              <DialogTitle className="text-lg">{message.name}</DialogTitle>
+              <DialogDescription className="flex flex-col items-center gap-1.5">
+                {message.admin ? (
+                  <span>Penyedia layanan internet TLINET</span>
+                ) : (
+                  <>
+                    <span>Pelanggan Subnet TLINET</span>
+                    {message.region && (
+                      <span className="flex items-center gap-1 font-medium text-foreground">
+                        <MapPin className="size-3.5 text-brand-ink" />
+                        {message.region}
+                      </span>
+                    )}
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Avatar({ message }: { message: ChatMessage }) {
   if (message.admin) {
     return (
@@ -129,6 +179,8 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
   const [attachment, setAttachment] = useState<{ blob: Blob; preview: string } | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  // Anggota yang profilnya sedang dibuka (ketuk foto atau nama).
+  const [profile, setProfile] = useState<ChatMessage | null>(null);
   // Terakhir ada pesan baru, pesan terkirim, atau pengguna mengetik; menentukan jeda baca ulang.
   const lastActivity = useRef(0);
 
@@ -286,13 +338,24 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
                 </li>
               )}
               <li className={cn("flex items-end gap-2", message.mine ? "justify-end" : "justify-start", !grouped && "mt-2")}>
-                {!message.mine && (grouped ? <span className="w-8 shrink-0" /> : <Avatar message={message} />)}
+                {!message.mine &&
+                  (grouped ? (
+                    <span className="w-8 shrink-0" />
+                  ) : (
+                    <button type="button" onClick={() => setProfile(message)} aria-label={`Lihat profil ${message.name}`} className="shrink-0 rounded-full transition-opacity active:opacity-70">
+                      <Avatar message={message} />
+                    </button>
+                  ))}
                 <div className={cn("flex max-w-[80%] flex-col sm:max-w-[70%]", message.mine ? "items-end" : "items-start")}>
                   {!message.mine && !grouped && (
-                    <span className={cn("mb-0.5 flex items-center gap-1 px-1 text-[0.6875rem] font-semibold", message.admin ? "text-brand-ink" : "text-muted-foreground")}>
+                    <button
+                      type="button"
+                      onClick={() => setProfile(message)}
+                      className={cn("mb-0.5 flex items-center gap-1 px-1 text-left text-[0.6875rem] font-semibold hover:underline", message.admin ? "text-brand-ink" : "text-muted-foreground")}
+                    >
                       {message.name}
                       {message.admin && <span className="rounded bg-brand px-1 py-px text-[0.5625rem] font-bold tracking-wide text-white uppercase">Admin</span>}
-                    </span>
+                    </button>
                   )}
                   {message.imageUrl && (
                     <a href={message.imageUrl} target="_blank" rel="noopener" className={cn("mb-1 block overflow-hidden rounded-2xl border bg-muted", message.mine ? "rounded-br-md" : "rounded-bl-md")}>
@@ -425,6 +488,7 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
         )}
         {error && <p className="mt-1.5 px-1 text-xs text-destructive">{error}</p>}
       </div>
+      <ProfileCard message={profile} onClose={() => setProfile(null)} />
     </section>
   );
 }

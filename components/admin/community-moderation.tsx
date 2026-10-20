@@ -1,8 +1,9 @@
 "use client";
 
 import { LoaderCircle, MessageSquareOff, SendHorizontal, ShieldCheck, Trash2, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { deleteCommunityMessageAction, postCommunityAdminAction, setChatMutedAction } from "@/app/admin/community-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,10 +25,20 @@ export type ModerationMessage = {
   photoUrl: string;
 };
 
+/** Membungkus foto pelanggan dengan tautan ke detailnya di Data Pelanggan (bila boleh dibuka). */
+function ProfileLink({ customerId, label, children }: { customerId: string | null; label: string; children: ReactNode }) {
+  if (!customerId) return <>{children}</>;
+  return (
+    <Link href={`/admin/data/customers/${customerId}`} aria-label={label} title={label} className="shrink-0 rounded-full transition-opacity hover:opacity-80">
+      {children}
+    </Link>
+  );
+}
+
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
 /** Ruang moderasi Forum Subnet: kirim pengumuman, hapus pesan, dan bisukan pelanggan. Dimuat ulang tiap 30 detik. */
-export function CommunityModeration({ messages }: { messages: ModerationMessage[] }) {
+export function CommunityModeration({ messages, customerLinks = false }: { messages: ModerationMessage[]; customerLinks?: boolean }) {
   const router = useRouter();
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
@@ -88,14 +99,22 @@ export function CommunityModeration({ messages }: { messages: ModerationMessage[
                   <ShieldCheck className="size-4" />
                 </span>
               ) : (
-                <Avatar className="size-9">
-                  {message.photoUrl && <AvatarImage src={message.photoUrl} alt="" />}
-                  <AvatarFallback className="bg-brand-soft text-xs font-semibold text-brand-ink">{initials(message.name)}</AvatarFallback>
-                </Avatar>
+                <ProfileLink customerId={customerLinks ? message.customerId : null} label={`Lihat profil ${message.name}`}>
+                  <Avatar className="size-9">
+                    {message.photoUrl && <AvatarImage src={message.photoUrl} alt="" />}
+                    <AvatarFallback className="bg-brand-soft text-xs font-semibold text-brand-ink">{initials(message.name)}</AvatarFallback>
+                  </Avatar>
+                </ProfileLink>
               )}
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-                  <span className="font-semibold">{message.name}</span>
+                  {customerLinks && message.customerId ? (
+                    <Link href={`/admin/data/customers/${message.customerId}`} className="font-semibold underline-offset-4 hover:text-brand-ink hover:underline">
+                      {message.name}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold">{message.name}</span>
+                  )}
                   {message.admin && <span className="rounded bg-brand px-1 py-px text-[10px] font-bold tracking-wide text-white uppercase">Admin</span>}
                   {message.muted && (
                     <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-px text-[11px] font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
