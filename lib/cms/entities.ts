@@ -11,8 +11,12 @@ export type Column = {
   labels?: Record<string, string>;
   labelsFrom?: string;
   className?: string;
-  /** Inisial nama dalam lingkaran berwarna di depan isi kolom (mis. nama PT). */
+  /** Foto (atau inisial bila tidak ada foto) dalam lingkaran tepat di kiri isi kolom (mis. nama PT). */
   avatar?: boolean;
+  /** Sumber foto avatar: kolom baris berisi URL atau daftar URL (foto pertama dipakai)... */
+  avatarPhoto?: string;
+  /** ...atau daftar pilihan id → URL foto, untuk kolom yang isinya id (mis. pelanggan). */
+  avatarPhotoFrom?: string;
   /** Pilihan saringan di atas tabel untuk kolom ini. Kolom badge dan bulan selalu bisa disaring. */
   filter?: boolean;
 };
@@ -307,7 +311,7 @@ export const entityDefs: EntityDef[] = [
     detailPath: "/admin/data/customers",
     defaults: { status: "active", monthlyFee: "", napFee: "" },
     columns: [
-      { key: "company", label: "PT", avatar: true },
+      { key: "company", label: "PT", avatar: true, avatarPhoto: "photos" },
       { key: "name", label: "Nama" },
       { key: "siteId", label: "Site ID" },
       { key: "regency", label: "Kabupaten", filter: true },
@@ -366,7 +370,7 @@ export const entityDefs: EntityDef[] = [
     },
     defaults: { status: "paid", amount: "" },
     columns: [
-      { key: "customerId", label: "PT", labelsFrom: "customerNames", avatar: true, filter: true },
+      { key: "customerId", label: "PT", labelsFrom: "customerNames", avatar: true, avatarPhotoFrom: "customerPhotos", filter: true },
       { key: "pic", label: "PIC" },
       { key: "invoiceId", label: "Invoice", labelsFrom: "invoiceNumbers" },
       { key: "period", label: "Bulan", type: "month" },
@@ -464,7 +468,7 @@ export const entityDefs: EntityDef[] = [
     defaults: { status: "unpaid", items: [], notes: [], taxRate: "" },
     columns: [
       { key: "number", label: "No. Invoice" },
-      { key: "customerId", label: "Pelanggan", labelsFrom: "customerNames", avatar: true, filter: true },
+      { key: "customerId", label: "Pelanggan", labelsFrom: "customerNames", avatar: true, avatarPhotoFrom: "customerPhotos", filter: true },
       { key: "issueDate", label: "Tanggal terbit", type: "date" },
       { key: "dueDate", label: "Jatuh tempo", type: "date" },
       { key: "total", label: "Total tagihan", type: "currency" },

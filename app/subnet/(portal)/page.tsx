@@ -182,7 +182,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
 
           <SectionCard title="Layanan lainnya" className="order-5 lg:order-none">
             <div className="divide-y">
-              <ListRow href="/subnet/komunitas" icon={MessagesSquare} title="Komunitas Subnet" subtitle="Chat dengan sesama pelanggan Subnet" />
+              <ListRow href="/subnet/forum" icon={MessagesSquare} title="Forum Subnet" subtitle="Chat dengan sesama pelanggan Subnet" />
               <ListRow href="/subnet/tagihan#riwayat" icon={History} title="Riwayat pembayaran" />
               <ListRow href="/subnet/trafik/grafik" icon={ChartLine} title="Grafik MRTG" subtitle="Trafik 1 hari, 1 minggu, 1 bulan" />
               <ListRow href="/subnet/tower" icon={RadioTower} title="Lokasi tower" subtitle={customer.towerName || "Titik tower dan status koneksi"} />

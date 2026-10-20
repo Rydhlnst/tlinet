@@ -15,6 +15,13 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["10.0.2.2"],
   // APK aplikasi admin tidak ada di public/; berkasnya ikut dibundel hanya untuk rute unduhannya.
   outputFileTracingIncludes: { "/admin/app": ["./private/**/*"] },
+  // "Komunitas" berganti nama menjadi "Forum"; tautan lama tetap sampai.
+  async redirects() {
+    return [
+      { source: "/subnet/komunitas", destination: "/subnet/forum", permanent: true },
+      { source: "/admin/komunitas", destination: "/admin/forum", permanent: true },
+    ];
+  },
   // APK diunduh sebagai berkas (bukan dibuka) dan dikenali Android sebagai paket aplikasi.
   async headers() {
     return [

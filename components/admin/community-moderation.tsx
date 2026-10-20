@@ -16,6 +16,7 @@ export type ModerationMessage = {
   admin: boolean;
   name: string;
   body: string;
+  imageUrl: string;
   at: number;
   deleted: boolean;
   muted: boolean;
@@ -23,7 +24,7 @@ export type ModerationMessage = {
 
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
-/** Ruang moderasi Komunitas Subnet: kirim pengumuman, hapus pesan, dan bisukan pelanggan. Dimuat ulang tiap 30 detik. */
+/** Ruang moderasi Forum Subnet: kirim pengumuman, hapus pesan, dan bisukan pelanggan. Dimuat ulang tiap 30 detik. */
 export function CommunityModeration({ messages }: { messages: ModerationMessage[] }) {
   const router = useRouter();
   const [draft, setDraft] = useState("");
@@ -101,7 +102,13 @@ export function CommunityModeration({ messages }: { messages: ModerationMessage[
                   <span className="text-xs text-muted-foreground tabular-nums">{timeFormat.format(message.at)} WITA</span>
                   {message.deleted && <span className="text-xs font-medium text-rose-500">· dihapus</span>}
                 </p>
-                <p className={cn("mt-0.5 text-sm break-words whitespace-pre-wrap text-foreground/90", message.deleted && "line-through")}>{message.body}</p>
+                {message.imageUrl && (
+                  <a href={message.imageUrl} target="_blank" rel="noopener" className="mt-1.5 inline-block overflow-hidden rounded-lg border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={message.imageUrl} alt="Gambar pesan" loading="lazy" className="max-h-40 w-auto" />
+                  </a>
+                )}
+                {message.body && <p className={cn("mt-0.5 text-sm break-words whitespace-pre-wrap text-foreground/90", message.deleted && "line-through")}>{message.body}</p>}
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 {message.customerId && (
@@ -136,7 +143,7 @@ export function CommunityModeration({ messages }: { messages: ModerationMessage[
           {messages.length === 0 && (
             <li className="flex flex-col items-center gap-2 px-4 py-14 text-center text-sm text-muted-foreground">
               <MessageSquareOff className="size-6" />
-              Belum ada pesan di Komunitas.
+              Belum ada pesan di Forum.
             </li>
           )}
         </ul>

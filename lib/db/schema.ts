@@ -195,13 +195,13 @@ export const subnetAccounts = pgTable("subnet_accounts", {
   librenmsQosDeviceId: integer("librenms_qos_device_id"),
   /** IP atau hostname yang dicek lewat ping.pe di portal; diisi admin di menu Subnet. */
   pingTarget: text("ping_target").notNull().default(""),
-  /** Dibisukan admin di Komunitas Subnet: masih bisa membaca, tidak bisa mengirim pesan. */
+  /** Dibisukan admin di Forum Subnet: masih bisa membaca, tidak bisa mengirim pesan. */
   chatMuted: boolean("chat_muted").notNull().default(false),
   ...timestamps,
 });
 
 /**
- * Pesan grup Komunitas Subnet: satu ruang obrolan untuk semua pelanggan Subnet dan admin. `customerId` kosong untuk
+ * Pesan grup Forum Subnet: satu ruang obrolan untuk semua pelanggan Subnet dan admin. `customerId` kosong untuk
  * pesan admin (namanya di `authorName`). Pesan yang dihapus admin disimpan dengan `deletedAt` dan tidak lagi tampil.
  */
 export const communityMessages = pgTable(
@@ -212,6 +212,8 @@ export const communityMessages = pgTable(
     authorName: text("author_name").notNull().default(""),
     isAdmin: boolean("is_admin").notNull().default(false),
     body: text("body").notNull(),
+    /** Gambar lampiran (sudah diperkecil di perangkat pengirim); kosong bila pesan hanya teks. */
+    imageUrl: text("image_url").notNull().default(""),
     deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

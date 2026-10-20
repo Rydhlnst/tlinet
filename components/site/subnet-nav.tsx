@@ -89,7 +89,7 @@ const titles: [prefix: string, title: string][] = [
   ["/subnet/trafik/grafik", "Grafik MRTG"],
   ["/subnet/progres", "Progres Metro"],
   ["/subnet/tower", "Lokasi Tower"],
-  ["/subnet/komunitas", "Komunitas"],
+  ["/subnet/forum", "Forum"],
   ["/subnet/trafik", "Koneksi"],
   ["/subnet/tagihan", "Tagihan"],
   ["/subnet/layanan", "Layanan"],
@@ -101,7 +101,7 @@ export function SubnetMobileBar({ brand, name, photoUrl }: { brand: ReactNode; n
   const pathname = usePathname();
   const title = titles.find(([prefix]) => pathname.startsWith(prefix))?.[1];
   // Halaman di luar tab bawah punya tombol kembali ke asalnya.
-  const back = pathname.startsWith("/subnet/trafik/") ? { href: "/subnet/trafik", label: "Kembali ke Koneksi" } : ["/subnet/progres", "/subnet/tower", "/subnet/komunitas"].some((path) => pathname.startsWith(path)) ? { href: "/subnet", label: "Kembali ke Beranda" } : null;
+  const back = pathname.startsWith("/subnet/trafik/") ? { href: "/subnet/trafik", label: "Kembali ke Koneksi" } : ["/subnet/progres", "/subnet/tower", "/subnet/forum"].some((path) => pathname.startsWith(path)) ? { href: "/subnet", label: "Kembali ke Beranda" } : null;
 
   return (
     <header className="pt-safe sticky top-0 z-40 bg-brand text-white md:hidden">
@@ -121,8 +121,8 @@ export function SubnetMobileBar({ brand, name, photoUrl }: { brand: ReactNode; n
           </Link>
         )}
         <div className="flex shrink-0 items-center gap-1">
-          {!pathname.startsWith("/subnet/komunitas") && (
-            <Link href="/subnet/komunitas" aria-label="Komunitas Subnet" className="flex size-9 items-center justify-center rounded-full hover:bg-white/10">
+          {!pathname.startsWith("/subnet/forum") && (
+            <Link href="/subnet/forum" aria-label="Forum Subnet" className="flex size-9 items-center justify-center rounded-full hover:bg-white/10">
               <MessagesSquare className="size-5" />
             </Link>
           )}

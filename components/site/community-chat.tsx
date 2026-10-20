@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, MessagesSquare, SendHorizontal, ShieldCheck, VolumeX } from "lucide-react";
+import { ImagePlus, LoaderCircle, MessagesSquare, SendHorizontal, ShieldCheck, VolumeX, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { initials } from "@/components/admin/detail-panels";
 import type { ChatMessage } from "@/lib/community";
@@ -28,6 +28,54 @@ function dayLabel(at: number) {
   return dayFormat.format(at);
 }
 
+/**
+ * Gambar selalu digambar ulang di perangkat sebelum dikirim: sisi terpanjang paling besar 1280 px, WebP (atau JPEG
+ * bila peramban tidak bisa menulis WebP), mutu diturunkan bertahap sampai di bawah ±350 KB. Menggambar ulang juga
+ * membuang data EXIF (lokasi GPS, merek HP) dari foto.
+ */
+const imageSteps: [side: number, quality: number][] = [
+  [1280, 0.78],
+  [1280, 0.68],
+  [1080, 0.62],
+  [900, 0.55],
+];
+const imageTargetBytes = 350 * 1024;
+/** Batas server (lihat lib/community.ts). */
+const imageMaxBytes = 600 * 1024;
+
+function encode(bitmap: ImageBitmap, side: number, type: string, quality: number) {
+  const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) return Promise.resolve(null);
+  // Latar putih untuk gambar transparan (PNG) supaya tidak menjadi hitam di JPEG.
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+async function compressImage(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  try {
+    let best: Blob | null = null;
+    for (const [side, quality] of imageSteps) {
+      let blob = await encode(bitmap, side, "image/webp", quality);
+      if (blob && blob.type !== "image/webp") blob = await encode(bitmap, side, "image/jpeg", quality);
+      if (blob && (!best || blob.size < best.size)) best = blob;
+      if (best && best.size <= imageTargetBytes) break;
+    }
+    if (!best) throw new Error("encode");
+    return best;
+  } finally {
+    bitmap.close();
+  }
+}
+
+const formatKb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
 const nearBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160;
 const scrollToEnd = (smooth: boolean) => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth ? "smooth" : "auto" });
 
@@ -52,7 +100,7 @@ function Avatar({ message }: { message: ChatMessage }) {
 }
 
 /**
- * Ruang obrolan Komunitas Subnet. Pesan dibaca ulang tiap 5–30 detik (makin sepi makin jarang) selama halaman terlihat; pesan yang dihapus admin ikut
+ * Ruang obrolan Forum Subnet. Pesan dibaca ulang tiap 5–30 detik (makin sepi makin jarang) selama halaman terlihat; pesan yang dihapus admin ikut
  * hilang pada pembacaan berikutnya.
  */
 export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatMessage[]; muted: boolean }) {
@@ -64,6 +112,10 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
   const signature = useRef(initial.map((message) => message.id).join(","));
   const stickToEnd = useRef(true);
   const input = useRef<HTMLTextAreaElement>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  // Gambar yang sudah diperkecil dan siap dikirim, dengan pratinjaunya.
+  const [attachment, setAttachment] = useState<{ blob: Blob; preview: string } | null>(null);
+  const [preparing, setPreparing] = useState(false);
   // Terakhir ada pesan baru, pesan terkirim, atau pengguna mengetik; menentukan jeda baca ulang.
   const lastActivity = useRef(0);
 
@@ -117,13 +169,44 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
     };
   }, []);
 
+  function clearAttachment() {
+    if (attachment) URL.revokeObjectURL(attachment.preview);
+    setAttachment(null);
+  }
+
+  async function pickImage(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return setError("Pilih berkas gambar.");
+    setError("");
+    setPreparing(true);
+    try {
+      const blob = await compressImage(file);
+      if (blob.size > imageMaxBytes) return setError("Gambar ini tidak bisa diperkecil cukup. Coba gambar lain.");
+      clearAttachment();
+      setAttachment({ blob, preview: URL.createObjectURL(blob) });
+      lastActivity.current = Date.now();
+    } catch {
+      setError("Gambar tidak bisa dibaca. Coba gambar lain (JPG, PNG, atau WebP).");
+    } finally {
+      setPreparing(false);
+      if (picker.current) picker.current.value = "";
+    }
+  }
+
   async function send() {
     const body = draft.trim();
-    if (!body || sending) return;
+    if ((!body && !attachment) || sending || preparing) return;
     setSending(true);
     setError("");
     try {
-      const response = await fetch("/subnet/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body }) });
+      let request: RequestInit = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body }) };
+      if (attachment) {
+        const form = new FormData();
+        form.set("body", body);
+        form.set("image", attachment.blob, attachment.blob.type === "image/webp" ? "gambar.webp" : "gambar.jpg");
+        request = { method: "POST", body: form };
+      }
+      const response = await fetch("/subnet/chat", request);
       const data = (await response.json()) as { messages?: ChatMessage[]; error?: string };
       if (!response.ok || !data.messages) {
         setError(data.error ?? "Pesan gagal dikirim.");
@@ -131,6 +214,7 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
         return;
       }
       setDraft("");
+      clearAttachment();
       lastActivity.current = Date.now();
       signature.current = data.messages.map((message) => message.id).join(",");
       stickToEnd.current = true;
@@ -151,7 +235,7 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
         </span>
         {/* w-0 + flex-1: teks satu baris yang terpotong tidak ikut melebarkan halaman di HP. */}
         <div className="w-0 flex-1">
-          <h2 className="text-[0.9375rem] font-semibold">Komunitas Subnet</h2>
+          <h2 className="text-[0.9375rem] font-semibold">Forum Subnet</h2>
           <p className="truncate text-xs text-muted-foreground">Ruang chat semua pelanggan Subnet TLINET. Jaga sopan santun, ya.</p>
         </div>
       </div>
@@ -181,14 +265,22 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
                       {message.admin && <span className="rounded bg-brand px-1 py-px text-[0.5625rem] font-bold tracking-wide text-white uppercase">Admin</span>}
                     </span>
                   )}
-                  <div
-                    className={cn(
-                      "rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap",
-                      message.mine ? "rounded-br-md bg-brand text-white" : message.admin ? "rounded-bl-md bg-brand-soft text-foreground ring-1 ring-brand/20" : "rounded-bl-md bg-neutral-100 text-foreground",
-                    )}
-                  >
-                    {message.body}
-                  </div>
+                  {message.imageUrl && (
+                    <a href={message.imageUrl} target="_blank" rel="noopener" className={cn("mb-1 block overflow-hidden rounded-2xl border bg-muted", message.mine ? "rounded-br-md" : "rounded-bl-md")}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={message.imageUrl} alt={message.body ? `Gambar: ${message.body.slice(0, 80)}` : `Gambar dari ${message.name}`} loading="lazy" className="max-h-80 w-auto max-w-full object-contain" />
+                    </a>
+                  )}
+                  {message.body && (
+                    <div
+                      className={cn(
+                        "rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap",
+                        message.mine ? "rounded-br-md bg-brand text-white" : message.admin ? "rounded-bl-md bg-brand-soft text-foreground ring-1 ring-brand/20" : "rounded-bl-md bg-neutral-100 text-foreground",
+                      )}
+                    >
+                      {message.body}
+                    </div>
+                  )}
                   <span className="mt-0.5 px-1 text-[0.625rem] text-muted-foreground tabular-nums">{timeFormat.format(message.at)}</span>
                 </div>
               </li>
@@ -206,39 +298,69 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
           </p>
         ) : (
           <form
-            className="flex items-end gap-2"
+            className="flex flex-col gap-2"
             onSubmit={(event) => {
               event.preventDefault();
               void send();
             }}
           >
-            <textarea
-              ref={input}
-              value={draft}
-              onChange={(event) => {
-                setDraft(event.target.value.slice(0, maxLength));
-                lastActivity.current = Date.now();
-              }}
-              onKeyDown={(event) => {
-                // Enter mengirim, Shift+Enter membuat baris baru.
-                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                  event.preventDefault();
-                  void send();
-                }
-              }}
-              rows={1}
-              placeholder="Tulis pesan…"
-              aria-label="Tulis pesan"
-              className="field-sizing-content max-h-32 min-h-10 w-full min-w-0 flex-1 resize-none rounded-2xl border bg-background px-4 py-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-            />
-            <button
-              type="submit"
-              disabled={sending || !draft.trim()}
-              aria-label="Kirim pesan"
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-opacity disabled:opacity-40"
-            >
-              {sending ? <LoaderCircle className="size-[1.1rem] animate-spin" /> : <SendHorizontal className="size-[1.1rem]" />}
-            </button>
+            {(attachment || preparing) && (
+              <div className="flex items-center gap-3 rounded-xl border bg-muted/50 p-2">
+                {attachment ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={attachment.preview} alt="Pratinjau gambar" className="size-14 rounded-lg object-cover" />
+                ) : (
+                  <span className="flex size-14 items-center justify-center rounded-lg bg-muted">
+                    <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
+                  </span>
+                )}
+                <p className="min-w-0 flex-1 text-xs text-muted-foreground">{attachment ? `Gambar siap dikirim · ${formatKb(attachment.blob.size)}` : "Memperkecil gambar…"}</p>
+                {attachment && (
+                  <button type="button" onClick={clearAttachment} aria-label="Batalkan gambar" className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="flex items-end gap-2">
+              <input ref={picker} type="file" accept="image/*" className="hidden" onChange={(event) => void pickImage(event.target.files?.[0])} />
+              <button
+                type="button"
+                onClick={() => picker.current?.click()}
+                disabled={sending || preparing}
+                aria-label="Lampirkan gambar"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40"
+              >
+                <ImagePlus className="size-5" />
+              </button>
+              <textarea
+                ref={input}
+                value={draft}
+                onChange={(event) => {
+                  setDraft(event.target.value.slice(0, maxLength));
+                  lastActivity.current = Date.now();
+                }}
+                onKeyDown={(event) => {
+                  // Enter mengirim, Shift+Enter membuat baris baru.
+                  if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    void send();
+                  }
+                }}
+                rows={1}
+                placeholder={attachment ? "Tambahkan keterangan (opsional)…" : "Tulis pesan…"}
+                aria-label="Tulis pesan"
+                className="field-sizing-content max-h-32 min-h-10 w-full min-w-0 flex-1 resize-none rounded-2xl border bg-background px-4 py-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+              />
+              <button
+                type="submit"
+                disabled={sending || preparing || (!draft.trim() && !attachment)}
+                aria-label="Kirim pesan"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-opacity disabled:opacity-40"
+              >
+                {sending ? <LoaderCircle className="size-[1.1rem] animate-spin" /> : <SendHorizontal className="size-[1.1rem]" />}
+              </button>
+            </div>
           </form>
         )}
         {error && <p className="mt-1.5 px-1 text-xs text-destructive">{error}</p>}

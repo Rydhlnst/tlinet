@@ -35,6 +35,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Avatar as AvatarRoot, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -99,9 +100,22 @@ function initials(text: string) {
 }
 const avatarColor = (text: string) => avatarColors[[...text].reduce((sum, char) => sum + char.charCodeAt(0), 0) % avatarColors.length];
 
-function Avatar({ text }: { text: string }) {
+/** Foto profil pelanggan; inisial berwarna bila belum ada foto atau fotonya gagal dimuat. */
+function Avatar({ text, photo }: { text: string; photo?: string }) {
   if (!text) return null;
-  return <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", avatarColor(text))}>{initials(text)}</span>;
+  return (
+    <AvatarRoot className="size-7">
+      {photo && <AvatarImage src={photo} alt="" />}
+      <AvatarFallback className={cn("text-[10px] font-bold", avatarColor(text))}>{initials(text)}</AvatarFallback>
+    </AvatarRoot>
+  );
+}
+
+/** URL foto avatar sebuah sel: dari kolom baris (string atau daftar) atau dari pilihan id → URL. */
+function avatarPhotoOf(column: Column, row: Row, options: DynamicOptions) {
+  if (column.avatarPhotoFrom) return options[column.avatarPhotoFrom]?.find((option) => option.value === row[column.key])?.label;
+  const value = column.avatarPhoto ? row[column.avatarPhoto] : undefined;
+  return Array.isArray(value) ? (value[0] as string | undefined) : typeof value === "string" ? value : undefined;
 }
 
 function Cell({ column, row, options, entityKey }: { column: Column; row: Row; options: DynamicOptions; entityKey: string }) {
@@ -152,7 +166,7 @@ function Cell({ column, row, options, entityKey }: { column: Column; row: Row; o
       if (column.avatar && label) {
         return (
           <span className="flex min-w-0 items-center gap-2.5">
-            <Avatar text={label} />
+            <Avatar text={label} photo={avatarPhotoOf(column, row, options)} />
             <span className={cn("truncate", column.className)}>{label}</span>
           </span>
         );

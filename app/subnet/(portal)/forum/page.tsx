@@ -7,7 +7,7 @@ import { requireDb } from "@/lib/db";
 import { subnetAccounts } from "@/lib/db/schema";
 import { requireSubnetUser } from "@/lib/subnet";
 
-export const metadata: Metadata = { title: "Komunitas · Portal Subnet" };
+export const metadata: Metadata = { title: "Forum · Portal Subnet" };
 
 /** Chat grup antarpelanggan Subnet. */
 export default async function SubnetCommunityPage() {
@@ -19,7 +19,7 @@ export default async function SubnetCommunityPage() {
 
   return (
     <>
-      <PageHeading title="Komunitas" description="Ngobrol dan berbagi info dengan sesama pelanggan Subnet TLINET." />
+      <PageHeading title="Forum" description="Ngobrol dan berbagi info dengan sesama pelanggan Subnet TLINET." />
       <CommunityChat initial={messages} muted={Boolean(account?.muted)} />
     </>
   );
