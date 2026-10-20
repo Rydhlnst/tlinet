@@ -13,8 +13,8 @@ import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
 import { deleteRecord, generateNextMonth, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
-import { customers, invoices, mediaAssets, staffUsers } from "@/lib/db/schema";
-import { syncInvoicePayment } from "@/lib/invoice-payments";
+import { customerPayments, customerPurchases, customers, invoices, mediaAssets, salaryPayments, staffUsers } from "@/lib/db/schema";
+import { syncInvoicePayment, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { can, entityPermission, homePath, isStaffPermission, pagePermission } from "@/lib/permissions";
 import { deleteR2Object } from "@/lib/storage";
 
@@ -129,7 +129,34 @@ export async function setInvoiceStatusAction(id: string, status: "paid" | "unpai
   const updated = await db.update(invoices).set({ status, updatedAt: new Date() }).where(eq(invoices.id, id)).returning({ id: invoices.id });
   if (!updated.length) return { ok: false, message: "Invoice tidak ditemukan." };
   await syncInvoicePayment(id);
-  return { ok: true, message: status === "paid" ? "Invoice ditandai Paid." : "Invoice ditandai Unpaid." };
+  return { ok: true, message: status === "paid" ? "Invoice ditandai Paid; History Pembayaran ikut Lunas." : "Invoice ditandai Unpaid; History Pembayaran ikut Belum lunas." };
+}
+
+/** Tanggal hari ini di WITA, untuk tanggal bayar yang belum diisi saat ditandai lunas. */
+const todayWita = () => new Date(Date.now() + 8 * 3_600_000).toISOString().slice(0, 10);
+
+const statusTables = { "customer-payments": customerPayments, "customer-purchases": customerPurchases, salaries: salaryPayments } as const;
+
+/**
+ * Tandai lunas / belum lunas dengan satu klik dari daftar. Invoice ikut memperbarui History Pembayaran Subnet, dan
+ * sebaliknya; tanggal bayar yang kosong diisi hari ini saat ditandai lunas.
+ */
+export async function setRecordStatusAction(entityKey: string, id: string, status: "paid" | "unpaid"): Promise<SaveResult> {
+  if (status !== "paid" && status !== "unpaid") return { ok: false, message: "Status tidak valid." };
+  if (entityKey === "invoices") return setInvoiceStatusAction(id, status);
+  if (!(entityKey in statusTables)) return { ok: false, message: "Data ini tidak punya status pembayaran." };
+  if (!(await getAdminWith(entityPermission(entityKey)))) return expired;
+  if (!db) return { ok: false, message: "Database belum diatur." };
+  const table = statusTables[entityKey as keyof typeof statusTables];
+  const [row] = await db.select({ paidDate: table.paidDate }).from(table).where(equals(table.id, id)).limit(1);
+  if (!row) return { ok: false, message: "Data tidak ditemukan." };
+  await db
+    .update(table)
+    .set({ status, paidDate: status === "paid" ? row.paidDate || todayWita() : row.paidDate, updatedAt: new Date() })
+    .where(equals(table.id, id));
+  if (entityKey === "customer-payments") await syncPaymentInvoice(id);
+  const label = entityKey === "salaries" ? (status === "paid" ? "Sudah dibayar" : "Belum dibayar") : status === "paid" ? "Lunas" : "Belum lunas";
+  return { ok: true, message: `Ditandai ${label}${entityKey === "customer-payments" ? "; invoicenya ikut diperbarui" : ""}.` };
 }
 
 export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {

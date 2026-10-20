@@ -50,6 +50,7 @@ import type { DynamicOptions } from "./field-control";
 import { MonthlyGenerate } from "./monthly-generate";
 import { PageHero, StatCard, StatGrid, type StatTone } from "./page-hero";
 import { ProofViewer } from "./proof-viewer";
+import { StatusToggle, statusToggleEntities } from "./status-toggle";
 import { WhatsAppIcon } from "@/components/site/whatsapp-float";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
 
@@ -157,11 +158,19 @@ function Cell({ column, row, options, entityKey }: { column: Column; row: Row; o
       if (!label) return <span className="text-muted-foreground">—</span>;
       // Kolom status memakai pil berwarna dengan titik; badge lain (kategori, jenis) pil biru lembut.
       if (column.key === "status") {
-        return (
+        const pill = (
           <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ring-1 ring-inset", pillClass(text))}>
             <span className={cn("size-1.5 rounded-full", dotClass(text))} />
             {label}
           </span>
+        );
+        // Status pembayaran bisa diganti langsung dari daftar (invoice dan History Pembayaran saling mengikuti).
+        return statusToggleEntities.includes(entityKey) && row.id ? (
+          <StatusToggle entityKey={entityKey} id={row.id} status={text}>
+            {pill}
+          </StatusToggle>
+        ) : (
+          pill
         );
       }
       return <span className="inline-flex rounded-md bg-brand-soft px-2 py-0.5 text-xs font-medium whitespace-nowrap text-brand-ink">{label}</span>;

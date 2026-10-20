@@ -23,6 +23,7 @@ import { customerStatusLabels, getEntityDef, invoiceStatusLabels, paymentStatusL
 import type { customerPayments, customerPurchases, customers, invoices as invoiceTable } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { AmountSummary } from "./amount-summary";
+import { StatusToggle } from "./status-toggle";
 import { customerTones, InfoList, initials, Panel, StatusPill } from "./detail-panels";
 import { MonthlyGenerate } from "./monthly-generate";
 import { uploadImage } from "./image-field";
@@ -127,7 +128,9 @@ function HistoryPanel({
                 <TableCell className="font-medium whitespace-nowrap tabular-nums">{formatRupiah(item.amount)}</TableCell>
                 <TableCell className="tabular-nums">{(withSupplier ? item.paymentNumber : item.method) || "—"}</TableCell>
                 <TableCell>
-                  <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
+                  <StatusToggle entityKey={entityKey} id={item.id} status={item.status}>
+                    <StatusPill tone={item.status === "paid" ? "good" : "warn"}>{paymentStatusLabels[item.status] ?? item.status}</StatusPill>
+                  </StatusToggle>
                 </TableCell>
                 {withSupplier && (
                   <TableCell>
@@ -233,7 +236,9 @@ function InvoicePanel({ rows, customerId }: { rows: InvoiceRow[]; customerId: st
                 <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(invoice.dueDate)}</TableCell>
                 <TableCell className="font-medium whitespace-nowrap tabular-nums">{formatRupiah(invoice.total)}</TableCell>
                 <TableCell>
-                  <StatusPill tone={invoice.status === "paid" ? "good" : "warn"}>{invoiceStatusLabels[invoice.status] ?? invoice.status}</StatusPill>
+                  <StatusToggle entityKey="invoices" id={invoice.id} status={invoice.status}>
+                    <StatusPill tone={invoice.status === "paid" ? "good" : "warn"}>{invoiceStatusLabels[invoice.status] ?? invoice.status}</StatusPill>
+                  </StatusToggle>
                 </TableCell>
                 <TableCell className="pr-4 text-right whitespace-nowrap">
                   <Button asChild variant="ghost" size="icon-sm" aria-label={`Buka invoice ${invoice.number}`}>
