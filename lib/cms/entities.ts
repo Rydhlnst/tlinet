@@ -50,6 +50,13 @@ export type EntityDef = {
    */
   totalKey?: string;
   totalLabel?: string;
+  /** Kolom kapasitas berisi teks bebas ("100 Mbps", "1 Gbps") yang dijumlahkan jadi kartu Total bandwidth dan baris Jumlah. */
+  bandwidthKey?: string;
+  /**
+   * Peta sebaran titik di atas tabel, mengikuti pencarian dan saringan; baris tanpa koordinat dilewati. Judul titik dari
+   * kolom pertama di `titleKeys` yang terisi, keterangannya dari `detailKeys`. Titik hijau untuk status "active".
+   */
+  map?: { title: string; description: string; latKey: string; lngKey: string; titleKeys: string[]; detailKeys: string[]; activeLabel: string; inactiveLabel: string };
   /**
    * Tombol "Generate Tagihan <bulan>": baris bulan tagihan terakhir disalin ke bulan berikutnya. `copyKeys` ikut disalin
    * (isian yang tertaut ke Data Pelanggan tidak perlu, karena diisi dari pelanggannya), `matchKeys` menandai tagihan yang
@@ -320,6 +327,17 @@ export const entityDefs: EntityDef[] = [
     detailPath: "/admin/data/customers",
     totalKey: "monthlyFee",
     totalLabel: "Total biaya ke ISP / bulan",
+    bandwidthKey: "capacity",
+    map: {
+      title: "Peta Sebaran Subnet Indonesia",
+      description: "Titik tower pelanggan / subnet di seluruh wilayah",
+      latKey: "towerLat",
+      lngKey: "towerLng",
+      titleKeys: ["company", "name"],
+      detailKeys: ["towerName", "regency", "capacity"],
+      activeLabel: "Subnet aktif",
+      inactiveLabel: "Subnet belum aktif",
+    },
     defaults: { status: "active", monthlyFee: "", napFee: "" },
     columns: [
       { key: "company", label: "PT", avatar: true, avatarPhoto: "photos" },

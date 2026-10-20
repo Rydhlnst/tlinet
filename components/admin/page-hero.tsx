@@ -87,6 +87,7 @@ const tones = {
   orange: { card: "from-orange-50 border-orange-100 dark:border-orange-500/30", icon: "bg-orange-500 text-white shadow-orange-500/30", bar: "bg-orange-500", soft: "bg-orange-100 dark:bg-orange-500/20", spark: "#f97316" },
   red: { card: "from-rose-50 border-rose-100 dark:border-rose-500/30", icon: "bg-rose-500 text-white shadow-rose-500/30", bar: "bg-rose-500", soft: "bg-rose-100 dark:bg-rose-500/20", spark: "#f43f5e" },
   amber: { card: "from-amber-50 border-amber-100 dark:border-amber-500/30", icon: "bg-amber-400 text-white shadow-amber-400/30", bar: "bg-amber-400", soft: "bg-amber-100 dark:bg-amber-500/20", spark: "#f59e0b" },
+  cyan: { card: "from-cyan-50 border-cyan-100 dark:border-cyan-500/30", icon: "bg-cyan-500 text-white shadow-cyan-500/30", bar: "bg-cyan-500", soft: "bg-cyan-100 dark:bg-cyan-500/20", spark: "#06b6d4" },
   purple: { card: "from-violet-50 border-violet-100 dark:border-violet-500/30", icon: "bg-violet-500 text-white shadow-violet-500/30", bar: "bg-violet-500", soft: "bg-violet-100 dark:bg-violet-500/20", spark: "#8b5cf6" },
 } as const;
 

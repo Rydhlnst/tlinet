@@ -321,6 +321,23 @@
 .leaflet-tile-pane {
   filter: grayscale(0.9) contrast(0.95) brightness(1.04);
 }
+/* Tema gelap dashboard: peta ikut gelap. */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) grayscale(0.7) brightness(0.85) contrast(0.9);
+}
+.points-map-title {
+  margin: 0;
+  font-weight: 600;
+}
+.points-map-detail {
+  margin: 2px 0 0;
+  color: #64748b;
+}
+.points-map-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-weight: 600;
+}
 .area-ring {
   stroke: var(--brand);
   fill: var(--brand);
@@ -374,6 +391,16 @@
 .tower-pin::after {
   border: 3px solid white;
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.tower-pin.is-small {
+  width: 16px;
+  height: 16px;
+}
+.tower-pin.is-small::after {
+  border-width: 2px;
+}
+.tower-pin.is-off {
+  --pin: var(--destructive);
 }
 .tower-pin.is-up {
   --pin: oklch(0.7 0.17 155);

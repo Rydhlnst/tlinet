@@ -87,9 +87,15 @@ export function formatBitrate(bps: number) {
   return `${value.toLocaleString("id-ID", { maximumFractionDigits: value < 10 ? 2 : 1 })} ${units[unit]}`;
 }
 
-/** Kapasitas langganan dalam bit per detik dari isian bebas: "100 Mbps", "1 Gbps", "50M" → angka; 0 bila tidak terbaca. */
+/**
+ * Kapasitas langganan dalam bit per detik dari isian bebas: "100 Mbps", "1 Gbps", "50M" → angka; 0 bila tidak terbaca.
+ * Huruf O yang terketik sebagai nol ("2OO Mbps") ikut dibaca sebagai 0.
+ */
 export function parseCapacityBps(value: string) {
-  const match = value.replace(",", ".").match(/([\d.]+)\s*([kmg])?/i);
+  const match = value
+    .replace(/(?<=\d)[oO]+/g, (zeros) => "0".repeat(zeros.length))
+    .replace(",", ".")
+    .match(/([\d.]+)\s*([kmg])?/i);
   if (!match) return 0;
   const number = Number(match[1]);
   const scale = { k: 1e3, m: 1e6, g: 1e9 }[(match[2] ?? "m").toLowerCase() as "k" | "m" | "g"];

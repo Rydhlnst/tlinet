@@ -9,6 +9,7 @@ import {
   CircleHelp,
   CirclePause,
   Clock,
+  Gauge,
   Ellipsis,
   EllipsisVertical,
   ExternalLink,
@@ -44,12 +45,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getEntityDef, type Column, type EntityDef } from "@/lib/cms/entities";
-import { formatDate, formatDateTime, formatMonth, formatRupiah, whatsappUrl } from "@/lib/format";
+import { formatBitrate, formatDate, formatDateTime, formatMonth, formatRupiah, parseCapacityBps, whatsappUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AmountSummary } from "./amount-summary";
 import type { DynamicOptions } from "./field-control";
 import { MonthlyGenerate } from "./monthly-generate";
 import { PageHero, StatCard, type StatTone } from "./page-hero";
+import { PointsMap, type MapPoint } from "./points-map";
 import { ProofViewer } from "./proof-viewer";
 import { StatusToggle, statusToggleEntities } from "./status-toggle";
 import { WhatsAppIcon } from "@/components/site/whatsapp-float";
@@ -238,7 +240,9 @@ function StatusSummary({ entity, rows, visible, filtered }: { entity: EntityDef;
     .slice(0, 3);
   if (!rows.length) return null;
   const totalKey = entity.totalKey;
+  const bandwidthKey = entity.bandwidthKey;
   const sumOf = (list: Row[]) => list.reduce((sum, row) => sum + (Number(row[totalKey ?? ""]) || 0), 0);
+  const activeOf = (list: Row[]) => list.filter((row) => row.status === "active");
   const total = totalKey ? (
     <StatCard
       tone="green"
@@ -248,14 +252,34 @@ function StatusSummary({ entity, rows, visible, filtered }: { entity: EntityDef;
       hint={
         filtered
           ? `${visible.length} ${entity.singular} sesuai saringan`
-          : `${visible.length} ${entity.singular} · aktif ${formatRupiah(sumOf(visible.filter((row) => row.status === "active")))}`
+          : `${visible.length} ${entity.singular} · aktif ${formatRupiah(sumOf(activeOf(visible)))}`
       }
       progress={1}
     />
   ) : null;
+  const bandwidth = bandwidthKey ? (
+    <StatCard
+      tone="cyan"
+      icon={Gauge}
+      label="Total bandwidth"
+      value={formatBitrate(sumBandwidth(visible, bandwidthKey))}
+      hint={filtered ? `${visible.length} ${entity.singular} sesuai saringan` : `aktif ${formatBitrate(sumBandwidth(activeOf(visible), bandwidthKey))}`}
+      progress={1}
+    />
+  ) : null;
+  const cards = (total ? 1 : 0) + (bandwidth ? 1 : 0) + 1 + counts.length;
   return (
-    <div className={cn("grid grid-cols-2 gap-3 md:gap-4", totalKey ? "xl:grid-cols-5 [&>*:first-child]:col-span-2 xl:[&>*:first-child]:col-span-1" : "xl:grid-cols-4")}>
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-3 md:gap-4",
+        // Jumlah kartu ganjil: kartu pertama selebar dua kolom di layar kecil agar tidak ada lubang.
+        cards % 2 === 1 && "[&>*:first-child]:col-span-2 xl:[&>*:first-child]:col-span-1",
+        // Enam kartu: dua baris tiga kolom, karena satu baris enam membuat label dan nominalnya terpotong.
+        cards >= 6 ? "md:grid-cols-3 md:[&>*:first-child]:col-span-1" : cards === 5 ? "xl:grid-cols-5" : "xl:grid-cols-4",
+      )}
+    >
       {total}
+      {bandwidth}
       <StatCard tone="blue" icon={Layers} label={`Total ${entity.singular}`} value={rows.length} hint="Semua data" progress={1} />
       {counts.map((item, index) => {
         const style = statusTones[item.value] ?? { tone: (["red", "orange", "purple"] as const)[index], icon: Clock };
@@ -273,6 +297,35 @@ function StatusSummary({ entity, rows, visible, filtered }: { entity: EntityDef;
       })}
     </div>
   );
+}
+
+/** Jumlah kapasitas (bit per detik) dari kolom teks bebas seperti "100 Mbps". */
+const sumBandwidth = (list: Row[], key: string) => list.reduce((sum, row) => sum + parseCapacityBps(String(row[key] ?? "")), 0);
+
+/** Titik peta dari baris yang tampil; koordinat kosong atau (0, 0) dilewati. */
+function mapPoints(entity: EntityDef, rows: Row[]): MapPoint[] {
+  const map = entity.map;
+  if (!map) return [];
+  return rows.flatMap((row) => {
+    const lat = Number(row[map.latKey]);
+    const lng = Number(row[map.lngKey]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return [];
+    const title = map.titleKeys.map((key) => String(row[key] ?? "")).find(Boolean) ?? "";
+    return [
+      {
+        id: String(row.id),
+        lat,
+        lng,
+        title: title || entity.singular,
+        detail: map.detailKeys
+          .map((key) => String(row[key] ?? ""))
+          .filter(Boolean)
+          .join(" · "),
+        href: entity.detailPath ? `${entity.detailPath}/${row.id}` : undefined,
+        active: row.status === "active",
+      },
+    ];
+  });
 }
 
 const pageSizes = [10, 25, 50, 100];
@@ -319,6 +372,9 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
   // Baris jumlah di bawah kolom nominal, untuk koleksi yang punya rangkuman.
   const amountKey = entity.summary?.amountKey ?? entity.totalKey;
   const amountTotal = amountKey ? visible.reduce((total, row) => total + (Number(row[amountKey]) || 0), 0) : 0;
+  const bandwidthKey = entity.bandwidthKey;
+  const bandwidthTotal = bandwidthKey ? sumBandwidth(visible, bandwidthKey) : 0;
+  const points = useMemo(() => mapPoints(entity, visible), [entity, visible]);
   // Koleksi berhalaman detail membuka detailnya saat baris diklik; yang lain langsung membuka form ubah.
   const openRow = (row: Row) => (entity.detailPath ? router.push(detailHref(row)) : setEditing({ ...row }));
   // Tautan kirim lewat WhatsApp per baris (saat ini untuk invoice), disusun di server.
@@ -356,6 +412,18 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
       />
 
       {entity.summary ? <AmountSummary summary={entity.summary} rows={visible} /> : <StatusSummary entity={entity} rows={rows} visible={visible} filtered={filtered} />}
+
+      {entity.map && (
+        <PointsMap
+          title={entity.map.title}
+          description={entity.map.description}
+          points={points}
+          total={visible.length}
+          noun={entity.singular}
+          activeLabel={entity.map.activeLabel}
+          inactiveLabel={entity.map.inactiveLabel}
+        />
+      )}
 
       <div className="overflow-hidden rounded-2xl border bg-card shadow-[0_6px_24px_-16px_rgba(15,23,42,0.3)]">
         <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center">
@@ -565,13 +633,19 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
               </TableRow>
             )}
           </TableBody>
-          {amountKey && visible.length > 0 && (
+          {(amountKey || bandwidthKey) && visible.length > 0 && (
             <TableFooter>
               <TableRow className="hover:bg-transparent">
                 <TableCell />
                 {entity.columns.map((column, index) => (
-                  <TableCell key={column.key} className={cn(column.key === amountKey && "font-semibold whitespace-nowrap tabular-nums")}>
-                    {column.key === amountKey ? formatRupiah(amountTotal) : index === 0 ? <span className="font-semibold">Jumlah ({visible.length})</span> : null}
+                  <TableCell key={column.key} className={cn((column.key === amountKey || column.key === bandwidthKey) && "font-semibold whitespace-nowrap tabular-nums")}>
+                    {column.key === amountKey ? (
+                      formatRupiah(amountTotal)
+                    ) : column.key === bandwidthKey ? (
+                      formatBitrate(bandwidthTotal)
+                    ) : index === 0 ? (
+                      <span className="font-semibold">Jumlah ({visible.length})</span>
+                    ) : null}
                   </TableCell>
                 ))}
                 <TableCell />
