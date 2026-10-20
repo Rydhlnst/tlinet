@@ -30,7 +30,8 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
   const db = requireDb();
   const [orders, customerList] = await Promise.all([
     db
-      .select({ order: metroOrders, name: customers.name, company: customers.company })
+      // Site ID diambil dari Data Pelanggan masing-masing, jadi selalu mengikuti perubahan di sana.
+      .select({ order: metroOrders, name: customers.name, company: customers.company, siteId: customers.siteId })
       .from(metroOrders)
       .innerJoin(customers, eq(customers.id, metroOrders.customerId))
       .orderBy(desc(metroOrders.updatedAt)),
@@ -76,7 +77,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
         </nav>
         {/* HP: satu kartu per progres. */}
         <ul className="divide-y md:hidden">
-          {rows.map(({ order, name, company }) => {
+          {rows.map(({ order, name, company, siteId }) => {
             const kind = order.kind as "install" | "upgrade";
             const progress = metroProgress(kind, order.steps);
             return (
@@ -85,6 +86,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{company || name}</p>
                     <p className="truncate text-xs text-muted-foreground">
+                      {siteId && <>Site {siteId} · </>}
                       {metroKindLabels[kind]} · {kind === "upgrade" ? `${order.previousCapacity || "?"} → ${order.capacity}` : order.capacity || "—"}
                     </p>
                   </div>
@@ -110,6 +112,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-12 pl-5">No</TableHead>
               <TableHead>Pelanggan</TableHead>
+              <TableHead>Site ID</TableHead>
               <TableHead>Jenis</TableHead>
               <TableHead>Kapasitas</TableHead>
               <TableHead>Progres</TableHead>
@@ -119,7 +122,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map(({ order, name, company }, index) => {
+            {rows.map(({ order, name, company, siteId }, index) => {
               const kind = order.kind as "install" | "upgrade";
               const progress = metroProgress(kind, order.steps);
               const title = company || name;
@@ -132,6 +135,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
                     </Link>
                     {company && <span className="block text-xs text-muted-foreground">{name}</span>}
                   </TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{siteId || <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>
                     <span
                       className={cn(
@@ -175,7 +179,7 @@ export default async function MetroPage({ searchParams }: PageProps<"/admin/metr
             })}
             {rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                   {filter.status === "active" ? "Tidak ada progres yang sedang berjalan." : "Belum ada progres."}
                 </TableCell>
               </TableRow>
