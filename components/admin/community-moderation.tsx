@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { SaveResult } from "@/lib/cms/store";
 import { cn } from "@/lib/utils";
+import { ConfirmDeleteDialog } from "./confirm-delete";
 import { initials } from "./detail-panels";
 
 export type ModerationMessage = {
@@ -43,6 +44,8 @@ export function CommunityModeration({ messages, customerLinks = false }: { messa
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState("");
+  // Pesan yang menunggu konfirmasi hapus.
+  const [removing, setRemoving] = useState<ModerationMessage | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -89,6 +92,15 @@ export function CommunityModeration({ messages, customerLinks = false }: { messa
           Kirim
         </Button>
       </form>
+
+      <ConfirmDeleteDialog
+        open={removing !== null}
+        title="pesan ini"
+        description={removing ? `Pesan dari ${removing.name} hilang dari Forum${removing.imageUrl ? " dan gambarnya dihapus dari penyimpanan" : ""}.` : undefined}
+        pending={busy.startsWith("delete-")}
+        onCancel={() => setRemoving(null)}
+        onConfirm={() => removing && run(`delete-${removing.id}`, () => deleteCommunityMessageAction(removing.id), () => setRemoving(null))}
+      />
 
       <div className="overflow-hidden rounded-2xl border bg-card shadow-[0_6px_24px_-16px_rgba(15,23,42,0.3)]">
         <ul className="divide-y">
@@ -155,7 +167,7 @@ export function CommunityModeration({ messages, customerLinks = false }: { messa
                     title="Hapus pesan"
                     aria-label="Hapus pesan"
                     className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
-                    onClick={() => run(`delete-${message.id}`, () => deleteCommunityMessageAction(message.id))}
+                    onClick={() => setRemoving(message)}
                   >
                     {busy === `delete-${message.id}` ? <LoaderCircle className="animate-spin" /> : <Trash2 />}
                   </Button>
