@@ -11,6 +11,10 @@ export type Column = {
   labels?: Record<string, string>;
   labelsFrom?: string;
   className?: string;
+  /** Inisial nama dalam lingkaran berwarna di depan isi kolom (mis. nama PT). */
+  avatar?: boolean;
+  /** Pilihan saringan di atas tabel untuk kolom ini. Kolom badge dan bulan selalu bisa disaring. */
+  filter?: boolean;
 };
 
 export type EntityDef = {
@@ -303,11 +307,11 @@ export const entityDefs: EntityDef[] = [
     detailPath: "/admin/data/customers",
     defaults: { status: "active", monthlyFee: "", napFee: "" },
     columns: [
-      { key: "company", label: "PT" },
+      { key: "company", label: "PT", avatar: true },
       { key: "name", label: "Nama" },
       { key: "siteId", label: "Site ID" },
-      { key: "regency", label: "Kabupaten" },
-      { key: "capacity", label: "Kapasitas" },
+      { key: "regency", label: "Kabupaten", filter: true },
+      { key: "capacity", label: "Kapasitas", filter: true },
       { key: "monthlyFee", label: "Biaya ke ISP", type: "currency" },
       { key: "status", label: "Status", type: "badge", labels: customerStatusLabels },
     ],
@@ -362,7 +366,7 @@ export const entityDefs: EntityDef[] = [
     },
     defaults: { status: "paid", amount: "" },
     columns: [
-      { key: "customerId", label: "PT", labelsFrom: "customerNames" },
+      { key: "customerId", label: "PT", labelsFrom: "customerNames", avatar: true, filter: true },
       { key: "pic", label: "PIC" },
       { key: "invoiceId", label: "Invoice", labelsFrom: "invoiceNumbers" },
       { key: "period", label: "Bulan", type: "month" },
@@ -400,7 +404,7 @@ export const entityDefs: EntityDef[] = [
     },
     defaults: { status: "paid", amount: "" },
     columns: [
-      { key: "supplierName", label: "Pemasok" },
+      { key: "supplierName", label: "Pemasok", avatar: true, filter: true },
       { key: "serviceName", label: "Layanan" },
       { key: "siteId", label: "Site" },
       { key: "cid", label: "CID" },
@@ -460,7 +464,7 @@ export const entityDefs: EntityDef[] = [
     defaults: { status: "unpaid", items: [], notes: [], taxRate: "" },
     columns: [
       { key: "number", label: "No. Invoice" },
-      { key: "customerId", label: "Pelanggan", labelsFrom: "customerNames" },
+      { key: "customerId", label: "Pelanggan", labelsFrom: "customerNames", avatar: true, filter: true },
       { key: "issueDate", label: "Tanggal terbit", type: "date" },
       { key: "dueDate", label: "Jatuh tempo", type: "date" },
       { key: "total", label: "Total tagihan", type: "currency" },

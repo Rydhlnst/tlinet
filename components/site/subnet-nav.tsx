@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Gauge, House, Package, ReceiptText, UserRound, type LucideIcon } from "lucide-react";
+import { ChevronLeft, Gauge, House, MessagesSquare, Package, ReceiptText, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -89,6 +89,7 @@ const titles: [prefix: string, title: string][] = [
   ["/subnet/trafik/grafik", "Grafik MRTG"],
   ["/subnet/progres", "Progres Metro"],
   ["/subnet/tower", "Lokasi Tower"],
+  ["/subnet/komunitas", "Komunitas"],
   ["/subnet/trafik", "Koneksi"],
   ["/subnet/tagihan", "Tagihan"],
   ["/subnet/layanan", "Layanan"],
@@ -100,7 +101,7 @@ export function SubnetMobileBar({ brand, name, photoUrl }: { brand: ReactNode; n
   const pathname = usePathname();
   const title = titles.find(([prefix]) => pathname.startsWith(prefix))?.[1];
   // Halaman di luar tab bawah punya tombol kembali ke asalnya.
-  const back = pathname.startsWith("/subnet/trafik/") ? { href: "/subnet/trafik", label: "Kembali ke Koneksi" } : pathname.startsWith("/subnet/progres") || pathname.startsWith("/subnet/tower") ? { href: "/subnet", label: "Kembali ke Beranda" } : null;
+  const back = pathname.startsWith("/subnet/trafik/") ? { href: "/subnet/trafik", label: "Kembali ke Koneksi" } : ["/subnet/progres", "/subnet/tower", "/subnet/komunitas"].some((path) => pathname.startsWith(path)) ? { href: "/subnet", label: "Kembali ke Beranda" } : null;
 
   return (
     <header className="pt-safe sticky top-0 z-40 bg-brand text-white md:hidden">
@@ -119,14 +120,21 @@ export function SubnetMobileBar({ brand, name, photoUrl }: { brand: ReactNode; n
             {brand}
           </Link>
         )}
-        <Link href="/subnet/profil" aria-label="Profil saya" className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-xs font-semibold text-white ring-2 ring-white/30">
-          {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoUrl} alt="" className="size-full object-cover" />
-          ) : (
-            initials(name)
+        <div className="flex shrink-0 items-center gap-1">
+          {!pathname.startsWith("/subnet/komunitas") && (
+            <Link href="/subnet/komunitas" aria-label="Komunitas Subnet" className="flex size-9 items-center justify-center rounded-full hover:bg-white/10">
+              <MessagesSquare className="size-5" />
+            </Link>
           )}
-        </Link>
+          <Link href="/subnet/profil" aria-label="Profil saya" className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-xs font-semibold text-white ring-2 ring-white/30">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt="" className="size-full object-cover" />
+            ) : (
+              initials(name)
+            )}
+          </Link>
+        </div>
       </div>
     </header>
   );

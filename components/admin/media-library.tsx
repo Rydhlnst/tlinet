@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, FileText, LoaderCircle, Trash2, Upload } from "lucide-react";
+import { Copy, FileText, LoaderCircle, Trash2, Upload, FolderOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { isPdfUrl } from "@/lib/format";
+import { PageHero } from "./page-hero";
 import { uploadImage } from "./image-field";
 
 const formatSize = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
@@ -62,29 +63,30 @@ export function MediaLibrary({ items, storageLabel }: { items: MediaItem[]; stor
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Media</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Gambar yang diunggah dari dashboard. Penyimpanan aktif: {storageLabel}. Format JPG, PNG, WebP, atau AVIF, maksimal 4 MB.
-          </p>
-        </div>
-        <input
-          ref={input}
-          type="file"
-          multiple
-          accept="image/*"
-          className="hidden"
-          onChange={(event) => {
-            void onFiles(event.target.files);
-            event.target.value = "";
-          }}
-        />
-        <Button size="lg" disabled={uploading} onClick={() => input.current?.click()}>
-          {uploading ? <LoaderCircle className="animate-spin" /> : <Upload />}
-          Unggah gambar
-        </Button>
-      </div>
+      <PageHero
+        title="Media"
+        icon={FolderOpen}
+        description={<>Gambar yang diunggah dari dashboard. Penyimpanan aktif: {storageLabel}. Format JPG, PNG, WebP, atau AVIF, maksimal 4 MB.</>}
+        actions={
+          <>
+            <input
+              ref={input}
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => {
+                void onFiles(event.target.files);
+                event.target.value = "";
+              }}
+            />
+            <Button size="lg" disabled={uploading} onClick={() => input.current?.click()}>
+              {uploading ? <LoaderCircle className="animate-spin" /> : <Upload />}
+              Unggah gambar
+            </Button>
+          </>
+        }
+      />
 
       {items.length ? (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

@@ -1,5 +1,5 @@
 import { and, count, eq, ne } from "drizzle-orm";
-import { LogOut } from "lucide-react";
+import { LogOut, MessagesSquare } from "lucide-react";
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { initials } from "@/components/admin/detail-panels";
@@ -50,6 +50,9 @@ export default async function SubnetPortalLayout({ children }: LayoutProps<"/sub
           </Link>
           <SubnetTopNav unpaid={unpaid} />
           <div className="flex items-center gap-2">
+            <Link href="/subnet/komunitas" aria-label="Komunitas Subnet" title="Komunitas Subnet" className="flex size-9 items-center justify-center rounded-full text-white/85 hover:bg-white/10 hover:text-white">
+              <MessagesSquare className="size-5" />
+            </Link>
             <Link href="/subnet/profil" aria-label="Profil saya" className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-white/15 text-sm font-semibold text-white ring-2 ring-white/30">
               {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

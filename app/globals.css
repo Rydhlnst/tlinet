@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Situs hanya punya tema terang; varian dark: baru aktif bila ada kelas .dark. */
+/* Situs publik hanya terang; kelas .dark dipasang hanya oleh tema gelap dashboard admin (next-themes). */
 @custom-variant dark (&:is(.dark *));
 
 /* Header masih di puncak halaman yang punya hero gelap: tampil transparan dengan teks putih.
@@ -103,6 +103,41 @@
   --sidebar-accent-foreground: oklch(0.3 0.09 265);
   --sidebar-border: oklch(0.922 0.012 262);
   --sidebar-ring: oklch(0.68 0.14 262);
+}
+
+/* Tema gelap dashboard admin (situs publik dan portal Subnet tetap terang): biru malam dengan kartu bercahaya biru. */
+.dark {
+  --background: oklch(0.17 0.04 266);
+  --foreground: oklch(0.96 0.01 262);
+  --card: oklch(0.21 0.05 266);
+  --card-foreground: oklch(0.96 0.01 262);
+  --popover: oklch(0.23 0.05 266);
+  --popover-foreground: oklch(0.96 0.01 262);
+  --primary: oklch(0.6 0.2 260);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.27 0.05 265);
+  --secondary-foreground: oklch(0.92 0.02 262);
+  --muted: oklch(0.25 0.045 265);
+  --muted-foreground: oklch(0.72 0.035 262);
+  --accent: oklch(0.28 0.055 265);
+  --accent-foreground: oklch(0.95 0.015 262);
+  --destructive: oklch(0.65 0.22 25);
+  --border: oklch(0.32 0.06 264);
+  --input: oklch(0.34 0.06 264);
+  --ring: oklch(0.6 0.17 260);
+  --brand: oklch(0.6 0.2 260);
+  --brand-ink: oklch(0.74 0.15 258);
+  --brand-soft: oklch(0.3 0.08 262);
+  --brand-foreground: oklch(1 0 0);
+  --sidebar: oklch(0.15 0.04 266);
+  --sidebar-foreground: oklch(0.92 0.015 262);
+  --sidebar-primary: oklch(0.58 0.21 260);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.25 0.05 265);
+  --sidebar-accent-foreground: oklch(0.96 0.01 262);
+  --sidebar-border: oklch(0.28 0.055 264);
+  --sidebar-ring: oklch(0.6 0.17 260);
+  color-scheme: dark;
 }
 
 @layer base {

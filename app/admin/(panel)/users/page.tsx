@@ -1,4 +1,5 @@
 import { asc } from "drizzle-orm";
+import { ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { StaffUserButton } from "@/components/admin/staff-users";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { requireDb } from "@/lib/db";
 import { staffUsers } from "@/lib/db/schema";
 import { formatDateTime } from "@/lib/format";
 import { isStaffPermission, permissionDefs } from "@/lib/permissions";
+import { PageHero } from "@/components/admin/page-hero";
 import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = { title: "Pengguna" };
@@ -22,16 +24,16 @@ export default async function UsersPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Pengguna</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Akun staf di bawah owner. Setiap akun hanya melihat menu yang dicentang di hak aksesnya, dan aksi di luar hak aksesnya ditolak server. Akun owner (yang diatur di environment) selalu punya akses
-            penuh.
-          </p>
-        </div>
-        <StaffUserButton loginUrl={loginUrl} />
-      </div>
+      <PageHero
+        title="Pengguna"
+        icon={ShieldCheck}
+        description={<>Akun staf di bawah owner. Setiap akun hanya melihat menu yang dicentang di hak aksesnya, dan aksi di luar hak aksesnya ditolak server. Akun owner (yang diatur di environment) selalu punya akses penuh.</>}
+        actions={
+          <>
+            <StaffUserButton loginUrl={loginUrl} />
+          </>
+        }
+      />
 
       <div className="overflow-hidden rounded-xl border bg-card">
         <Table>

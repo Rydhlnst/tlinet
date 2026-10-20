@@ -31,12 +31,14 @@ export function MonthlyGenerate({
   rows,
   customerId = "",
   size = "lg",
+  className,
 }: {
   entityKey: string;
   monthly: NonNullable<EntityDef["monthly"]>;
   rows: Row[];
   customerId?: string;
   size?: "default" | "lg";
+  className?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -59,7 +61,7 @@ export function MonthlyGenerate({
 
   return (
     <>
-      <Button variant="outline" size={size} onClick={() => setOpen(true)}>
+      <Button variant="outline" size={size} className={className} onClick={() => setOpen(true)}>
         <CalendarPlus />
         Generate Tagihan {target}
       </Button>

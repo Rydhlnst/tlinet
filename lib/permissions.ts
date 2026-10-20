@@ -52,7 +52,7 @@ export function routePermission(pathname: string): Permission {
   const [, , section, key] = pathname.split("/");
   if (section === "data") return entityPermission(key ?? "");
   if (section === "pages") return pagePermission(key ?? "");
-  const sections: Record<string, Permission> = { media: "content", subnet: "subnet", metro: "metro", keuntungan: "finance", accurate: "accurate", invoice: "billing", users: "users" };
+  const sections: Record<string, Permission> = { media: "content", subnet: "subnet", komunitas: "subnet", metro: "metro", keuntungan: "finance", accurate: "accurate", invoice: "billing", users: "users" };
   return sections[section ?? ""] ?? "users";
 }
 

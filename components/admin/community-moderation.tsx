@@ -1,0 +1,146 @@
+"use client";
+
+import { LoaderCircle, MessageSquareOff, SendHorizontal, ShieldCheck, Trash2, Volume2, VolumeX } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
+import { deleteCommunityMessageAction, postCommunityAdminAction, setChatMutedAction } from "@/app/admin/community-actions";
+import { Button } from "@/components/ui/button";
+import type { SaveResult } from "@/lib/cms/store";
+import { cn } from "@/lib/utils";
+import { initials } from "./detail-panels";
+
+export type ModerationMessage = {
+  id: string;
+  customerId: string | null;
+  admin: boolean;
+  name: string;
+  body: string;
+  at: number;
+  deleted: boolean;
+  muted: boolean;
+};
+
+const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+
+/** Ruang moderasi Komunitas Subnet: kirim pengumuman, hapus pesan, dan bisukan pelanggan. Dimuat ulang tiap 15 detik. */
+export function CommunityModeration({ messages }: { messages: ModerationMessage[] }) {
+  const router = useRouter();
+  const [draft, setDraft] = useState("");
+  const [pending, startTransition] = useTransition();
+  const [busy, setBusy] = useState("");
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!document.hidden) router.refresh();
+    }, 15_000);
+    return () => clearInterval(timer);
+  }, [router]);
+
+  function run(key: string, action: () => Promise<SaveResult>, after?: () => void) {
+    setBusy(key);
+    startTransition(async () => {
+      const result = await action();
+      setBusy("");
+      if (result.ok) {
+        toast.success(result.message);
+        after?.();
+        router.refresh();
+      } else toast.error(result.message);
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <form
+        className="flex items-end gap-2 rounded-2xl border bg-card p-3 shadow-[0_6px_24px_-16px_rgba(15,23,42,0.3)]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (draft.trim()) run("post", () => postCommunityAdminAction(draft), () => setDraft(""));
+        }}
+      >
+        <span className="mb-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+          <ShieldCheck className="size-4" />
+        </span>
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value.slice(0, 1000))}
+          rows={1}
+          placeholder="Tulis pengumuman atau balasan sebagai Admin TLINET…"
+          aria-label="Pesan admin"
+          className="field-sizing-content max-h-40 min-h-10 w-full min-w-0 flex-1 resize-none rounded-xl border bg-background px-3.5 py-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+        />
+        <Button type="submit" size="lg" className="rounded-full" disabled={pending || !draft.trim()}>
+          {busy === "post" ? <LoaderCircle className="animate-spin" /> : <SendHorizontal />}
+          Kirim
+        </Button>
+      </form>
+
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-[0_6px_24px_-16px_rgba(15,23,42,0.3)]">
+        <ul className="divide-y">
+          {messages.map((message) => (
+            <li key={message.id} className={cn("flex items-start gap-3 px-4 py-3 sm:px-5", message.deleted && "opacity-55")}>
+              <span
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                  message.admin ? "bg-brand text-white" : "bg-brand-soft text-brand-ink",
+                )}
+              >
+                {message.admin ? <ShieldCheck className="size-4" /> : initials(message.name)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                  <span className="font-semibold">{message.name}</span>
+                  {message.admin && <span className="rounded bg-brand px-1 py-px text-[10px] font-bold tracking-wide text-white uppercase">Admin</span>}
+                  {message.muted && (
+                    <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-px text-[11px] font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                      <VolumeX className="size-3" />
+                      Dibisukan
+                    </span>
+                  )}
+                  <span className="text-xs text-muted-foreground tabular-nums">{timeFormat.format(message.at)} WITA</span>
+                  {message.deleted && <span className="text-xs font-medium text-rose-500">· dihapus</span>}
+                </p>
+                <p className={cn("mt-0.5 text-sm break-words whitespace-pre-wrap text-foreground/90", message.deleted && "line-through")}>{message.body}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                {message.customerId && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={pending}
+                    title={message.muted ? "Izinkan mengirim pesan lagi" : "Bisukan pelanggan ini"}
+                    aria-label={message.muted ? `Aktifkan lagi ${message.name}` : `Bisukan ${message.name}`}
+                    className={message.muted ? "text-emerald-600" : "text-amber-600"}
+                    onClick={() => run(`mute-${message.id}`, () => setChatMutedAction(message.customerId!, !message.muted))}
+                  >
+                    {busy === `mute-${message.id}` ? <LoaderCircle className="animate-spin" /> : message.muted ? <Volume2 /> : <VolumeX />}
+                  </Button>
+                )}
+                {!message.deleted && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={pending}
+                    title="Hapus pesan"
+                    aria-label="Hapus pesan"
+                    className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
+                    onClick={() => run(`delete-${message.id}`, () => deleteCommunityMessageAction(message.id))}
+                  >
+                    {busy === `delete-${message.id}` ? <LoaderCircle className="animate-spin" /> : <Trash2 />}
+                  </Button>
+                )}
+              </div>
+            </li>
+          ))}
+          {messages.length === 0 && (
+            <li className="flex flex-col items-center gap-2 px-4 py-14 text-center text-sm text-muted-foreground">
+              <MessageSquareOff className="size-6" />
+              Belum ada pesan di Komunitas.
+            </li>
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}

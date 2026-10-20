@@ -1,7 +1,8 @@
 import { asc } from "drizzle-orm";
-import { Search } from "lucide-react";
+import { Building2, Search, TrendingUp, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageHero, StatCard } from "@/components/admin/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,16 +14,6 @@ import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Selisih Keuntungan" };
-
-function Stat({ label, value, hint, tone }: { label: string; value: number; hint: string; tone?: "profit" }) {
-  return (
-    <div className="rounded-xl border bg-card p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={cn("mt-2 text-2xl font-semibold tracking-tight tabular-nums", tone === "profit" && (value < 0 ? "text-destructive" : "text-emerald-700"))}>{formatRupiah(value)}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
-}
 
 const money = (value: number) => (value ? formatRupiah(value) : <span className="text-muted-foreground">—</span>);
 
@@ -62,17 +53,22 @@ export default async function ProfitPage({ searchParams }: PageProps<"/admin/keu
 
   return (
     <>
-      <div className="hidden md:block">
-        <h1 className="text-2xl font-semibold tracking-tight">Selisih Keuntungan</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Keuntungan per bulan tiap pelanggan: biaya bulanan ke ISP dikurangi biaya bulanan ke NAP. Angkanya otomatis mengikuti Data Pelanggan.
-        </p>
-      </div>
+      <PageHero
+        title="Selisih Keuntungan"
+        icon={TrendingUp}
+        description="Keuntungan per bulan tiap pelanggan: biaya bulanan ke ISP dikurangi biaya bulanan ke NAP. Angkanya otomatis mengikuti Data Pelanggan."
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Biaya bulanan ke ISP" value={total((row) => row.ispFee)} hint={`Dari ${active.length} pelanggan aktif yang biayanya sudah diisi`} />
-        <Stat label="Biaya bulanan ke NAP" value={total((row) => row.napFee)} hint="Yang dibayar ke NAP untuk pelanggan itu" />
-        <Stat label="Selisih keuntungan per bulan" value={total((row) => row.profit)} hint="Biaya ke ISP dikurangi biaya ke NAP" tone="profit" />
+        <StatCard tone="blue" icon={Wallet} label="Biaya bulanan ke ISP" value={formatRupiah(total((row) => row.ispFee))} hint={`Dari ${active.length} pelanggan aktif yang biayanya sudah diisi`} />
+        <StatCard tone="orange" icon={Building2} label="Biaya bulanan ke NAP" value={formatRupiah(total((row) => row.napFee))} hint="Yang dibayar ke NAP untuk pelanggan itu" />
+        <StatCard
+          tone={total((row) => row.profit) < 0 ? "red" : "green"}
+          icon={TrendingUp}
+          label="Selisih keuntungan per bulan"
+          value={formatRupiah(total((row) => row.profit))}
+          hint="Biaya ke ISP dikurangi biaya ke NAP"
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card">

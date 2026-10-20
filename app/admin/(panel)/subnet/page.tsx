@@ -1,5 +1,5 @@
 import { asc, count, desc, eq, ne, sql } from "drizzle-orm";
-import { Download, ExternalLink, Search } from "lucide-react";
+import { Download, ExternalLink, Search, Network } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SubnetAccessButton, SubnetPortsProvider } from "@/components/admin/subnet-access";
@@ -13,6 +13,7 @@ import { customers, invoices, subnetAccounts } from "@/lib/db/schema";
 import { formatDateTime, formatRupiah } from "@/lib/format";
 import { librenmsConfigured, listLibrenmsPorts, listLibrenmsQos, suggestPort, suggestQos, type LibrenmsPort, type LibrenmsQos } from "@/lib/librenms";
 import { absoluteUrl } from "@/lib/seo";
+import { PageHero } from "@/components/admin/page-hero";
 import { androidApk } from "@/lib/subnet";
 
 export const metadata: Metadata = { title: "Subnet" };
@@ -93,30 +94,28 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
 
   return (
     <>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="hidden md:block">
-          <h1 className="text-2xl font-semibold tracking-tight">Subnet</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, grafik trafik, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length}{" "}
-            pelanggan punya akses aktif.
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {/* Tautan APK bisa dibagikan ke pelanggan lewat WhatsApp. */}
-          <Button asChild variant="outline" size="lg">
-            <a href={androidApk.path} download>
-              <Download />
-              APK Android
-            </a>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/subnet/login" target="_blank">
-              <ExternalLink />
-              Buka portal
-            </Link>
-          </Button>
-        </div>
-      </div>
+      <PageHero
+        title="Subnet"
+        icon={Network}
+        description={<>Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, grafik trafik, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length} pelanggan punya akses aktif.</>}
+        actions={
+          <>
+            {/* Tautan APK bisa dibagikan ke pelanggan lewat WhatsApp. */}
+            <Button asChild variant="outline" size="lg">
+              <a href={androidApk.path} download>
+                <Download />
+                APK Android
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/subnet/login" target="_blank">
+                <ExternalLink />
+                Buka portal
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       <SubnetPortsProvider ports={ports.length ? ports : null} qos={qosList}>
       <div className="overflow-hidden rounded-xl border bg-card">

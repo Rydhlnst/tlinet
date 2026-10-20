@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, LoaderCircle, Save } from "lucide-react";
+import { ExternalLink, LoaderCircle, Save, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPageDef } from "@/lib/cms/pages";
 import { cn } from "@/lib/utils";
+import { PageHero } from "./page-hero";
 import { FieldGrid } from "./field-control";
 
 type Doc = Record<string, unknown>;
@@ -48,24 +49,25 @@ export function ContentForm({ pageKey, initial }: { pageKey: string; initial: Do
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{page.label}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{page.description}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button asChild variant="outline" size="lg">
-            <Link href={page.publicPath} target="_blank">
-              <ExternalLink />
-              Lihat halaman
-            </Link>
-          </Button>
-          <Button size="lg" onClick={save} disabled={saving || !dirty}>
-            {saving ? <LoaderCircle className="animate-spin" /> : <Save />}
-            {dirty ? "Simpan perubahan" : "Tersimpan"}
-          </Button>
-        </div>
-      </div>
+      <PageHero
+        title={page.label}
+        icon={FileText}
+        description={<>{page.description}</>}
+        actions={
+          <>
+            <Button asChild variant="outline" size="lg">
+              <Link href={page.publicPath} target="_blank">
+                <ExternalLink />
+                Lihat halaman
+              </Link>
+            </Button>
+            <Button size="lg" onClick={save} disabled={saving || !dirty}>
+              {saving ? <LoaderCircle className="animate-spin" /> : <Save />}
+              {dirty ? "Simpan perubahan" : "Tersimpan"}
+            </Button>
+          </>
+        }
+      />
 
       <div className="grid items-start gap-6 lg:grid-cols-[13rem_1fr]">
         <nav className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col" aria-label="Bagian halaman">

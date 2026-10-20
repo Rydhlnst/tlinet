@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Calculator, ChevronRight, Ellipsis, Eye, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ScrollText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronRight, Ellipsis, Eye, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Plus, ReceiptText, ScrollText, ShoppingBag, StickyNote, Trash2, User, Wifi, X, type LucideIcon, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
@@ -27,6 +27,7 @@ import { customerTones, InfoList, initials, Panel, StatusPill } from "./detail-p
 import { MonthlyGenerate } from "./monthly-generate";
 import { uploadImage } from "./image-field";
 import { ProofViewer } from "./proof-viewer";
+import { PageHero } from "./page-hero";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
 
 type Customer = typeof customers.$inferSelect;
@@ -344,24 +345,25 @@ export function CustomerDetail({
         <span className="text-muted-foreground">Detail Pelanggan</span>
       </nav>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Detail Pelanggan</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Informasi lengkap data pelanggan, foto, dan riwayat pembayaran.</p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="lg">
-            <Link href={listPath}>
-              <ArrowLeft />
-              Kembali ke Data Pelanggan
-            </Link>
-          </Button>
-          <Button size="lg" onClick={() => setEditing({ ...customer })}>
-            <Pencil />
-            Edit Data
-          </Button>
-        </div>
-      </div>
+      <PageHero
+        title="Detail Pelanggan"
+        icon={UserRound}
+        description={<>Informasi lengkap data pelanggan, foto, dan riwayat pembayaran.</>}
+        actions={
+          <>
+            <Button asChild variant="outline" size="lg">
+              <Link href={listPath}>
+                <ArrowLeft />
+                Kembali ke Data Pelanggan
+              </Link>
+            </Button>
+            <Button size="lg" onClick={() => setEditing({ ...customer })}>
+              <Pencil />
+              Edit Data
+            </Button>
+          </>
+        }
+      />
 
       <section className="flex flex-col gap-6 rounded-xl border bg-card p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-5">
