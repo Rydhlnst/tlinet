@@ -45,6 +45,12 @@ export type EntityDef = {
    */
   summary?: { amountKey: string; statusKey: string; periodKey: string; paidLabel?: string; unpaidLabel?: string; periodLabel?: string };
   /**
+   * Untuk koleksi tanpa `summary`: kolom nominal yang dijumlahkan, tampil sebagai kartu di atas tabel dan baris Jumlah
+   * di bawahnya (mengikuti pencarian dan saringan). `totalLabel` adalah judul kartunya.
+   */
+  totalKey?: string;
+  totalLabel?: string;
+  /**
    * Tombol "Generate Tagihan <bulan>": baris bulan tagihan terakhir disalin ke bulan berikutnya. `copyKeys` ikut disalin
    * (isian yang tertaut ke Data Pelanggan tidak perlu, karena diisi dari pelanggannya), `matchKeys` menandai tagihan yang
    * sama sehingga yang sudah ada di bulan tujuan dilewati. `periodKey` kolom bulan/tanggal tagihannya (bawaan `period`),
@@ -312,6 +318,8 @@ export const entityDefs: EntityDef[] = [
     searchKeys: ["name", "company", "phone", "siteId", "cid", "address", "regency", "ipAddress", "vlan"],
     internal: true,
     detailPath: "/admin/data/customers",
+    totalKey: "monthlyFee",
+    totalLabel: "Total biaya ke ISP / bulan",
     defaults: { status: "active", monthlyFee: "", napFee: "" },
     columns: [
       { key: "company", label: "PT", avatar: true, avatarPhoto: "photos" },

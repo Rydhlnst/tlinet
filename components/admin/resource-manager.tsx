@@ -32,6 +32,7 @@ import {
   Tags,
   Trash2,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -48,7 +49,7 @@ import { cn } from "@/lib/utils";
 import { AmountSummary } from "./amount-summary";
 import type { DynamicOptions } from "./field-control";
 import { MonthlyGenerate } from "./monthly-generate";
-import { PageHero, StatCard, StatGrid, type StatTone } from "./page-hero";
+import { PageHero, StatCard, type StatTone } from "./page-hero";
 import { ProofViewer } from "./proof-viewer";
 import { StatusToggle, statusToggleEntities } from "./status-toggle";
 import { WhatsAppIcon } from "@/components/site/whatsapp-float";
@@ -223,8 +224,11 @@ const statusTones: Record<string, { tone: StatTone; icon: LucideIcon }> = {
   new: { tone: "purple", icon: Inbox },
 };
 
-/** Kartu jumlah per status (mis. pelanggan aktif / belum aktif), untuk koleksi tanpa rangkuman nominal. */
-function StatusSummary({ entity, rows }: { entity: EntityDef; rows: Row[] }) {
+/**
+ * Kartu jumlah per status (mis. pelanggan aktif / belum aktif), untuk koleksi tanpa rangkuman nominal. Dengan
+ * `totalKey`, kartu pertama berisi total nominal baris yang sedang tampil (mengikuti pencarian dan saringan).
+ */
+function StatusSummary({ entity, rows, visible, filtered }: { entity: EntityDef; rows: Row[]; visible: Row[]; filtered: boolean }) {
   const column = entity.columns.find((item) => item.key === "status" && item.type === "badge" && item.labels);
   if (!column?.labels) return null;
   const counts = Object.keys(column.labels)
@@ -233,8 +237,25 @@ function StatusSummary({ entity, rows }: { entity: EntityDef; rows: Row[] }) {
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
   if (!rows.length) return null;
+  const totalKey = entity.totalKey;
+  const sumOf = (list: Row[]) => list.reduce((sum, row) => sum + (Number(row[totalKey ?? ""]) || 0), 0);
+  const total = totalKey ? (
+    <StatCard
+      tone="green"
+      icon={Wallet}
+      label={entity.totalLabel ?? "Total"}
+      value={formatRupiah(sumOf(visible))}
+      hint={
+        filtered
+          ? `${visible.length} ${entity.singular} sesuai saringan`
+          : `${visible.length} ${entity.singular} · aktif ${formatRupiah(sumOf(visible.filter((row) => row.status === "active")))}`
+      }
+      progress={1}
+    />
+  ) : null;
   return (
-    <StatGrid>
+    <div className={cn("grid grid-cols-2 gap-3 md:gap-4", totalKey ? "xl:grid-cols-5 [&>*:first-child]:col-span-2 xl:[&>*:first-child]:col-span-1" : "xl:grid-cols-4")}>
+      {total}
       <StatCard tone="blue" icon={Layers} label={`Total ${entity.singular}`} value={rows.length} hint="Semua data" progress={1} />
       {counts.map((item, index) => {
         const style = statusTones[item.value] ?? { tone: (["red", "orange", "purple"] as const)[index], icon: Clock };
@@ -250,7 +271,7 @@ function StatusSummary({ entity, rows }: { entity: EntityDef; rows: Row[] }) {
           />
         );
       })}
-    </StatGrid>
+    </div>
   );
 }
 
@@ -296,7 +317,7 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
   };
   const detailHref = (row: Row) => `${entity.detailPath}/${row.id}`;
   // Baris jumlah di bawah kolom nominal, untuk koleksi yang punya rangkuman.
-  const amountKey = entity.summary?.amountKey;
+  const amountKey = entity.summary?.amountKey ?? entity.totalKey;
   const amountTotal = amountKey ? visible.reduce((total, row) => total + (Number(row[amountKey]) || 0), 0) : 0;
   // Koleksi berhalaman detail membuka detailnya saat baris diklik; yang lain langsung membuka form ubah.
   const openRow = (row: Row) => (entity.detailPath ? router.push(detailHref(row)) : setEditing({ ...row }));
@@ -334,7 +355,7 @@ export function ResourceManager({ entityKey, rows, options = {}, hiddenFields = 
         }
       />
 
-      {entity.summary ? <AmountSummary summary={entity.summary} rows={visible} /> : <StatusSummary entity={entity} rows={rows} />}
+      {entity.summary ? <AmountSummary summary={entity.summary} rows={visible} /> : <StatusSummary entity={entity} rows={rows} visible={visible} filtered={filtered} />}
 
       <div className="overflow-hidden rounded-2xl border bg-card shadow-[0_6px_24px_-16px_rgba(15,23,42,0.3)]">
         <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center">
