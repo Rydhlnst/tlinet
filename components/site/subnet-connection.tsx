@@ -13,7 +13,9 @@ type Counters = { time: number; in: string; out: string };
 type Point = { time: number; inBps: number; outBps: number };
 
 const maxPoints = 60;
-const statusRefreshMs = 60_000;
+/** Status dari LibreNMS (diperbarui router tiap ±5 menit): tiap 2 menit saat terlihat, 5 menit saat di latar (untuk notifikasi down). */
+const statusVisibleMs = 2 * 60_000;
+const statusHiddenMs = 5 * 60_000;
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
 
 /** Kecepatan dari dua bacaan penghitung; `null` bila penghitung mundur (router restart atau penghitung berputar). */
@@ -159,10 +161,15 @@ function useLiveTraffic(initial: ConnectionStatus | null, realtime: boolean, sec
         // Status lama tetap ditampilkan.
       }
     };
-    const timer = setInterval(refresh, statusRefreshMs);
+    let timer: ReturnType<typeof setTimeout>;
+    const loop = async () => {
+      await refresh();
+      if (!stopped) timer = setTimeout(loop, document.hidden ? statusHiddenMs : statusVisibleMs);
+    };
+    timer = setTimeout(loop, statusVisibleMs);
     return () => {
       stopped = true;
-      clearInterval(timer);
+      clearTimeout(timer);
     };
   }, [realtime]);
 
@@ -337,9 +344,12 @@ function UsageBar({ bps, capacityBps }: { bps: number; capacityBps: number }) {
 
 type Props = { initial: ConnectionStatus | null; realtime: boolean; capacityBps: number; reportHref?: string };
 
-/** Kartu ringkas di Beranda: status, kecepatan sekarang, dan pemakaian. Grafiknya ada di tab Koneksi. */
-export function ConnectionSummaryCard({ initial, realtime, capacityBps }: Props) {
-  const { status, health, latest } = useLiveTraffic(initial, realtime, 5, 3 * 60_000);
+/**
+ * Kartu ringkas di Beranda: status, kecepatan terakhir dari LibreNMS, dan pemakaian. Router tidak dibaca langsung di sini
+ * (hemat permintaan ke server); kecepatan langsung dan grafiknya ada di tab Koneksi.
+ */
+export function ConnectionSummaryCard({ initial, capacityBps }: Omit<Props, "realtime">) {
+  const { status, health, latest } = useLiveTraffic(initial, false, 5, 0);
   return (
     <Link href="/subnet/trafik" className="group block overflow-hidden rounded-2xl border bg-card transition-colors hover:border-foreground/20">
       <DownBanner health={health} />
@@ -368,12 +378,12 @@ export function ConnectionSummaryCard({ initial, realtime, capacityBps }: Props)
   );
 }
 
-const intervals = [2, 5, 15];
+const intervals = [5, 10, 30];
 
 /** Tab Koneksi: status, pengukur pemakaian, dan grafik langsung. Grafik MRTG lengkap ada di halaman detail. */
 export function ConnectionMonitor({ initial, realtime, capacityBps, reportHref }: Props) {
-  const [seconds, setSeconds] = useState(2);
-  const { status, health, points, latest, running, setRunning, error } = useLiveTraffic(initial, realtime, seconds, 10 * 60_000);
+  const [seconds, setSeconds] = useState(5);
+  const { status, health, points, latest, running, setRunning, error } = useLiveTraffic(initial, realtime, seconds, 5 * 60_000);
 
   return (
     <section className="overflow-hidden rounded-2xl border bg-card">
@@ -438,7 +448,7 @@ export function ConnectionMonitor({ initial, realtime, capacityBps, reportHref }
             {error ||
               (realtime
                 ? running
-                  ? `Dibaca langsung dari router tiap ${seconds} detik, berhenti otomatis setelah 10 menit.`
+                  ? `Dibaca langsung dari router tiap ${seconds} detik, berhenti otomatis setelah 5 menit.`
                   : "Dijeda. Tekan tombol putar untuk melanjutkan."
                 : "Diperbarui dari sistem monitoring TLINET setiap beberapa menit.")}
           </p>

@@ -6,7 +6,15 @@ import { initials } from "@/components/admin/detail-panels";
 import type { ChatMessage } from "@/lib/community";
 import { cn } from "@/lib/utils";
 
-const pollMs = 3000;
+/**
+ * Jeda baca ulang (setiap pembacaan = satu permintaan ke server): cepat selama obrolan ramai atau pengguna sedang mengetik,
+ * lalu melambat bila sepi. Saat halaman tidak terlihat, tidak ada pembacaan sama sekali.
+ */
+function pollDelay(idleMs: number) {
+  if (idleMs < 60_000) return 5_000;
+  if (idleMs < 5 * 60_000) return 15_000;
+  return 30_000;
+}
 const maxLength = 1000;
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
 const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Makassar" });
@@ -44,7 +52,7 @@ function Avatar({ message }: { message: ChatMessage }) {
 }
 
 /**
- * Ruang obrolan Komunitas Subnet. Pesan dibaca ulang tiap 3 detik selama halaman terlihat; pesan yang dihapus admin ikut
+ * Ruang obrolan Komunitas Subnet. Pesan dibaca ulang tiap 5–30 detik (makin sepi makin jarang) selama halaman terlihat; pesan yang dihapus admin ikut
  * hilang pada pembacaan berikutnya.
  */
 export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatMessage[]; muted: boolean }) {
@@ -56,6 +64,8 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
   const signature = useRef(initial.map((message) => message.id).join(","));
   const stickToEnd = useRef(true);
   const input = useRef<HTMLTextAreaElement>(null);
+  // Terakhir ada pesan baru, pesan terkirim, atau pengguna mengetik; menentukan jeda baca ulang.
+  const lastActivity = useRef(0);
 
   // Pesan baru: ikut turun bila pengguna memang sedang di bagian bawah (atau baru saja mengirim).
   useEffect(() => {
@@ -64,7 +74,13 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
 
   useEffect(() => {
     scrollToEnd(false);
+    lastActivity.current = Date.now();
     let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      clearTimeout(timer);
+      if (!stopped && !document.hidden) timer = setTimeout(load, pollDelay(Date.now() - lastActivity.current));
+    };
     const load = async () => {
       if (document.hidden) return;
       try {
@@ -74,20 +90,30 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
         if (stopped) return;
         setMuted(data.muted);
         const next = data.messages.map((message) => message.id).join(",");
-        if (next === signature.current) return;
-        signature.current = next;
-        stickToEnd.current = nearBottom();
-        setMessages(data.messages);
+        if (next !== signature.current) {
+          signature.current = next;
+          stickToEnd.current = nearBottom();
+          lastActivity.current = Date.now();
+          setMessages(data.messages);
+        }
       } catch {
         // Jaringan putus sesaat: dicoba lagi pada putaran berikutnya.
+      } finally {
+        schedule();
       }
     };
-    const timer = setInterval(load, pollMs);
-    document.addEventListener("visibilitychange", load);
+    // Kembali ke halaman: langsung dibaca, lalu jadwal berjalan lagi.
+    const onVisible = () => {
+      if (document.hidden) return clearTimeout(timer);
+      lastActivity.current = Date.now();
+      void load();
+    };
+    schedule();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       stopped = true;
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", load);
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
@@ -105,6 +131,7 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
         return;
       }
       setDraft("");
+      lastActivity.current = Date.now();
       signature.current = data.messages.map((message) => message.id).join(",");
       stickToEnd.current = true;
       setMessages(data.messages);
@@ -188,7 +215,10 @@ export function CommunityChat({ initial, muted: initialMuted }: { initial: ChatM
             <textarea
               ref={input}
               value={draft}
-              onChange={(event) => setDraft(event.target.value.slice(0, maxLength))}
+              onChange={(event) => {
+                setDraft(event.target.value.slice(0, maxLength));
+                lastActivity.current = Date.now();
+              }}
               onKeyDown={(event) => {
                 // Enter mengirim, Shift+Enter membuat baris baru.
                 if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {

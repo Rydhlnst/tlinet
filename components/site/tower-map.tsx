@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { trafficStopped } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const statusRefreshMs = 60_000;
+const statusRefreshMs = 5 * 60_000;
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
 
 type TowerState = "up" | "down" | "unknown";
@@ -26,7 +26,7 @@ const pinHtml = (state: TowerState) => `<span class="tower-pin is-${state}"></sp
 
 /**
  * Peta lokasi tower pelanggan dengan titik yang berkedip hijau saat trafik jalan dan merah saat down. Statusnya dari
- * /subnet/status (LibreNMS, ±5 menit), diperbarui tiap menit selama halaman terbuka.
+ * /subnet/status (LibreNMS, ±5 menit), diperbarui tiap 5 menit selama halaman terbuka.
  */
 export function TowerMap({ lat, lng, name, initial, monitored }: { lat: number; lng: number; name: string; initial: ConnectionStatus | null; monitored: boolean }) {
   const container = useRef<HTMLDivElement>(null);

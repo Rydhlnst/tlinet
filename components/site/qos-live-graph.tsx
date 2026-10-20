@@ -4,11 +4,12 @@ import { Activity } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SectionCard } from "@/components/site/subnet-ui";
 
-const refreshMs = 60_000;
+/** LibreNMS mencatat antrean tiap 5 menit; lebih sering dari itu hanya memuat gambar yang sama. */
+const refreshMs = 5 * 60_000;
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
 
 /**
- * Trafik terkini antrean QoS: grafik 2 jam terakhir dari LibreNMS, dimuat ulang tiap menit selama halaman terbuka.
+ * Trafik terkini antrean QoS: grafik 2 jam terakhir dari LibreNMS, dimuat ulang tiap 5 menit selama halaman terbuka.
  * LibreNMS tidak punya Real time untuk antrean, jadi angka "Now" di bawah grafik adalah bacaan terakhirnya (±5 menit).
  */
 export function QosLiveCard() {
@@ -67,7 +68,7 @@ export function QosLiveCard() {
           </div>
         )}
         <p className="text-xs text-muted-foreground">
-          2 jam terakhir, diperbarui otomatis tiap menit. Kecepatan saat ini ada di kolom &ldquo;Now&rdquo; (In = unduh, Out = unggah); router mencatat trafik antrean tiap ±5 menit.
+          2 jam terakhir, diperbarui otomatis tiap 5 menit. Kecepatan saat ini ada di kolom &ldquo;Now&rdquo; (In = unduh, Out = unggah); router mencatat trafik antrean tiap ±5 menit.
         </p>
       </div>
     </SectionCard>

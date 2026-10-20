@@ -12,7 +12,8 @@ async function api(path: string, revalidate: number) {
   return fetch(`${baseUrl}/api/v0${path}`, {
     headers: { "X-Auth-Token": token() },
     next: { revalidate },
-    signal: AbortSignal.timeout(15_000),
+    // Menunggu LibreNMS ikut dihitung sebagai waktu jalan fungsi di Vercel; yang lambat lebih baik gagal cepat.
+    signal: AbortSignal.timeout(8_000),
   });
 }
 
@@ -179,7 +180,7 @@ export async function getRealtimeCounters(portId: number): Promise<{ time: numbe
         headers: { Cookie: cookie, Accept: "text/plain" },
         redirect: "manual",
         cache: "no-store",
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(6_000),
       });
       // Sesi kedaluwarsa: LibreNMS mengalihkan ke /login; masuk ulang sekali.
       if (response.status === 302 || response.status === 401 || response.status === 419) continue;
@@ -196,7 +197,7 @@ export async function getRealtimeCounters(portId: number): Promise<{ time: numbe
 }
 
 /** Halaman web LibreNMS dengan sesi login; masuk ulang sekali bila sesinya kedaluwarsa. `null` bila gagal. */
-async function webFetch(path: string, timeoutMs = 15_000): Promise<Response | null> {
+async function webFetch(path: string, timeoutMs = 8_000): Promise<Response | null> {
   if (!realtimeConfigured()) return null;
   for (let attempt = 0; attempt < 2; attempt++) {
     const cookie = await sessionCookie(attempt > 0);
@@ -263,10 +264,22 @@ export function suggestQos(names: string[], list: LibrenmsQos[]) {
 export const qosLiveSeconds = 2 * 3600;
 
 /** Grafik trafik antrean QoS (SVG dari LibreNMS), atau `null` bila gagal diambil. */
+/**
+ * Grafik yang sudah diambil, per antrean dan rentang, disimpan 5 menit (selama LibreNMS belum mencatat data baru) supaya
+ * pelanggan yang membuka grafik sama tidak membuat server menunggu LibreNMS lagi.
+ */
+const qosGraphCache = new Map<string, { body: ArrayBuffer; type: string; expires: number }>();
+
 export async function getQosGraph(deviceId: number, qosId: number, range: TrafficRange | "live") {
-  const from = range === "live" ? Math.floor(Date.now() / 60_000) * 60 - qosLiveSeconds : Math.floor(Date.now() / 300_000) * 300 - trafficRanges[range].seconds;
-  const response = await webFetch(`/graph?type=device_qos_routeros_simple_traffic&device=${deviceId}&qos_id=${qosId}&from=${from}&width=1000&height=300`, 20_000);
+  const key = `${deviceId}:${qosId}:${range}`;
+  const cached = qosGraphCache.get(key);
+  if (cached && cached.expires > Date.now()) return { body: cached.body, type: cached.type };
+  const from = Math.floor(Date.now() / 300_000) * 300 - (range === "live" ? qosLiveSeconds : trafficRanges[range].seconds);
+  const response = await webFetch(`/graph?type=device_qos_routeros_simple_traffic&device=${deviceId}&qos_id=${qosId}&from=${from}&width=1000&height=300`, 10_000);
   const type = response?.headers.get("content-type") ?? "";
   if (!response || !type.startsWith("image/")) return null;
-  return { body: await response.arrayBuffer(), type };
+  const body = await response.arrayBuffer();
+  if (qosGraphCache.size > 200) qosGraphCache.clear();
+  qosGraphCache.set(key, { body, type, expires: Date.now() + 5 * 60_000 });
+  return { body, type };
 }

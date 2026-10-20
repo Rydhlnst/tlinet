@@ -13,7 +13,7 @@ import { requireDb } from "@/lib/db";
 import { customerPayments, customers, invoices, metroOrders } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah, parseCapacityBps, trafficStopped, whatsappUrl } from "@/lib/format";
 import { invoicePublicPath } from "@/lib/invoices";
-import { getPortTraffic, realtimeConfigured } from "@/lib/librenms";
+import { getPortTraffic } from "@/lib/librenms";
 import { isMetroKind, metroProgress } from "@/lib/metro";
 import { requireSubnetUser } from "@/lib/subnet";
 import { cn } from "@/lib/utils";
@@ -213,7 +213,6 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
             ) : (
               <ConnectionSummaryCard
                 initial={traffic ? { up: traffic.up, inBps: traffic.inBps, outBps: traffic.outBps, polledAt: traffic.polledAt?.getTime() ?? null } : null}
-                realtime={Boolean(user.portId) && realtimeConfigured()}
                 capacityBps={parseCapacityBps(customer.capacity)}
               />
             )}

@@ -23,7 +23,7 @@ export type ModerationMessage = {
 
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
-/** Ruang moderasi Komunitas Subnet: kirim pengumuman, hapus pesan, dan bisukan pelanggan. Dimuat ulang tiap 15 detik. */
+/** Ruang moderasi Komunitas Subnet: kirim pengumuman, hapus pesan, dan bisukan pelanggan. Dimuat ulang tiap 30 detik. */
 export function CommunityModeration({ messages }: { messages: ModerationMessage[] }) {
   const router = useRouter();
   const [draft, setDraft] = useState("");
@@ -33,7 +33,7 @@ export function CommunityModeration({ messages }: { messages: ModerationMessage[
   useEffect(() => {
     const timer = setInterval(() => {
       if (!document.hidden) router.refresh();
-    }, 15_000);
+    }, 30_000);
     return () => clearInterval(timer);
   }, [router]);
 
