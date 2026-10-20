@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { useState } from "react";
 import { isPdfUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { canShowPdfInline, PdfPages } from "./pdf-pages";
 
 const barButton =
   "inline-flex h-9 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 text-sm font-medium text-white outline-none transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/60 [&_svg]:size-4";
@@ -79,7 +80,12 @@ export function ProofViewer({
             </div>
             <div className="flex min-h-0 flex-1 items-center justify-center p-4 pt-0">
               {pdf ? (
-                <iframe src={src} title={`${name} ${label}`} className="size-full rounded-lg bg-white" />
+                canShowPdfInline() ? (
+                  <iframe src={src} title={`${name} ${label}`} className="size-full rounded-lg bg-white" />
+                ) : (
+                  // Aplikasi Android dan peramban HP tidak bisa menampilkan PDF di dalam halaman.
+                  <PdfPages src={src} title={`${name} ${label}`} />
+                )
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={src} alt={`${name} ${label}`} className="max-h-full max-w-full rounded-lg object-contain" />
