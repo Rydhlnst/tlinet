@@ -265,6 +265,44 @@ export const customerPurchases = pgTable(
   (table) => [index("customer_purchases_customer_idx").on(table.customerId, table.period)],
 );
 
+/** Karyawan perusahaan, dasar pencatatan gaji bulanan. Gaji pokok dan tunjangan di sini jadi isian awal slip gajinya. */
+export const employees = pgTable("employees", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  position: text("position").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  email: text("email").notNull().default(""),
+  bankName: text("bank_name").notNull().default(""),
+  bankAccount: text("bank_account").notNull().default(""),
+  accountHolder: text("account_holder").notNull().default(""),
+  joinDate: text("join_date").notNull().default(""),
+  baseSalary: integer("base_salary").notNull().default(0),
+  allowance: integer("allowance").notNull().default(0),
+  status: text("status").notNull().default("active"),
+  note: text("note").notNull().default(""),
+  ...timestamps,
+});
+
+/**
+ * Gaji karyawan per bulan. `amount` (gaji bersih) dihitung server: gaji pokok + tunjangan + lembur + bonus − potongan.
+ * `position` adalah jabatan saat itu, supaya riwayat lama tidak berubah ketika jabatannya berganti.
+ */
+export const salaryPayments = pgTable(
+  "salary_payments",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull().default(""),
+    position: text("position").notNull().default(""),
+    baseSalary: integer("base_salary").notNull().default(0),
+    allowance: integer("allowance").notNull().default(0),
+    overtime: integer("overtime").notNull().default(0),
+    bonus: integer("bonus").notNull().default(0),
+    deduction: integer("deduction").notNull().default(0),
+    ...billingColumns(),
+  },
+  (table) => [index("salary_payments_employee_idx").on(table.employeeId, table.period)],
+);
+
 export type InvoiceItem = { description: string; note: string; quantity: number; unitPrice: number };
 
 /**

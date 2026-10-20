@@ -2,7 +2,7 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
-import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, faqs, invoices, leads, packageCategories, packages, siteContent, subnetAccounts } from "@/lib/db/schema";
+import { articles, clients, coverageAreas, customerPayments, customerPurchases, customers, employees, faqs, invoices, leads, packageCategories, packages, salaryPayments, siteContent, subnetAccounts } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
 import { deleteInvoicePayment, deleteInvoicePurchase, syncInvoicePayment, syncInvoicePurchase, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { prepareInvoice } from "@/lib/invoices";
@@ -26,6 +26,8 @@ const tables: Record<string, EntityTable> = {
   "customer-payments": customerPayments,
   "customer-purchases": customerPurchases,
   invoices,
+  employees,
+  salaries: salaryPayments,
 };
 
 export type SaveResult = { ok: true; message: string } | { ok: false; message: string };
@@ -47,6 +49,10 @@ export async function listRecords(entity: EntityDef): Promise<RecordRow[]> {
         ? [desc(customerPurchases.period), desc(customerPurchases.createdAt)]
         : entity.key === "invoices"
         ? [desc(invoices.issueDate), desc(invoices.createdAt)]
+        : entity.key === "employees"
+        ? [asc(employees.name)]
+        : entity.key === "salaries"
+        ? [desc(salaryPayments.period), desc(salaryPayments.createdAt)]
         : table.sortOrder
         ? [asc(table.sortOrder), asc(table.createdAt)]
         : [desc(table.createdAt)];
@@ -89,6 +95,7 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
     }
   }
   if (entity.key === "invoices") await prepareInvoice(values, (input ?? {}) as Record<string, unknown>, givenId, errors);
+  if (entity.key === "salaries") await prepareSalary(values, (input ?? {}) as Record<string, unknown>, errors);
   // Pembelian berstatus lunas harus punya tanggal bayarnya.
   if (entity.key === "customer-purchases" && values.status === "paid" && !values.paidDate) errors.push("Tanggal bayar wajib diisi bila statusnya Lunas.");
   if (errors.length) return { ok: false, message: errors[0] };
@@ -115,6 +122,28 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
 }
 
 /**
+ * Gaji: isian yang dikosongkan (gaji pokok, tunjangan, jabatan) diambil dari Data Karyawan, lalu gaji bersih dihitung
+ * di server: gaji pokok + tunjangan + lembur + bonus − potongan.
+ */
+async function prepareSalary(values: Record<string, unknown>, raw: Record<string, unknown>, errors: string[]) {
+  const blank = (key: string) => raw[key] == null || String(raw[key]).trim() === "";
+  if (values.employeeId) {
+    const [employee] = await requireDb().select().from(employees).where(eq(employees.id, String(values.employeeId))).limit(1);
+    if (!employee) errors.push("Karyawan tidak ditemukan.");
+    else {
+      if (blank("baseSalary")) values.baseSalary = employee.baseSalary;
+      if (blank("allowance")) values.allowance = employee.allowance;
+      if (!String(values.position ?? "").trim()) values.position = employee.position;
+    }
+  }
+  const money = (key: string) => Number(values[key]) || 0;
+  const total = money("baseSalary") + money("allowance") + money("overtime") + money("bonus") - money("deduction");
+  if (total < 0) errors.push("Potongan lebih besar dari total gaji.");
+  values.amount = Math.max(0, total);
+  if (values.status === "paid" && !values.paidDate) errors.push("Tanggal bayar wajib diisi bila statusnya Sudah dibayar.");
+}
+
+/**
  * Membuat tagihan bulan sesudah `source` dari tagihan bulan itu; yang sudah ada di bulan tujuan dilewati.
  * Dengan `customerId`, hanya tagihan pelanggan itu (dipakai di halaman detail pelanggan).
  */
@@ -123,15 +152,21 @@ export async function generateNextMonth(entity: EntityDef, source: string, custo
   const rows = await listRecords(entity);
   const plan = planNextMonth(entity.monthly, customerId ? rows.filter((row) => row.customerId === customerId) : rows, source);
   if (!plan?.toCreate.length) return { ok: false, message: "Tidak ada tagihan yang perlu dibuat." };
+  // Gaji hanya dibuat untuk karyawan yang masih aktif.
+  if (entity.key === "salaries") {
+    const active = new Set((await requireDb().select({ id: employees.id }).from(employees).where(eq(employees.status, "active"))).map((row) => row.id));
+    plan.toCreate = plan.toCreate.filter((row) => active.has(String(row.employeeId)));
+    if (!plan.toCreate.length) return { ok: false, message: "Tidak ada karyawan aktif yang perlu dibuatkan gaji." };
+  }
   let created = 0;
   const failures: string[] = [];
   for (const row of plan.toCreate) {
     const result = await saveRecord(entity, nextMonthValues(entity.monthly, row, plan.target));
     if (result.ok) created += 1;
-    else failures.push(`${String(row.supplierName ?? row.companyName ?? "")}: ${result.message}`);
+    else failures.push(`${String(row.supplierName ?? row.companyName ?? row.position ?? "")}: ${result.message}`);
   }
   if (!created) return { ok: false, message: failures[0] ?? "Tagihan gagal dibuat." };
-  return { ok: true, message: `${created} tagihan dibuat.${failures.length ? ` ${failures.length} gagal: ${failures[0]}` : ""}` };
+  return { ok: true, message: `${created} ${entity.monthly.noun ?? "tagihan"} dibuat.${failures.length ? ` ${failures.length} gagal: ${failures[0]}` : ""}` };
 }
 
 export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveResult> {
@@ -139,6 +174,11 @@ export async function deleteRecord(entity: EntityDef, id: string): Promise<SaveR
   if (entity.key === "package-categories") {
     const used = await db.select({ id: packages.id }).from(packages).where(eq(packages.categoryId, id)).limit(1);
     if (used.length) return { ok: false, message: "Kategori masih dipakai paket. Pindahkan atau hapus paketnya terlebih dahulu." };
+  }
+  // Riwayat gaji adalah catatan keuangan: karyawannya dinonaktifkan, bukan dihapus.
+  if (entity.key === "employees") {
+    const used = await db.select({ id: salaryPayments.id }).from(salaryPayments).where(eq(salaryPayments.employeeId, id)).limit(1);
+    if (used.length) return { ok: false, message: "Karyawan ini sudah punya riwayat gaji. Ubah statusnya menjadi Nonaktif." };
   }
   if (entity.key === "invoices") {
     await deleteInvoicePayment(id);

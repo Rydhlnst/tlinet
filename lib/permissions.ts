@@ -11,7 +11,7 @@ export const permissionDefs = [
   { key: "subnet", label: "Subnet", help: "Akses portal pelanggan." },
   { key: "metro", label: "Progres Metro" },
   { key: "billing", label: "Invoice & History Pembayaran" },
-  { key: "finance", label: "Keuangan", help: "History pembelian, biaya ke NAP, dan Selisih Keuntungan." },
+  { key: "finance", label: "Keuangan", help: "History pembelian, biaya ke NAP, Selisih Keuntungan, serta Data dan Gaji Karyawan." },
   { key: "accurate", label: "Pencatatan Accurate" },
   { key: "settings", label: "Pengaturan situs & invoice" },
 ] as const;
@@ -40,6 +40,8 @@ const entityPermissions: Record<string, StaffPermission> = {
   "customer-payments": "billing",
   invoices: "billing",
   "customer-purchases": "finance",
+  employees: "finance",
+  salaries: "finance",
 };
 export const entityPermission = (entityKey: string): Permission => entityPermissions[entityKey] ?? "users";
 

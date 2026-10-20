@@ -50,7 +50,8 @@ export type EntityDef = {
    * sama sehingga yang sudah ada di bulan tujuan dilewati. `periodKey` kolom bulan/tanggal tagihannya (bawaan `period`),
    * `kind: "invoice"` memajukan tanggal invoice sebulan, dan `note` menjelaskan hasilnya di dialog konfirmasi.
    */
-  monthly?: { copyKeys: string[]; matchKeys: string[]; periodKey?: string; kind?: "billing" | "invoice"; note: string };
+  /** `noun`: sebutan barisnya di tombol dan pesan (bawaan "tagihan"), mis. "gaji". */
+  monthly?: { copyKeys: string[]; matchKeys: string[]; periodKey?: string; kind?: "billing" | "invoice"; noun?: string; note: string };
 };
 
 const ordering: Field[] = [
@@ -67,6 +68,8 @@ export const paymentStatusLabels: Record<string, string> = { paid: "Lunas", unpa
 export const clientTypeLabels: Record<string, string> = { partner: "Mitra", client: "Klien", cdn: "Cloud & CDN" };
 /** Invoice memakai istilah yang tercetak di lembarnya. */
 export const invoiceStatusLabels: Record<string, string> = { unpaid: "Unpaid", paid: "Paid" };
+export const employeeStatusLabels: Record<string, string> = { active: "Aktif", inactive: "Nonaktif" };
+export const salaryStatusLabels: Record<string, string> = { paid: "Sudah dibayar", unpaid: "Belum dibayar" };
 
 const toOptions = (labels: Record<string, string>) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 
@@ -445,6 +448,93 @@ export const entityDefs: EntityDef[] = [
       { name: "status", label: "Status", type: "select", half: true, options: toOptions(paymentStatusLabels) },
       { name: "proofUrl", label: "Invoice pemasok", type: "image", allowPdf: true, help: "Opsional. Unggah PDF atau gambar invoice dari pemasok (maks. 4 MB untuk PDF)." },
       { name: "transferProofUrl", label: "Bukti transfer", type: "image", jpgPngOnly: true, help: "Opsional. Hanya gambar JPG atau PNG." },
+      { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
+    ],
+  },
+  {
+    key: "employees",
+    label: "Data Karyawan",
+    singular: "karyawan",
+    description: "Karyawan perusahaan beserta jabatan, rekening, gaji pokok, dan tunjangan. Gaji pokok dan tunjangan di sini menjadi isian awal setiap pencatatan Gaji Karyawan.",
+    searchKeys: ["name", "position", "phone", "email", "bankName", "bankAccount", "accountHolder", "note"],
+    internal: true,
+    detailDialog: true,
+    defaults: { status: "active", baseSalary: "", allowance: "" },
+    columns: [
+      { key: "name", label: "Nama", avatar: true },
+      { key: "position", label: "Jabatan", filter: true },
+      { key: "phone", label: "WhatsApp", type: "whatsapp" },
+      { key: "bankName", label: "Bank" },
+      { key: "baseSalary", label: "Gaji pokok", type: "currency" },
+      { key: "allowance", label: "Tunjangan", type: "currency" },
+      { key: "joinDate", label: "Mulai kerja", type: "date" },
+      { key: "status", label: "Status", type: "badge", labels: employeeStatusLabels },
+    ],
+    fields: [
+      { name: "name", label: "Nama lengkap", type: "text", required: true },
+      { name: "position", label: "Jabatan", type: "text", half: true, placeholder: "Teknisi Lapangan" },
+      { name: "joinDate", label: "Mulai kerja", type: "date", half: true },
+      { name: "phone", label: "No. WhatsApp", type: "text", half: true, placeholder: "6281234567890", help: "Format internasional tanpa tanda +." },
+      { name: "email", label: "Email", type: "email", half: true },
+      { name: "bankName", label: "Bank", type: "text", half: true, placeholder: "BRI" },
+      { name: "bankAccount", label: "No. rekening", type: "text", half: true },
+      { name: "accountHolder", label: "Atas nama rekening", type: "text" },
+      { name: "baseSalary", label: "Gaji pokok per bulan (Rp)", type: "number", integer: true, min: 0, half: true, help: "Angka saja, tanpa titik." },
+      { name: "allowance", label: "Tunjangan tetap per bulan (Rp)", type: "number", integer: true, min: 0, half: true, help: "Mis. transport dan makan. Isi 0 bila tidak ada." },
+      { name: "status", label: "Status", type: "select", half: true, options: toOptions(employeeStatusLabels), help: "Karyawan nonaktif tidak ikut dibuatkan gaji bulan berikutnya." },
+      { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
+    ],
+  },
+  {
+    key: "salaries",
+    label: "Gaji Karyawan",
+    singular: "gaji",
+    description: "Gaji karyawan per bulan: gaji pokok, tunjangan, lembur, bonus, dan potongan. Gaji bersih dihitung otomatis. Generate Gaji membuat gaji bulan berikutnya dari bulan terakhir untuk karyawan yang masih aktif.",
+    searchKeys: ["position", "period", "method", "note"],
+    internal: true,
+    detailDialog: true,
+    summary: { amountKey: "amount", statusKey: "status", periodKey: "period", paidLabel: "Sudah dibayar", unpaidLabel: "Belum dibayar", periodLabel: "Gaji" },
+    monthly: {
+      noun: "gaji",
+      copyKeys: ["employeeId", "method"],
+      matchKeys: ["employeeId"],
+      note: "Karyawan, gaji pokok, tunjangan, dan metode disalin (gaji pokok dan tunjangan mengikuti Data Karyawan terbaru) dan tetap bisa diubah. Lembur, bonus, dan potongan mulai dari 0; statusnya Belum dibayar. Karyawan nonaktif dilewati.",
+    },
+    defaults: { status: "unpaid", baseSalary: "", allowance: "", overtime: "", bonus: "", deduction: "" },
+    columns: [
+      { key: "employeeId", label: "Karyawan", labelsFrom: "employeeNames", avatar: true, filter: true },
+      { key: "position", label: "Jabatan" },
+      { key: "period", label: "Bulan", type: "month" },
+      { key: "baseSalary", label: "Gaji pokok", type: "currency" },
+      { key: "allowance", label: "Tunjangan", type: "currency" },
+      { key: "overtime", label: "Lembur", type: "currency" },
+      { key: "bonus", label: "Bonus", type: "currency" },
+      { key: "deduction", label: "Potongan", type: "currency" },
+      { key: "amount", label: "Gaji bersih", type: "currency" },
+      { key: "paidDate", label: "Tanggal bayar", type: "date" },
+      { key: "status", label: "Status", type: "badge", labels: salaryStatusLabels },
+      { key: "proofUrl", label: "Bukti", type: "proof" },
+    ],
+    fields: [
+      {
+        name: "employeeId",
+        label: "Karyawan",
+        type: "select",
+        optionsFrom: "employees",
+        required: true,
+        help: "Gaji pokok, tunjangan, dan jabatan yang dikosongkan diisi dari Data Karyawan.",
+      },
+      { name: "period", label: "Bulan gaji", type: "month", required: true, half: true },
+      { name: "position", label: "Jabatan", type: "text", half: true },
+      { name: "baseSalary", label: "Gaji pokok (Rp)", type: "number", integer: true, min: 0, half: true },
+      { name: "allowance", label: "Tunjangan (Rp)", type: "number", integer: true, min: 0, half: true },
+      { name: "overtime", label: "Lembur (Rp)", type: "number", integer: true, min: 0, half: true },
+      { name: "bonus", label: "Bonus / insentif (Rp)", type: "number", integer: true, min: 0, half: true },
+      { name: "deduction", label: "Potongan (Rp)", type: "number", integer: true, min: 0, half: true, help: "Mis. kasbon, BPJS, atau absen." },
+      { name: "paidDate", label: "Tanggal bayar", type: "date", half: true, help: "Wajib diisi bila statusnya Sudah dibayar." },
+      { name: "method", label: "Metode pembayaran", type: "text", half: true, placeholder: "Transfer BRI" },
+      { name: "status", label: "Status", type: "select", half: true, options: toOptions(salaryStatusLabels) },
+      { name: "proofUrl", label: "Bukti transfer / slip gaji", type: "image", allowPdf: true, help: "Opsional. Foto, tangkapan layar, atau PDF (maks. 4 MB untuk PDF)." },
       { name: "note", label: "Keterangan", type: "textarea", rows: 2 },
     ],
   },

@@ -2,6 +2,7 @@
 
 import {
   BadgeCheck,
+  Banknote,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +15,7 @@ import {
   Eye,
   FileText,
   Handshake,
+  IdCard,
   Inbox,
   Layers,
   MapPin,
@@ -64,6 +66,8 @@ const entityIcons: Record<string, LucideIcon> = {
   faqs: CircleHelp,
   articles: Newspaper,
   clients: Handshake,
+  employees: IdCard,
+  salaries: Banknote,
 };
 
 /** Warna pil status: hijau = beres, merah = perlu ditagih/bermasalah, kuning = menunggu, abu-abu = belum aktif. */

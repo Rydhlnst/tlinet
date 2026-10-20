@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Banknote,
   Bell,
   BookOpenText,
   ChevronDown,
@@ -12,6 +13,7 @@ import {
   FolderOpen,
   Handshake,
   Home,
+  IdCard,
   Inbox,
   LayoutDashboard,
   LifeBuoy,
@@ -130,6 +132,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/data/customer-payments", label: "History Pembayaran Subnet", icon: ReceiptText, keywords: "tagihan bayar lunas riwayat" },
       { href: "/admin/data/customer-purchases", label: "History Pembelian Perusahaan", icon: ShoppingBag, keywords: "beli nap pemasok biaya riwayat" },
       { href: "/admin/keuntungan", label: "Selisih Keuntungan", icon: TrendingUp, keywords: "profit margin laba biaya isp nap" },
+      { href: "/admin/data/employees", label: "Data Karyawan", icon: IdCard, keywords: "pegawai staf jabatan rekening" },
+      { href: "/admin/data/salaries", label: "Gaji Karyawan", icon: Banknote, keywords: "payroll upah slip lembur bonus potongan" },
       { href: "/admin/data/invoices", label: "Invoice", icon: ScrollText, keywords: "tagihan faktur cetak pdf" },
     ],
   },

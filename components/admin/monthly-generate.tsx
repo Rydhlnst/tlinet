@@ -46,6 +46,7 @@ export function MonthlyGenerate({
   const plan = planNextMonth(monthly, rows);
   if (!plan) return null;
   const target = formatMonth(plan.target);
+  const noun = monthly.noun ?? "tagihan";
   const count = plan.toCreate.length;
 
   function generate() {
@@ -63,17 +64,17 @@ export function MonthlyGenerate({
     <>
       <Button variant="outline" size={size} className={className} onClick={() => setOpen(true)}>
         <CalendarPlus />
-        Generate Tagihan {target}
+        Generate {noun[0].toUpperCase() + noun.slice(1)} {target}
       </Button>
       <AlertDialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Generate tagihan {target}?</AlertDialogTitle>
+            <AlertDialogTitle>Generate {noun} {target}?</AlertDialogTitle>
             <AlertDialogDescription>
               {count > 0
-                ? `${count} tagihan ${target} akan dibuat dari tagihan ${formatMonth(plan.source)}. ${monthly.note}`
-                : `Semua tagihan ${formatMonth(plan.source)} sudah punya tagihan ${target}. Tidak ada yang perlu dibuat.`}
-              {plan.skipped > 0 && count > 0 && ` ${plan.skipped} tagihan yang sudah ada di ${target} dilewati.`}
+                ? `${count} ${noun} ${target} akan dibuat dari ${noun} ${formatMonth(plan.source)}. ${monthly.note}`
+                : `Semua ${noun} ${formatMonth(plan.source)} sudah punya ${noun} ${target}. Tidak ada yang perlu dibuat.`}
+              {plan.skipped > 0 && count > 0 && ` ${plan.skipped} ${noun} yang sudah ada di ${target} dilewati.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -87,7 +88,7 @@ export function MonthlyGenerate({
                 }}
               >
                 {pending && <LoaderCircle className="animate-spin" />}
-                Buat {count} tagihan
+                Buat {count} {noun}
               </AlertDialogAction>
             )}
           </AlertDialogFooter>

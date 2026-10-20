@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getAdminWith } from "@/lib/auth";
 import { entityPermission } from "@/lib/permissions";
 import { db } from "@/lib/db";
-import { customerPayments, customerPurchases, customers, mediaAssets } from "@/lib/db/schema";
+import { customerPayments, customerPurchases, customers, mediaAssets, salaryPayments } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
 import { isR2Url } from "@/lib/storage";
 
@@ -23,6 +23,10 @@ async function findProof(entity: string, id: string, field: string): Promise<{ p
       .limit(1);
     if (!row) return undefined;
     return field === "proofUrl" ? { proofUrl: row.proofUrl, name: `invoice-pemasok-${row.period}` } : { proofUrl: row.transferProofUrl, name: `bukti-transfer-${row.period}` };
+  }
+  if (entity === "salaries" && field === "proofUrl") {
+    const [row] = await db.select({ url: salaryPayments.proofUrl, period: salaryPayments.period }).from(salaryPayments).where(eq(salaryPayments.id, id)).limit(1);
+    return row && { proofUrl: row.url, name: `bukti-gaji-${row.period}` };
   }
   if (entity === "customers" && (field === "aosUrl" || field === "pksUrl")) {
     const [row] = await db.select({ aosUrl: customers.aosUrl, pksUrl: customers.pksUrl, siteId: customers.siteId }).from(customers).where(eq(customers.id, id)).limit(1);

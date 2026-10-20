@@ -11,7 +11,7 @@ import { listRecords } from "@/lib/cms/store";
 import { getContent } from "@/lib/data";
 import { invoiceWhatsappUrl } from "@/lib/invoices";
 import { requireDb } from "@/lib/db";
-import { customers, invoices, packageCategories } from "@/lib/db/schema";
+import { customers, employees, invoices, packageCategories } from "@/lib/db/schema";
 
 export async function generateMetadata({ params }: PageProps<"/admin/data/[entity]">): Promise<Metadata> {
   return { title: getEntityDef((await params).entity)?.label };
@@ -26,6 +26,14 @@ async function loadOptions(entityKey: string): Promise<DynamicOptions> {
   if (entityKey === "faqs") {
     const help = await getContent("help");
     return { faqCategories: help.faq.categories.map((category) => ({ value: category, label: category })) };
+  }
+  if (entityKey === "salaries") {
+    const rows = await requireDb().select({ id: employees.id, name: employees.name, position: employees.position, status: employees.status }).from(employees).orderBy(asc(employees.name));
+    return {
+      employeeNames: rows.map((employee) => ({ value: employee.id, label: employee.name })),
+      // Di form: nama dan jabatan; karyawan nonaktif ditandai.
+      employees: rows.map((employee) => ({ value: employee.id, label: [employee.name, employee.position, employee.status !== "active" && "nonaktif"].filter(Boolean).join(" · ") })),
+    };
   }
   if (customerHistoryKeys.includes(entityKey)) {
     const rows = await requireDb().select({ id: customers.id, name: customers.name, company: customers.company, siteId: customers.siteId, photos: customers.photos }).from(customers);
