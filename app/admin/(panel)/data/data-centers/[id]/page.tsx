@@ -3,10 +3,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DataCenterDetail } from "@/components/admin/data-center-detail";
 import { requireAdmin } from "@/lib/auth";
-import { mrtgFallbackLabel } from "@/lib/data-centers";
+import { mrtgFallbackLabel, parseMrtgSource } from "@/lib/data-centers";
 import { requireDb } from "@/lib/db";
 import { dataCenterPayments, dataCenters } from "@/lib/db/schema";
-import { trafficRanges, type TrafficRange } from "@/lib/librenms";
+import { parseCapacityBps } from "@/lib/format";
+import { realtimeConfigured, trafficRanges, type TrafficRange } from "@/lib/librenms";
 
 export const metadata: Metadata = { title: "Detail Data Center" };
 
@@ -22,5 +23,17 @@ export default async function DataCenterPage({ params, searchParams }: PageProps
   ]);
   if (!dataCenter) notFound();
 
-  return <DataCenterDetail dataCenter={dataCenter} payments={payments} range={range} ranges={Object.entries(trafficRanges).map(([key, value]) => ({ key, label: value.label }))} sourceLabel={mrtgFallbackLabel(dataCenter.mrtgSource)} />;
+  // Real time membaca penghitung port langsung dari router; antrean QoS tidak punya data real time di LibreNMS.
+  const source = parseMrtgSource(dataCenter.mrtgSource);
+  const live = {
+    available: source?.kind === "port" && realtimeConfigured(),
+    capacityBps: parseCapacityBps(dataCenter.capacity),
+    note: !source
+      ? "Pilih port di Grafik MRTG (Edit Data) untuk melihat trafik real time."
+      : source.kind === "qos"
+        ? "Real time hanya tersedia untuk port. Antrean QoS tidak punya data real time di LibreNMS; lihat grafik MRTG di bawah."
+        : "Real time belum diatur di server (LIBRENMS_USERNAME dan LIBRENMS_PASSWORD).",
+  };
+
+  return <DataCenterDetail dataCenter={dataCenter} payments={payments} range={range} ranges={Object.entries(trafficRanges).map(([key, value]) => ({ key, label: value.label }))} sourceLabel={mrtgFallbackLabel(dataCenter.mrtgSource)} live={live} />;
 }

@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 /** Status port dari LibreNMS (lihat /subnet/status). Download = trafik keluar port menuju pelanggan. */
 export type ConnectionStatus = { up: boolean; inBps: number; outBps: number; polledAt: number | null };
 
-type Counters = { time: number; in: string; out: string };
-type Point = { time: number; inBps: number; outBps: number };
+export type Counters = { time: number; in: string; out: string };
+export type Point = { time: number; inBps: number; outBps: number };
 
 const maxPoints = 60;
 /** Status dari LibreNMS (diperbarui router tiap ±5 menit): tiap 2 menit saat terlihat, 5 menit saat di latar (untuk notifikasi down). */
@@ -20,7 +20,7 @@ const statusHiddenMs = 5 * 60_000;
 const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit" });
 
 /** Kecepatan dari dua bacaan penghitung; `null` bila penghitung mundur (router restart atau penghitung berputar). */
-function rate(previous: Counters, current: Counters): Point | null {
+export function rate(previous: Counters, current: Counters): Point | null {
   const seconds = current.time - previous.time;
   const inDiff = BigInt(current.in) - BigInt(previous.in);
   const outDiff = BigInt(current.out) - BigInt(previous.out);
@@ -225,7 +225,8 @@ function niceMax(value: number) {
   return ([1, 2, 5, 10].find((step) => step * power >= value) ?? 10) * power;
 }
 
-function TrafficChart({ points, height, detailed }: { points: Point[]; height: number; detailed?: boolean }) {
+/** Grafik garis kecepatan: `outBps` berwarna brand dengan area, `inBps` garis hijau. Dipakai juga di Data Center admin. */
+export function TrafficChart({ points, height, detailed }: { points: Point[]; height: number; detailed?: boolean }) {
   const id = useId();
   const width = 600;
   const top = niceMax(Math.max(0, ...points.map((point) => Math.max(point.inBps, point.outBps))) * 1.1);

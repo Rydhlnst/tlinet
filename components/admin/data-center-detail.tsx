@@ -11,7 +11,9 @@ import type { dataCenterPayments, dataCenters } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AmountSummary } from "./amount-summary";
-import { InfoList, initials, Panel, StatusPill } from "./detail-panels";
+import { DataCenterLive } from "./data-center-live";
+import { InfoList, Panel, StatusPill } from "./detail-panels";
+import { EditableAvatar } from "./editable-avatar";
 import { PageHero } from "./page-hero";
 import { ProofViewer } from "./proof-viewer";
 import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from "./record-dialogs";
@@ -36,6 +38,7 @@ export function DataCenterDetail({
   range,
   ranges,
   sourceLabel,
+  live,
 }: {
   dataCenter: DataCenter;
   payments: Payment[];
@@ -44,6 +47,8 @@ export function DataCenterDetail({
   ranges: { key: string; label: string }[];
   /** Nama singkat sumber grafik ("Port #2533"); `null` bila belum diatur. Nama lengkapnya dimuat dari LibreNMS. */
   sourceLabel: string | null;
+  /** MRTG Real time: tersedia untuk sumber port; `note` menjelaskan bila tidak. */
+  live: { available: boolean; capacityBps: number; note: string };
 }) {
   const [sourceName, setSourceName] = useState<string | null>(null);
   const source = dataCenter.mrtgSource;
@@ -97,7 +102,7 @@ export function DataCenterDetail({
 
       <section className="flex flex-col gap-6 rounded-xl border bg-card p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-5">
-          <div className="flex size-20 shrink-0 items-center justify-center rounded-full bg-brand-soft text-2xl font-semibold text-brand-ink">{initials(dataCenter.company)}</div>
+          <EditableAvatar kind="data-centers" id={dataCenter.id} name={dataCenter.company} photo={dataCenter.photoUrl} />
           <div className="flex min-w-0 flex-col items-start gap-1.5">
             <p className="max-w-full truncate text-xl font-semibold">{dataCenter.company}</p>
             {dataCenter.service && <p className="max-w-full truncate text-sm text-muted-foreground">{dataCenter.service}</p>}
@@ -144,6 +149,8 @@ export function DataCenterDetail({
           />
         </Panel>
       </div>
+
+      <DataCenterLive id={dataCenter.id} available={live.available} capacityBps={live.capacityBps} note={live.note} />
 
       <Panel
         icon={ChartLine}
