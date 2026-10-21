@@ -298,11 +298,36 @@ export async function deleteRecord(entity: EntityDef, id: string, deletedBy = ""
 }
 
 const maxCustomerPhotos = 30;
+/** Hanya URL hasil unggahan (/media/… atau https://…) yang diterima sebagai foto. */
+const validPhotoUrl = (url: string) => /^(\/media\/|https:\/\/)/.test(url) && url.length <= 500;
+
+/**
+ * Mengganti foto profil pelanggan dari admin: fotonya jadi foto pertama di Data Pelanggan, dan foto akun portal Subnet
+ * (dipakai di portal dan Forum) ikut diganti supaya di mana pun tampil sama.
+ */
+export async function setCustomerProfilePhoto(id: string, url: string): Promise<SaveResult> {
+  if (!validPhotoUrl(url)) return { ok: false, message: "Tautan foto tidak valid." };
+  const db = requireDb();
+  const [customer] = await db.select({ photos: customers.photos }).from(customers).where(eq(customers.id, id)).limit(1);
+  if (!customer) return { ok: false, message: "Pelanggan tidak ditemukan. Muat ulang halaman lalu coba lagi." };
+  const photos = [url, ...customer.photos.filter((photo) => photo !== url)].slice(0, maxCustomerPhotos);
+  await db.update(customers).set({ photos, updatedAt: new Date() }).where(eq(customers.id, id));
+  await db.update(subnetAccounts).set({ photoUrl: url, updatedAt: new Date() }).where(eq(subnetAccounts.customerId, id));
+  return { ok: true, message: "Foto profil pelanggan diganti." };
+}
+
+/** Mengganti foto profil / logo Data Center. */
+export async function setDataCenterPhoto(id: string, url: string): Promise<SaveResult> {
+  if (!validPhotoUrl(url)) return { ok: false, message: "Tautan foto tidak valid." };
+  const updated = await requireDb().update(dataCenters).set({ photoUrl: url, updatedAt: new Date() }).where(eq(dataCenters.id, id)).returning({ id: dataCenters.id });
+  if (!updated.length) return { ok: false, message: "Data Center tidak ditemukan. Muat ulang halaman lalu coba lagi." };
+  return { ok: true, message: "Foto profil Data Center diganti." };
+}
 
 /** Mengganti daftar foto pelanggan. Hanya URL hasil unggahan (/media/… atau https://…) yang diterima. */
 export async function saveCustomerPhotos(id: string, input: unknown): Promise<SaveResult> {
   const photos = [...new Set((Array.isArray(input) ? input : []).map((item) => String(item ?? "").trim()))];
-  if (photos.some((url) => !/^(\/media\/|https:\/\/)/.test(url) || url.length > 500)) return { ok: false, message: "Tautan foto tidak valid." };
+  if (photos.some((url) => !validPhotoUrl(url))) return { ok: false, message: "Tautan foto tidak valid." };
   if (photos.length > maxCustomerPhotos) return { ok: false, message: `Maksimal ${maxCustomerPhotos} foto per pelanggan.` };
   const updated = await requireDb().update(customers).set({ photos, updatedAt: new Date() }).where(eq(customers.id, id)).returning({ id: customers.id });
   if (!updated.length) return { ok: false, message: "Pelanggan tidak ditemukan. Muat ulang halaman lalu coba lagi." };

@@ -11,7 +11,7 @@ import { eq as equals } from "drizzle-orm";
 import { createSession, credentialsConfigured, credentialsMatch, destroySession, findStaffLogin, getAdmin, getAdminWith } from "@/lib/auth";
 import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
-import { deleteRecord, generateNextMonth, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
+import { deleteRecord, generateNextMonth, saveContent, saveCustomerPhotos, saveRecord, setCustomerProfilePhoto, setDataCenterPhoto, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
 import { customerPayments, customerPurchases, customers, dataCenterPayments, invoices, mediaAssets, salaryPayments, staffUsers } from "@/lib/db/schema";
 import { mrtgSourceOptions } from "@/lib/data-centers";
@@ -170,6 +170,19 @@ export async function mrtgSourceOptionsAction(): Promise<{ value: string; label:
 export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {
   if (!(await getAdminWith("customers"))) return expired;
   return saveCustomerPhotos(id, photos);
+}
+
+/** Ganti foto profil dari halaman detail (ikon edit di foto): `kind` menentukan datanya dan hak akses yang dibutuhkan. */
+export async function setProfilePhotoAction(kind: "customers" | "data-centers", id: string, url: string): Promise<SaveResult> {
+  if (kind === "customers") {
+    if (!(await getAdminWith("customers"))) return expired;
+    return setCustomerProfilePhoto(id, url);
+  }
+  if (kind === "data-centers") {
+    if (!(await getAdminWith("finance"))) return expired;
+    return setDataCenterPhoto(id, url);
+  }
+  return { ok: false, message: "Data ini tidak punya foto profil." };
 }
 
 export type MediaItem = { id: string; url: string; filename: string; mimeType: string; size: number; createdAt: Date };

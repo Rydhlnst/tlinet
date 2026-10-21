@@ -578,7 +578,7 @@ export const entityDefs: EntityDef[] = [
     bandwidthKey: "capacity",
     defaults: { status: "active", monthlyFee: "" },
     columns: [
-      { key: "company", label: "PT", avatar: true },
+      { key: "company", label: "PT", avatar: true, avatarPhoto: "photoUrl" },
       { key: "interconnection", label: "Interkoneksi", filter: true },
       { key: "service", label: "Layanan" },
       { key: "capacity", label: "Kapasitas", filter: true },
@@ -606,6 +606,7 @@ export const entityDefs: EntityDef[] = [
         half: true,
         help: "Port atau antrean QoS di LibreNMS. Grafiknya tampil di halaman detail Data Center.",
       },
+      { name: "photoUrl", label: "Foto profil / logo", type: "image", help: "Opsional. Tampil di samping nama PT; bisa juga diganti langsung dari foto di halaman detail." },
       { name: "note", label: "Keterangan", type: "textarea", rows: 3 },
     ],
   },

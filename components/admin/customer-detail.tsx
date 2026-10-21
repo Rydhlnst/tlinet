@@ -24,7 +24,8 @@ import type { customerPayments, customerPurchases, customers, invoices as invoic
 import { formatDate, formatMonth, formatRupiah } from "@/lib/format";
 import { AmountSummary } from "./amount-summary";
 import { StatusToggle } from "./status-toggle";
-import { customerTones, InfoList, initials, Panel, StatusPill } from "./detail-panels";
+import { customerTones, InfoList, Panel, StatusPill } from "./detail-panels";
+import { EditableAvatar } from "./editable-avatar";
 import { MonthlyGenerate } from "./monthly-generate";
 import { uploadImage } from "./image-field";
 import { ProofViewer } from "./proof-viewer";
@@ -372,14 +373,7 @@ export function CustomerDetail({
 
       <section className="flex flex-col gap-6 rounded-xl border bg-card p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-5">
-          <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-soft text-2xl font-semibold text-brand-ink">
-            {customer.photos[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={customer.photos[0]} alt={`Foto ${customer.name}`} className="size-full object-cover" />
-            ) : (
-              initials(customer.name)
-            )}
-          </div>
+          <EditableAvatar kind="customers" id={customer.id} name={customer.name} photo={customer.photos[0] ?? ""} />
           <div className="flex min-w-0 flex-col items-start gap-1.5">
             <p className="max-w-full truncate text-xl font-semibold">{customer.name}</p>
             {customer.company && <p className="max-w-full truncate text-sm text-muted-foreground">{customer.company}</p>}

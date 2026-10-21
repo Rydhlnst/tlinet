@@ -319,6 +319,8 @@ export const dataCenters = pgTable("data_centers", {
   vlan: text("vlan").notNull().default(""),
   monthlyFee: integer("monthly_fee").notNull().default(0),
   mrtgSource: text("mrtg_source").notNull().default(""),
+  /** Foto profil / logo PT-nya, diganti admin dari halaman detail. */
+  photoUrl: text("photo_url").notNull().default(""),
   status: text("status").notNull().default("active"),
   note: text("note").notNull().default(""),
   ...timestamps,
