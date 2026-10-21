@@ -416,7 +416,7 @@ export default async function DashboardPage() {
               href="/admin/data/customer-purchases"
             />
           </StatGrid>
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <Panel title="Grafik Arus Kas" icon={ChartColumn} description="Uang masuk dan uang keluar 6 bulan terakhir, menurut tanggal bayar.">
               <BarChart
                 data={cash.map((item) => ({ month: item.month, values: billing ? [item.in, item.out] : [item.out] }))}
@@ -497,7 +497,7 @@ export default async function DashboardPage() {
         </Panel>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]">
         {billing ? (
           <Panel
             title="Transaksi Terbaru"
