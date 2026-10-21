@@ -27,14 +27,11 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { headers } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PageHero, StatCard, StatGrid } from "@/components/admin/page-hero";
 import { Button } from "@/components/ui/button";
 import { accurateMode } from "@/lib/accurate";
-import { adminAppUserAgent } from "@/lib/admin-app";
 import { requireAdmin } from "@/lib/auth";
 import { invoiceStatusLabels } from "@/lib/cms/entities";
 import { requireDb } from "@/lib/db";
@@ -45,6 +42,8 @@ import { pingR2, storageMode } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 const monthLabel = new Intl.DateTimeFormat("id-ID", { month: "short", year: "numeric", timeZone: "UTC" });
+/** Di HP (dan aplikasi TLINET Admin) label bulan grafik tanpa tahun agar tidak saling bertumpuk. */
+const shortMonthLabel = new Intl.DateTimeFormat("id-ID", { month: "short", timeZone: "UTC" });
 const todayFormat = new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Makassar" });
 
 /** "2026-10" untuk enam bulan terakhir (termasuk bulan ini, WITA), dari yang terlama. */
@@ -144,7 +143,10 @@ function BarChart({ data, series }: { data: { month: string; values: number[] }[
                   />
                 ))}
               </div>
-              <span className="mt-2 text-[11px] whitespace-nowrap text-muted-foreground">{monthLabel.format(new Date(`${item.month}-01T00:00:00Z`))}</span>
+              <span className="mt-2 text-[11px] whitespace-nowrap text-muted-foreground">
+                <span className="sm:hidden">{shortMonthLabel.format(new Date(`${item.month}-01T00:00:00Z`))}</span>
+                <span className="hidden sm:inline">{monthLabel.format(new Date(`${item.month}-01T00:00:00Z`))}</span>
+              </span>
             </div>
           ))}
         </div>
@@ -234,8 +236,6 @@ const activityStyle = {
 
 export default async function DashboardPage() {
   const admin = await requireAdmin("dashboard");
-  // Aplikasi TLINET Admin hanya untuk menu operasional; halaman awalnya Data Pelanggan.
-  if (((await headers()).get("user-agent") ?? "").includes(adminAppUserAgent)) redirect("/admin/data/customers");
   const billing = can(admin, "billing");
   // Pembelian dan gaji termasuk data Keuangan; uang masuk (pembayaran pelanggan) termasuk Invoice & History Pembayaran.
   const finance = can(admin, "finance");

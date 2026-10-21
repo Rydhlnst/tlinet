@@ -17,7 +17,7 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
     requireDb().select({ value: count() }).from(leads).where(eq(leads.status, "new")),
     headers(),
   ]);
-  // Di aplikasi TLINET Admin: hanya menu operasional, dan tombol unduh aplikasinya tidak tampil.
+  // Di aplikasi TLINET Admin: hanya Ringkasan dan menu operasional, dan tombol unduh aplikasinya tidak tampil.
   const inAdminApp = (requestHeaders.get("user-agent") ?? "").includes(adminAppUserAgent);
 
   return (

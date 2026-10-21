@@ -151,12 +151,15 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 ];
 
 /** Menu yang boleh dibuka pengguna ini; grup tanpa menu tersisa ikut disembunyikan. */
-function visibleNav(admin: AdminUser, operationalOnly = false) {
+/** Di aplikasi TLINET Admin: Ringkasan dan menu operasional saja. */
+const appHrefs = new Set(["/admin"]);
+
+function visibleNav(admin: AdminUser, appMode = false) {
   return navGroups
-    .filter((group) => !operationalOnly || group.label === "Operasional")
     .map((group) => ({
       ...group,
       items: group.items
+        .filter((item) => !appMode || group.label === "Operasional" || appHrefs.has(item.href))
         .filter((item) => can(admin, routePermission(item.href)))
         .map((item) => ({ ...item, children: item.children?.filter((child) => can(admin, routePermission(child.href))) })),
     }))
@@ -324,6 +327,7 @@ function CommandMenu({ admin, appMode }: { admin: AdminUser; appMode: boolean })
 
 /** Tab bawah di HP: menu operasional yang paling sering dibuka, dengan label pendek. */
 const tabLabels: Record<string, string> = {
+  "/admin": "Ringkasan",
   "/admin/data/customers": "Pelanggan",
   "/admin/subnet": "Subnet",
   "/admin/metro": "Metro",
@@ -334,7 +338,7 @@ const tabLabels: Record<string, string> = {
 
 /**
  * Navigasi HP (dan aplikasi TLINET Admin): judul halaman di atas, tab bawah untuk menu utama, dan "Menu" untuk sisanya.
- * Di aplikasi hanya menu operasional yang tampil.
+ * Di aplikasi hanya Ringkasan dan menu operasional yang tampil.
  */
 function MobileNav({ admin, appMode }: { admin: AdminUser; appMode: boolean }) {
   const pathname = usePathname();
