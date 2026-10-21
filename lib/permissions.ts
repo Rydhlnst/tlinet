@@ -46,6 +46,8 @@ const entityPermissions: Record<string, StaffPermission> = {
   "customer-purchases": "finance",
   employees: "finance",
   salaries: "finance",
+  "data-centers": "finance",
+  "data-center-payments": "finance",
 };
 export const entityPermission = (entityKey: string): Permission => entityPermissions[entityKey] ?? "users";
 

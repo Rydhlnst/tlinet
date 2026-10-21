@@ -2,13 +2,13 @@ import { eq } from "drizzle-orm";
 import { getAdminWith } from "@/lib/auth";
 import { entityPermission } from "@/lib/permissions";
 import { db } from "@/lib/db";
-import { customerPayments, customerPurchases, customers, mediaAssets, salaryPayments } from "@/lib/db/schema";
+import { customerPayments, customerPurchases, customers, dataCenterPayments, mediaAssets, salaryPayments } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
 import { isR2Url } from "@/lib/storage";
 
 const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif", "application/pdf": "pdf" };
 
-/** Berkas yang boleh disajikan: bukti transfer dan invoice pemasok di riwayat, serta AOS dan PKS pelanggan. Hasilnya tautan dan nama unduhannya. */
+/** Berkas yang boleh disajikan: bukti transfer dan invoice pemasok / Data Center di riwayat, serta AOS dan PKS pelanggan. Hasilnya tautan dan nama unduhannya. */
 async function findProof(entity: string, id: string, field: string): Promise<{ proofUrl: string; name: string } | undefined> {
   if (!db) return undefined;
   if (entity === "customer-payments" && field === "proofUrl") {
@@ -27,6 +27,15 @@ async function findProof(entity: string, id: string, field: string): Promise<{ p
   if (entity === "salaries" && field === "proofUrl") {
     const [row] = await db.select({ url: salaryPayments.proofUrl, period: salaryPayments.period }).from(salaryPayments).where(eq(salaryPayments.id, id)).limit(1);
     return row && { proofUrl: row.url, name: `bukti-gaji-${row.period}` };
+  }
+  if (entity === "data-center-payments" && (field === "proofUrl" || field === "invoiceUrl")) {
+    const [row] = await db
+      .select({ proofUrl: dataCenterPayments.proofUrl, invoiceUrl: dataCenterPayments.invoiceUrl, period: dataCenterPayments.period })
+      .from(dataCenterPayments)
+      .where(eq(dataCenterPayments.id, id))
+      .limit(1);
+    if (!row) return undefined;
+    return field === "invoiceUrl" ? { proofUrl: row.invoiceUrl, name: `invoice-data-center-${row.period}` } : { proofUrl: row.proofUrl, name: `bukti-transfer-${row.period}` };
   }
   if (entity === "customers" && (field === "aosUrl" || field === "pksUrl")) {
     const [row] = await db.select({ aosUrl: customers.aosUrl, pksUrl: customers.pksUrl, siteId: customers.siteId }).from(customers).where(eq(customers.id, id)).limit(1);

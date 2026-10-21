@@ -8,13 +8,14 @@ import { setRecordStatusAction } from "@/app/admin/actions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 /** Data dengan status pembayaran yang bisa ditandai lunas dengan satu klik dari daftar. */
-export const statusToggleEntities = ["invoices", "customer-payments", "customer-purchases", "salaries"];
+export const statusToggleEntities = ["invoices", "customer-payments", "customer-purchases", "salaries", "data-center-payments"];
 
 const words: Record<string, { paid: string; unpaid: string; sync?: string }> = {
   invoices: { paid: "Paid", unpaid: "Unpaid", sync: "History Pembayaran Subnet ikut diperbarui." },
   "customer-payments": { paid: "Lunas", unpaid: "Belum lunas", sync: "Invoice-nya ikut diperbarui." },
   "customer-purchases": { paid: "Lunas", unpaid: "Belum lunas" },
   salaries: { paid: "Sudah dibayar", unpaid: "Belum dibayar" },
+  "data-center-payments": { paid: "Lunas", unpaid: "Belum lunas" },
 };
 
 /**

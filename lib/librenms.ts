@@ -33,8 +33,8 @@ export type LibrenmsPort = { portId: number; deviceId: number; device: string; n
 type RawPort = { port_id: number; ifName: string | null; ifDescr: string | null; ifOperStatus: string | null };
 type RawDevice = { device_id: number; hostname: string; sysName: string | null; status: number | boolean };
 
-/** Semua port VLAN di semua router, untuk dipilih admin. Router yang sedang aktif lebih dulu. */
-export async function listLibrenmsPorts(): Promise<LibrenmsPort[]> {
+/** Port di semua router (bawaan: hanya port VLAN; `null` untuk semua port), untuk dipilih admin. Router yang sedang aktif lebih dulu. */
+export async function listLibrenmsPorts(only: RegExp | null = /vlan/i): Promise<LibrenmsPort[]> {
   const devices = (await json<{ devices?: RawDevice[] }>("/devices?type=all", 300))?.devices ?? [];
   const sorted = [...devices].sort((a, b) => Number(Boolean(b.status)) - Number(Boolean(a.status)));
   const lists = await Promise.all(
@@ -43,7 +43,7 @@ export async function listLibrenmsPorts(): Promise<LibrenmsPort[]> {
       const label = `${device.sysName || device.hostname} (${device.hostname})`;
       return ports
         .map((port) => ({ portId: port.port_id, deviceId: device.device_id, device: label, name: (port.ifName || port.ifDescr || "").trim(), up: port.ifOperStatus === "up" }))
-        .filter((port) => /vlan/i.test(port.name))
+        .filter((port) => port.name && (!only || only.test(port.name)))
         .sort((a, b) => a.name.localeCompare(b.name, "id", { numeric: true }));
     }),
   );

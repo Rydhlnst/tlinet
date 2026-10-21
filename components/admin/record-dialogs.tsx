@@ -2,9 +2,9 @@
 
 import { LoaderCircle, Pencil, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, useTransition, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
-import { deleteRecordAction, saveRecordAction } from "@/app/admin/actions";
+import { deleteRecordAction, mrtgSourceOptionsAction, saveRecordAction } from "@/app/admin/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,9 @@ import { ProofViewer } from "./proof-viewer";
 
 export type Row = Record<string, unknown> & { id?: string };
 
+/** Pilihan yang lambat dimuat (mis. dari LibreNMS): diambil saat form dibuka, bukan saat halamannya dimuat. */
+const lazyOptions: Record<string, () => Promise<DynamicOptions[string]>> = { mrtgSources: mrtgSourceOptionsAction };
+
 /** Form samping untuk menambah atau mengubah satu baris; `value` null berarti tertutup. */
 export function RecordSheet({
   entityKey,
@@ -44,7 +47,19 @@ export function RecordSheet({
   const entity = getEntityDef(entityKey)!;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [loaded, setLoaded] = useState<DynamicOptions>({});
   const onClose = () => setValue(null);
+  const open = value !== null;
+  const lazyKeys = entity.fields
+    .flatMap((field) => (field.type === "select" && field.optionsFrom && lazyOptions[field.optionsFrom] && !options?.[field.optionsFrom] ? [field.optionsFrom] : []))
+    .join(",");
+
+  useEffect(() => {
+    if (!open || !lazyKeys) return;
+    for (const key of lazyKeys.split(",")) {
+      lazyOptions[key]().then((list) => setLoaded((current) => ({ ...current, [key]: list })));
+    }
+  }, [open, lazyKeys]);
 
   function save() {
     if (!value) return;
@@ -72,7 +87,7 @@ export function RecordSheet({
             <FieldGrid
               fields={entity.fields.filter((field) => !hiddenFields.includes(field.name))}
               values={value}
-              options={options}
+              options={{ ...loaded, ...options }}
               // Pembaruan fungsional: peta mengisi latitude dan longitude dalam dua panggilan berurutan.
               onChange={(name, next) => setValue((current) => (current ? { ...current, [name]: next } : current))}
             />

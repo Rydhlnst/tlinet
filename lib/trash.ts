@@ -10,6 +10,8 @@ import {
   customerPayments,
   customerPurchases,
   customers,
+  dataCenterPayments,
+  dataCenters,
   employees,
   faqs,
   invoices,
@@ -42,6 +44,8 @@ const tables: Record<string, PgTable> = {
   customerPayments,
   customerPurchases,
   customers,
+  dataCenterPayments,
+  dataCenters,
   employees,
   faqs,
   invoices,
@@ -55,7 +59,7 @@ const tables: Record<string, PgTable> = {
   subnetAccounts,
 };
 /** Urutan pemulihan: induk dulu (pelanggan) sebelum data yang merujuknya (pesan Forum, akun Subnet). */
-const restoreOrder = ["customers", "employees", "invoices"];
+const restoreOrder = ["customers", "employees", "dataCenters", "invoices"];
 
 type Rows = Record<string, unknown>[];
 

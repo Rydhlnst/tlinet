@@ -29,6 +29,7 @@ import {
   RotateCcw,
   ScrollText,
   Search,
+  Server,
   ShoppingBag,
   Tags,
   Trash2,
@@ -72,6 +73,8 @@ const entityIcons: Record<string, LucideIcon> = {
   clients: Handshake,
   employees: IdCard,
   salaries: Banknote,
+  "data-centers": Server,
+  "data-center-payments": ReceiptText,
 };
 
 /** Warna pil status: hijau = beres, merah = perlu ditagih/bermasalah, kuning = menunggu, abu-abu = belum aktif. */

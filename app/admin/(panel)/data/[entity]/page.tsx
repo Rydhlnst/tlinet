@@ -8,6 +8,7 @@ import { can, entityPermission } from "@/lib/permissions";
 import { customerHistoryKeys, getEntityDef } from "@/lib/cms/entities";
 import { withCustomerData } from "@/lib/cms/linked";
 import { listRecords } from "@/lib/cms/store";
+import { dataCenterOptions } from "@/lib/data-centers";
 import { getContent } from "@/lib/data";
 import { invoiceWhatsappUrl } from "@/lib/invoices";
 import { requireDb } from "@/lib/db";
@@ -35,6 +36,7 @@ async function loadOptions(entityKey: string): Promise<DynamicOptions> {
       employees: rows.map((employee) => ({ value: employee.id, label: [employee.name, employee.position, employee.status !== "active" && "nonaktif"].filter(Boolean).join(" · ") })),
     };
   }
+  if (entityKey === "data-center-payments") return dataCenterOptions();
   if (customerHistoryKeys.includes(entityKey)) {
     const rows = await requireDb().select({ id: customers.id, name: customers.name, company: customers.company, siteId: customers.siteId, photos: customers.photos }).from(customers);
     // Pelanggan dikenali lewat PT-nya; nama orang hanya dipakai bila PT kosong.

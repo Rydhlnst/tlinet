@@ -35,7 +35,7 @@ import { accurateMode } from "@/lib/accurate";
 import { requireAdmin } from "@/lib/auth";
 import { invoiceStatusLabels } from "@/lib/cms/entities";
 import { requireDb } from "@/lib/db";
-import { articles, coverageAreas, customerPayments, customerPurchases, customers, employees, invoices, leads, packages, salaryPayments } from "@/lib/db/schema";
+import { articles, coverageAreas, customerPayments, customerPurchases, customers, dataCenterPayments, employees, invoices, leads, packages, salaryPayments } from "@/lib/db/schema";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { pingR2, storageMode } from "@/lib/storage";
@@ -258,7 +258,7 @@ export default async function DashboardPage() {
   ]);
 
   type MoneyRow = { amount: number; status: string; paidDate: string; period: string };
-  const [paymentRows, purchaseRows, salaryRows, [activeEmployees]]: [MoneyRow[], MoneyRow[], MoneyRow[], { value: number }[]] = await Promise.all([
+  const [paymentRows, purchaseRows, salaryRows, dataCenterRows, [activeEmployees]]: [MoneyRow[], MoneyRow[], MoneyRow[], MoneyRow[], { value: number }[]] = await Promise.all([
     billing && finance
       ? db.select({ amount: customerPayments.amount, status: customerPayments.status, paidDate: customerPayments.paidDate, period: customerPayments.period }).from(customerPayments)
       : Promise.resolve([]),
@@ -267,6 +267,10 @@ export default async function DashboardPage() {
       : Promise.resolve([]),
     finance
       ? db.select({ amount: salaryPayments.amount, status: salaryPayments.status, paidDate: salaryPayments.paidDate, period: salaryPayments.period }).from(salaryPayments)
+      : Promise.resolve([]),
+    // Pembayaran ke Data Center juga pembelian perusahaan.
+    finance
+      ? db.select({ amount: dataCenterPayments.amount, status: dataCenterPayments.status, paidDate: dataCenterPayments.paidDate, period: dataCenterPayments.period }).from(dataCenterPayments)
       : Promise.resolve([]),
     finance ? db.select({ value: count() }).from(employees).where(eq(employees.status, "active")) : Promise.resolve([{ value: 0 }]),
   ]);
@@ -292,15 +296,18 @@ export default async function DashboardPage() {
   const paidIn = (list: MoneyRow[], month: string) => total(list.filter((row) => row.status === "paid" && cashMonth(row) === month));
   const cash = months.map((month) => {
     const purchases = paidIn(purchaseRows, month);
+    const dataCenters = paidIn(dataCenterRows, month);
     const salaries = paidIn(salaryRows, month);
-    return { month, in: paidIn(paymentRows, month), out: purchases + salaries, purchases, salaries };
+    return { month, in: paidIn(paymentRows, month), out: purchases + dataCenters + salaries, purchases, dataCenters, salaries };
   });
   const [cashBefore, cashNow] = cash.slice(-2);
   const net = cashNow.in - cashNow.out;
-  const unpaidOut = [...purchaseRows, ...salaryRows].filter((row) => row.status !== "paid");
+  const unpaidOut = [...purchaseRows, ...dataCenterRows, ...salaryRows].filter((row) => row.status !== "paid");
   const thisMonth = months.at(-1)!;
   const ofMonth = (list: MoneyRow[]) => list.filter((row) => row.period.slice(0, 7) === thisMonth);
-  const purchasesNow = ofMonth(purchaseRows);
+  const supplierNow = ofMonth(purchaseRows);
+  const dataCentersNow = ofMonth(dataCenterRows);
+  const purchasesNow = [...supplierNow, ...dataCentersNow];
   const salariesNow = ofMonth(salaryRows);
   const paidOf = (list: MoneyRow[]) => total(list.filter((row) => row.status === "paid"));
   const unpaidOf = (list: MoneyRow[]) => list.filter((row) => row.status !== "paid");
@@ -393,7 +400,7 @@ export default async function DashboardPage() {
               icon={ArrowUpRight}
               label="Uang Keluar"
               value={formatRupiah(cashNow.out)}
-              hint={`Pemasok ${formatRupiah(cashNow.purchases)} · Gaji ${formatRupiah(cashNow.salaries)}`}
+              hint={`Pemasok ${formatRupiah(cashNow.purchases)} · Data Center ${formatRupiah(cashNow.dataCenters)} · Gaji ${formatRupiah(cashNow.salaries)}`}
               spark={cash.map((item) => item.out)}
               href="/admin/data/customer-purchases"
             />
@@ -412,7 +419,7 @@ export default async function DashboardPage() {
               icon={Clock}
               label="Belum Dibayar ke Luar"
               value={formatRupiah(total(unpaidOut))}
-              hint={`${unpaidOut.length} tagihan pemasok dan gaji`}
+              hint={`${unpaidOut.length} tagihan pemasok, Data Center, dan gaji`}
               href="/admin/data/customer-purchases"
             />
           </StatGrid>
@@ -426,7 +433,7 @@ export default async function DashboardPage() {
             <Panel
               title="Pembelian Perusahaan"
               icon={ShoppingBag}
-              description={`Tagihan pemasok ${monthLabel.format(new Date(`${thisMonth}-01T00:00:00Z`))}`}
+              description={`Tagihan pemasok dan Data Center ${monthLabel.format(new Date(`${thisMonth}-01T00:00:00Z`))}`}
               action={
                 <Button asChild variant="outline" size="sm" className="rounded-full">
                   <Link href="/admin/data/customer-purchases">
@@ -438,7 +445,8 @@ export default async function DashboardPage() {
             >
               <MoneyRows
                 rows={[
-                  { label: "Total tagihan", value: total(purchasesNow), hint: `${purchasesNow.length} pembelian` },
+                  { label: "Total tagihan", value: total(purchasesNow), hint: `${supplierNow.length} pembelian · ${dataCentersNow.length} Data Center` },
+                  { label: "Data Center", value: total(dataCentersNow), hint: `Lunas ${formatRupiah(paidOf(dataCentersNow))}` },
                   { label: "Sudah lunas", value: paidOf(purchasesNow), tone: "good" },
                   { label: "Belum lunas", value: total(unpaidOf(purchasesNow)), hint: `${unpaidOf(purchasesNow).length} pembelian`, tone: "warn" },
                 ]}

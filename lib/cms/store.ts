@@ -2,7 +2,26 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import type { ContentKey } from "@/lib/content/types";
 import { requireDb } from "@/lib/db";
-import { articles, clients, communityMessages, coverageAreas, customerPayments, customerPurchases, customers, employees, faqs, invoices, leads, packageCategories, packages, salaryPayments, siteContent, subnetAccounts } from "@/lib/db/schema";
+import {
+  articles,
+  clients,
+  communityMessages,
+  coverageAreas,
+  customerPayments,
+  customerPurchases,
+  customers,
+  dataCenterPayments,
+  dataCenters,
+  employees,
+  faqs,
+  invoices,
+  leads,
+  packageCategories,
+  packages,
+  salaryPayments,
+  siteContent,
+  subnetAccounts,
+} from "@/lib/db/schema";
 import { entityPermission } from "@/lib/permissions";
 import { moveToTrash, snapshotRows } from "@/lib/trash";
 import { formatMonth, slugify } from "@/lib/format";
@@ -30,6 +49,8 @@ const tables: Record<string, EntityTable> = {
   invoices,
   employees,
   salaries: salaryPayments,
+  "data-centers": dataCenters,
+  "data-center-payments": dataCenterPayments,
 };
 
 export type SaveResult = { ok: true; message: string } | { ok: false; message: string };
@@ -55,6 +76,10 @@ export async function listRecords(entity: EntityDef): Promise<RecordRow[]> {
         ? [asc(employees.name)]
         : entity.key === "salaries"
         ? [desc(salaryPayments.period), desc(salaryPayments.createdAt)]
+        : entity.key === "data-centers"
+        ? [asc(dataCenters.company)]
+        : entity.key === "data-center-payments"
+        ? [desc(dataCenterPayments.period), desc(dataCenterPayments.createdAt)]
         : table.sortOrder
         ? [asc(table.sortOrder), asc(table.createdAt)]
         : [desc(table.createdAt)];
@@ -98,6 +123,9 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
   }
   if (entity.key === "invoices") await prepareInvoice(values, (input ?? {}) as Record<string, unknown>, givenId, errors);
   if (entity.key === "salaries") await prepareSalary(values, (input ?? {}) as Record<string, unknown>, errors);
+  if (entity.key === "data-center-payments") await prepareDataCenterPayment(values, (input ?? {}) as Record<string, unknown>, errors);
+  // "-" di isian Grafik MRTG berarti tanpa grafik.
+  if (entity.key === "data-centers" && values.mrtgSource === "-") values.mrtgSource = "";
   // Pembelian berstatus lunas harus punya tanggal bayarnya.
   if (entity.key === "customer-purchases" && values.status === "paid" && !values.paidDate) errors.push("Tanggal bayar wajib diisi bila statusnya Lunas.");
   if (errors.length) return { ok: false, message: errors[0] };
@@ -121,6 +149,17 @@ export async function saveRecord(entity: EntityDef, input: unknown): Promise<Sav
   }
   if (entity.key === "customer-payments") await syncPaymentInvoice(savedId);
   return { ok: true, message: `${entity.label} tersimpan.` };
+}
+
+/** Pembayaran Data Center: nominal yang dikosongkan diambil dari biaya bulanan Data Center-nya; lunas harus bertanggal bayar. */
+async function prepareDataCenterPayment(values: Record<string, unknown>, raw: Record<string, unknown>, errors: string[]) {
+  const [dataCenter] = await requireDb().select({ monthlyFee: dataCenters.monthlyFee }).from(dataCenters).where(eq(dataCenters.id, String(values.dataCenterId))).limit(1);
+  if (!dataCenter) {
+    errors.push("Data Center tidak ditemukan.");
+    return;
+  }
+  if (raw.amount === "" || raw.amount === undefined || raw.amount === null) values.amount = dataCenter.monthlyFee;
+  if (values.status === "paid" && !values.paidDate) errors.push("Tanggal bayar wajib diisi bila statusnya Lunas.");
 }
 
 /**
@@ -186,6 +225,8 @@ const trashTable: Record<string, Parameters<typeof snapshotRows>[0]> = {
   invoices: "invoices",
   employees: "employees",
   salaries: "salaryPayments",
+  "data-centers": "dataCenters",
+  "data-center-payments": "dataCenterPayments",
 };
 
 /** Judul baris di Tempat Sampah: nama PT, nomor invoice, judul, atau nama, ditambah bulan untuk riwayat bulanan. */
@@ -199,6 +240,10 @@ async function trashTitle(row: Record<string, unknown>) {
   if (text("employeeId")) {
     const [employee] = await requireDb().select({ name: employees.name }).from(employees).where(eq(employees.id, text("employeeId"))).limit(1);
     owner = employee?.name ?? "";
+  }
+  if (text("dataCenterId")) {
+    const [dataCenter] = await requireDb().select({ company: dataCenters.company }).from(dataCenters).where(eq(dataCenters.id, text("dataCenterId"))).limit(1);
+    owner = dataCenter?.company ?? "";
   }
   const main = text("number") || text("company") || text("supplierName") || owner || text("title") || text("name") || text("question");
   const period = text("period");
@@ -232,6 +277,7 @@ export async function deleteRecord(entity: EntityDef, id: string, deletedBy = ""
       await snapshotRows("communityMessages", eq(communityMessages.customerId, id)),
     );
   }
+  if (entity.key === "data-centers") saved.push(await snapshotRows("dataCenterPayments", eq(dataCenterPayments.dataCenterId, id)));
   if (entity.key === "invoices") {
     await deleteInvoicePayment(id);
     await deleteInvoicePurchase(id);
@@ -242,6 +288,8 @@ export async function deleteRecord(entity: EntityDef, id: string, deletedBy = ""
     await db.delete(customerPurchases).where(eq(customerPurchases.customerId, id));
     await db.delete(subnetAccounts).where(eq(subnetAccounts.customerId, id));
   }
+  // Riwayat pembayaran ikut terhapus (dan ikut dikembalikan) bersama Data Center-nya.
+  if (entity.key === "data-centers") await db.delete(dataCenterPayments).where(eq(dataCenterPayments.dataCenterId, id));
   await db.delete(tables[entity.key]).where(eq(tables[entity.key].id, id));
   if (saved.length) {
     await moveToTrash({ kind: entity.key, label: entity.singular[0].toUpperCase() + entity.singular.slice(1), title: await trashTitle(saved[0].rows[0]), permission: entityPermission(entity.key), deletedBy, tables: saved });

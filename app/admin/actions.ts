@@ -13,7 +13,8 @@ import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
 import { deleteRecord, generateNextMonth, saveContent, saveCustomerPhotos, saveRecord, type SaveResult } from "@/lib/cms/store";
 import { db } from "@/lib/db";
-import { customerPayments, customerPurchases, customers, invoices, mediaAssets, salaryPayments, staffUsers } from "@/lib/db/schema";
+import { customerPayments, customerPurchases, customers, dataCenterPayments, invoices, mediaAssets, salaryPayments, staffUsers } from "@/lib/db/schema";
+import { mrtgSourceOptions } from "@/lib/data-centers";
 import { syncInvoicePayment, syncPaymentInvoice } from "@/lib/invoice-payments";
 import { can, entityPermission, homePath, isStaffPermission, pagePermission } from "@/lib/permissions";
 import { moveToTrash, snapshotRows } from "@/lib/trash";
@@ -136,7 +137,7 @@ export async function setInvoiceStatusAction(id: string, status: "paid" | "unpai
 /** Tanggal hari ini di WITA, untuk tanggal bayar yang belum diisi saat ditandai lunas. */
 const todayWita = () => new Date(Date.now() + 8 * 3_600_000).toISOString().slice(0, 10);
 
-const statusTables = { "customer-payments": customerPayments, "customer-purchases": customerPurchases, salaries: salaryPayments } as const;
+const statusTables = { "customer-payments": customerPayments, "customer-purchases": customerPurchases, salaries: salaryPayments, "data-center-payments": dataCenterPayments } as const;
 
 /**
  * Tandai lunas / belum lunas dengan satu klik dari daftar. Invoice ikut memperbarui History Pembayaran Subnet, dan
@@ -158,6 +159,12 @@ export async function setRecordStatusAction(entityKey: string, id: string, statu
   if (entityKey === "customer-payments") await syncPaymentInvoice(id);
   const label = entityKey === "salaries" ? (status === "paid" ? "Sudah dibayar" : "Belum dibayar") : status === "paid" ? "Lunas" : "Belum lunas";
   return { ok: true, message: `Ditandai ${label}${entityKey === "customer-payments" ? "; invoicenya ikut diperbarui" : ""}.` };
+}
+
+/** Pilihan Grafik MRTG Data Center dari LibreNMS; dimuat saat form dibuka supaya halamannya tidak menunggu LibreNMS. */
+export async function mrtgSourceOptionsAction(): Promise<{ value: string; label: string }[]> {
+  if (!(await getAdminWith("finance"))) return [];
+  return mrtgSourceOptions();
 }
 
 export async function saveCustomerPhotosAction(id: string, photos: string[]): Promise<SaveResult> {

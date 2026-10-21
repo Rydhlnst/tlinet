@@ -303,6 +303,41 @@ export const salaryPayments = pgTable(
   (table) => [index("salary_payments_employee_idx").on(table.employeeId, table.period)],
 );
 
+/**
+ * Data Center: PT pemasok tempat perusahaan membeli layanan (interkoneksi, IP transit, dll.). `mrtgSource` adalah sumber
+ * grafik trafiknya di LibreNMS: "p:<portId>" untuk port, "q:<deviceId>:<qosId>" untuk antrean QoS, kosong bila tidak ada.
+ */
+export const dataCenters = pgTable("data_centers", {
+  id: text("id").primaryKey(),
+  company: text("company").notNull(),
+  interconnection: text("interconnection").notNull().default(""),
+  service: text("service").notNull().default(""),
+  startDate: text("start_date").notNull().default(""),
+  capacity: text("capacity").notNull().default(""),
+  ipv4: text("ipv4").notNull().default(""),
+  ipv6: text("ipv6").notNull().default(""),
+  vlan: text("vlan").notNull().default(""),
+  monthlyFee: integer("monthly_fee").notNull().default(0),
+  mrtgSource: text("mrtg_source").notNull().default(""),
+  status: text("status").notNull().default("active"),
+  note: text("note").notNull().default(""),
+  ...timestamps,
+});
+
+/** Tagihan Data Center per bulan: nomor dan berkas invoicenya, tanggal bayar, dan bukti transfer. */
+export const dataCenterPayments = pgTable(
+  "data_center_payments",
+  {
+    id: text("id").primaryKey(),
+    dataCenterId: text("data_center_id").notNull().default(""),
+    invoiceNumber: text("invoice_number").notNull().default(""),
+    /** Berkas invoice dari Data Center (PDF atau gambar). `proofUrl` berisi bukti transfernya. */
+    invoiceUrl: text("invoice_url").notNull().default(""),
+    ...billingColumns(),
+  },
+  (table) => [index("data_center_payments_dc_idx").on(table.dataCenterId, table.period)],
+);
+
 /** Isi tempat sampah: salinan baris yang dihapus per tabel, dipulihkan apa adanya saat dikembalikan. */
 export type TrashSnapshot = { tables: { table: string; rows: Record<string, unknown>[] }[]; files?: string[] };
 
