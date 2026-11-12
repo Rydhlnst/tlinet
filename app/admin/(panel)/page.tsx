@@ -313,7 +313,10 @@ export default async function DashboardPage() {
   const unpaidOf = (list: MoneyRow[]) => list.filter((row) => row.status !== "paid");
   const paidRows = invoiceRows.filter((invoice) => invoice.status === "paid");
   const unpaidRows = invoiceRows.filter((invoice) => invoice.status !== "paid");
-  const sum = (list: typeof invoiceRows) => list.reduce((total, item) => total + item.total, 0);
+  // Kartu ringkasan dihitung per bulan berjalan (bukan gabungan semua bulan); grafik & tren sudah per bulan.
+  const monthInvoices = invoiceRows.filter((invoice) => invoice.issueDate.startsWith(thisMonth));
+  const monthPaid = monthInvoices.filter((invoice) => invoice.status === "paid");
+  const monthUnpaid = monthInvoices.filter((invoice) => invoice.status !== "paid");
   const totalChange = change(current.total, previous.total);
   const paidChange = change(current.paid, previous.paid);
   const unpaidChange = change(current.total - current.paid, previous.total - previous.paid);
@@ -363,10 +366,10 @@ export default async function DashboardPage() {
 
       {billing ? (
         <StatGrid>
-          <StatCard tone="blue" icon={FileText} label="Total Tagihan" value={formatRupiah(sum(invoiceRows))} hint={<>{invoiceRows.length} transaksi{trend(totalChange)}</>} spark={series.map((item) => item.total)} href="/admin/data/invoices" />
-          <StatCard tone="green" icon={Wallet} label="Sudah Dibayar" value={formatRupiah(sum(paidRows))} hint={<>{paidRows.length} transaksi{trend(paidChange)}</>} spark={series.map((item) => item.paid)} href="/admin/data/invoices" />
-          <StatCard tone="orange" icon={Clock} label="Belum Dibayar" value={formatRupiah(sum(unpaidRows))} hint={<>{unpaidRows.length} transaksi{trend(unpaidChange)}</>} spark={series.map((item) => item.total - item.paid)} href="/admin/data/invoices" />
-          <StatCard tone="purple" icon={ReceiptText} label="Jumlah Invoice" value={invoiceRows.length} hint={`${current.count} invoice bulan ini`} spark={series.map((item) => item.count)} href="/admin/data/invoices" />
+          <StatCard tone="blue" icon={FileText} label="Total Tagihan" value={formatRupiah(current.total)} hint={<>{current.count} transaksi{trend(totalChange)}</>} spark={series.map((item) => item.total)} href="/admin/data/invoices" />
+          <StatCard tone="green" icon={Wallet} label="Sudah Dibayar" value={formatRupiah(current.paid)} hint={<>{monthPaid.length} transaksi{trend(paidChange)}</>} spark={series.map((item) => item.paid)} href="/admin/data/invoices" />
+          <StatCard tone="orange" icon={Clock} label="Belum Dibayar" value={formatRupiah(current.total - current.paid)} hint={<>{monthUnpaid.length} transaksi{trend(unpaidChange)}</>} spark={series.map((item) => item.total - item.paid)} href="/admin/data/invoices" />
+          <StatCard tone="purple" icon={ReceiptText} label="Jumlah Invoice" value={current.count} hint={`Invoice ${monthLabel.format(new Date(`${thisMonth}-01T00:00:00Z`))}`} spark={series.map((item) => item.count)} href="/admin/data/invoices" />
         </StatGrid>
       ) : (
         <StatGrid>
