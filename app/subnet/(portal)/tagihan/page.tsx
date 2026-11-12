@@ -31,6 +31,14 @@ export default async function SubnetBillingPage() {
   const nextDue = unpaid.map((invoice) => invoice.dueDate).sort()[0];
   const dueIn = nextDue ? daysUntil(nextDue, today) : 0;
   const hasBank = Boolean(invoiceSettings.bankName && invoiceSettings.bankAccountNumber);
+  // Invoice dikelompokkan per bulan terbit (data sudah urut terbaru dulu, jadi urutan bulannya ikut terjaga).
+  const invoiceMonths = [
+    ...invoiceList.reduce((map, invoice) => {
+      const month = invoice.issueDate.slice(0, 7);
+      (map.get(month) ?? map.set(month, []).get(month)!).push(invoice);
+      return map;
+    }, new Map<string, typeof invoiceList>()),
+  ].map(([month, list]) => ({ month, list }));
 
   return (
     <>
@@ -68,33 +76,40 @@ export default async function SubnetBillingPage() {
       <div className="grid grid-cols-1 items-start gap-3 sm:gap-4 lg:grid-cols-2">
         <SectionCard title="Invoice">
           {invoiceList.length ? (
-            <ul className="divide-y border-t">
-              {invoiceList.map((invoice) => {
-                const paid = invoice.status === "paid";
-                const overdue = !paid && invoice.dueDate < today;
-                const items = invoice.items.map((item) => item.description.trim()).filter(Boolean).join(", ");
-                return (
-                  <li key={invoice.id}>
-                    <Link href={invoicePublicPath(invoice.id)} className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/60 active:bg-muted sm:px-5">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-semibold">{invoice.number}</p>
-                          <p className="shrink-0 text-sm font-semibold tabular-nums">{formatRupiah(invoice.total)}</p>
-                        </div>
-                        {items && <p className="mt-0.5 truncate text-xs text-muted-foreground">{items}</p>}
-                        <div className="mt-1.5 flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground">Jatuh tempo {formatDate(invoice.dueDate)}</span>
-                          <StatusDot tone={paid ? "good" : overdue ? "bad" : "warn"} className="shrink-0">
-                            {paid ? "Lunas" : overdue ? "Terlambat" : "Belum dibayar"}
-                          </StatusDot>
-                        </div>
-                      </div>
-                      <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="border-t">
+              {invoiceMonths.map(({ month, list }) => (
+                <div key={month}>
+                  <p className="border-t bg-muted/40 px-4 py-2 text-xs font-semibold text-muted-foreground capitalize first:border-t-0 sm:px-5">{formatMonth(month)}</p>
+                  <ul className="divide-y">
+                    {list.map((invoice) => {
+                      const paid = invoice.status === "paid";
+                      const overdue = !paid && invoice.dueDate < today;
+                      const items = invoice.items.map((item) => item.description.trim()).filter(Boolean).join(", ");
+                      return (
+                        <li key={invoice.id}>
+                          <Link href={invoicePublicPath(invoice.id)} className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/60 active:bg-muted sm:px-5">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="truncate text-sm font-semibold">{invoice.number}</p>
+                                <p className="shrink-0 text-sm font-semibold tabular-nums">{formatRupiah(invoice.total)}</p>
+                              </div>
+                              {items && <p className="mt-0.5 truncate text-xs text-muted-foreground">{items}</p>}
+                              <div className="mt-1.5 flex items-center justify-between gap-2">
+                                <span className="text-xs text-muted-foreground">Jatuh tempo {formatDate(invoice.dueDate)}</span>
+                                <StatusDot tone={paid ? "good" : overdue ? "bad" : "warn"} className="shrink-0">
+                                  {paid ? "Lunas" : overdue ? "Terlambat" : "Belum dibayar"}
+                                </StatusDot>
+                              </div>
+                            </div>
+                            <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="px-5 py-12 text-center text-sm text-muted-foreground">Belum ada invoice.</p>
           )}
