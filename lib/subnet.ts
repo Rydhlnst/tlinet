@@ -72,9 +72,29 @@ export const getSubnetUser = cache(async (): Promise<SubnetUser | null> => {
  */
 export const androidApk = { path: "/downloads/TLINET.apk", version: "1.0.2", size: "3 MB" };
 
+/** Penanda yang ditambahkan aplikasi Android TLINET ke user agent WebView-nya (lihat android-app/capacitor.config.json). */
+export const androidAppMarker = "TLINETApp";
+
 /** Aplikasi Android TLINET menambahkan penanda ini ke user agent WebView-nya (lihat android-app/capacitor.config.json). */
 export async function inAndroidApp() {
-  return ((await headers()).get("user-agent") ?? "").includes("TLINETApp");
+  return ((await headers()).get("user-agent") ?? "").includes(androidAppMarker);
+}
+
+/** Ubah user-agent menjadi nama perangkat ringkas (mis. "SM-A137F", "iPhone", "Windows (PC)") dan apakah lewat aplikasi Android. */
+export function parseDevice(ua: string): { label: string; inApp: boolean } {
+  if (!ua) return { label: "", inApp: false };
+  const inApp = ua.includes(androidAppMarker);
+  const android = ua.match(/Android\s+([\d.]+)(?:;\s*([^;)]+?))?(?:\s+Build|;?\s*wv|\))/i);
+  let label = "Perangkat lain";
+  if (android) {
+    const model = (android[2] || "").replace(/\s*Build.*$/i, "").trim();
+    label = model && !/^wv$/i.test(model) ? model : `Android ${android[1]}`;
+  } else if (/iPhone/i.test(ua)) label = "iPhone";
+  else if (/iPad/i.test(ua)) label = "iPad";
+  else if (/Windows/i.test(ua)) label = "Windows (PC)";
+  else if (/Macintosh|Mac OS X/i.test(ua)) label = "Mac";
+  else if (/Linux/i.test(ua)) label = "Linux (PC)";
+  return { label, inApp };
 }
 
 export async function requireSubnetUser() {

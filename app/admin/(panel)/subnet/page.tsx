@@ -1,5 +1,5 @@
 import { asc, count, desc, eq, ne, sql } from "drizzle-orm";
-import { Download, ExternalLink, Search, Network } from "lucide-react";
+import { Download, ExternalLink, Search, Network, Smartphone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SubnetAccessButton, SubnetPortsProvider } from "@/components/admin/subnet-access";
@@ -14,7 +14,7 @@ import { formatDateTime, formatRupiah } from "@/lib/format";
 import { librenmsConfigured, listLibrenmsPorts, listLibrenmsQos, suggestPort, suggestQos, type LibrenmsPort, type LibrenmsQos } from "@/lib/librenms";
 import { absoluteUrl } from "@/lib/seo";
 import { PageHero } from "@/components/admin/page-hero";
-import { androidApk } from "@/lib/subnet";
+import { androidApk, parseDevice } from "@/lib/subnet";
 
 export const metadata: Metadata = { title: "Subnet" };
 
@@ -59,6 +59,8 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
         qosDeviceId: subnetAccounts.librenmsQosDeviceId,
         active: subnetAccounts.active,
         lastLoginAt: subnetAccounts.lastLoginAt,
+        lastDevice: subnetAccounts.lastDevice,
+        appInstalledAt: subnetAccounts.appInstalledAt,
       })
       .from(customers)
       .leftJoin(subnetAccounts, eq(subnetAccounts.customerId, customers.id))
@@ -91,13 +93,14 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
     // Yang sudah punya akses lebih dulu.
     .sort((a, b) => Number(Boolean(b.email)) - Number(Boolean(a.email)) || a.title.localeCompare(b.title, "id"));
   const withAccess = all.filter((row) => row.email && row.active).length;
+  const withApp = all.filter((row) => row.appInstalledAt).length;
 
   return (
     <>
       <PageHero
         title="Subnet"
         icon={Network}
-        description={<>Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, grafik trafik, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length} pelanggan punya akses aktif.</>}
+        description={<>Akses portal pelanggan. Pelanggan masuk dengan email dan kata sandi dari sini, lalu bisa melihat data layanan, grafik trafik, invoice, dan history pembayarannya sendiri. {withAccess} dari {all.length} pelanggan punya akses aktif, {withApp} sudah memakai aplikasi.</>}
         actions={
           <>
             {/* Tautan APK bisa dibagikan ke pelanggan lewat WhatsApp. */}
@@ -176,6 +179,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
               <TableHead>Akses</TableHead>
               <TableHead>Grafik trafik</TableHead>
               <TableHead>Invoice</TableHead>
+              <TableHead>Perangkat</TableHead>
               <TableHead>Login terakhir</TableHead>
               <TableHead className="pr-4 text-right">Aksi</TableHead>
             </TableRow>
@@ -209,6 +213,21 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
                       empty
                     )}
                   </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {row.appInstalledAt ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Badge className="gap-1">
+                          <Smartphone className="size-3" />
+                          Aplikasi
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{parseDevice(row.lastDevice ?? "").label || "—"}</span>
+                      </span>
+                    ) : row.lastDevice ? (
+                      <span className="text-xs text-muted-foreground">{parseDevice(row.lastDevice ?? "").label || "—"} · browser</span>
+                    ) : (
+                      empty
+                    )}
+                  </TableCell>
                   <TableCell className="whitespace-nowrap text-muted-foreground">{row.lastLoginAt ? formatDateTime(row.lastLoginAt) : "—"}</TableCell>
                   <TableCell className="pr-4 text-right">
                     <SubnetAccessButton
@@ -222,7 +241,7 @@ export default async function SubnetPage({ searchParams }: PageProps<"/admin/sub
             })}
             {rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                   {keywords ? "Tidak ada pelanggan yang cocok dengan pencarian." : "Belum ada pelanggan di Data Pelanggan."}
                 </TableCell>
               </TableRow>

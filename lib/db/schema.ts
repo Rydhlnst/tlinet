@@ -197,6 +197,10 @@ export const subnetAccounts = pgTable("subnet_accounts", {
   pingTarget: text("ping_target").notNull().default(""),
   /** Dibisukan admin di Forum Subnet: masih bisa membaca, tidak bisa mengirim pesan. */
   chatMuted: boolean("chat_muted").notNull().default(false),
+  /** User-agent login terakhir, dipakai menampilkan tipe perangkat pelanggan di menu Subnet. */
+  lastDevice: text("last_device").notNull().default(""),
+  /** Terisi saat pertama kali login lewat aplikasi Android (UA memuat "TLINETApp"); penanda pelanggan sudah instal aplikasi. */
+  appInstalledAt: timestamp("app_installed_at"),
   /** Terakhir pelanggan membuka Forum; pesan orang lain setelahnya dihitung belum dibaca (titik merah dan notifikasi). */
   forumReadAt: timestamp("forum_read_at"),
   ...timestamps,

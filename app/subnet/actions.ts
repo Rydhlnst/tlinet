@@ -2,11 +2,12 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireDb } from "@/lib/db";
 import { customers, metroOrders, subnetAccounts } from "@/lib/db/schema";
 import { capacityLabel, upgradeOptions } from "@/lib/metro";
-import { createSubnetSession, destroySubnetSession, getSubnetUser, subnetPasswordMatches } from "@/lib/subnet";
+import { androidAppMarker, createSubnetSession, destroySubnetSession, getSubnetUser, subnetPasswordMatches } from "@/lib/subnet";
 import { storeUpload } from "@/lib/uploads";
 
 export type SubnetResult = { ok: true; message: string } | { ok: false; message: string };
@@ -107,7 +108,13 @@ export async function subnetLoginAction(_previous: SubnetFormState, formData: Fo
   }
   if (!account.active) return { error: "Akses Anda sedang dinonaktifkan. Silakan hubungi admin TLINET." };
 
-  await db.update(subnetAccounts).set({ lastLoginAt: new Date() }).where(eq(subnetAccounts.customerId, account.customerId));
+  // Catat perangkat login untuk menu Subnet; tandai "sudah instal aplikasi" saat login pertama dari aplikasi Android.
+  const ua = (await headers()).get("user-agent") ?? "";
+  const inApp = ua.includes(androidAppMarker);
+  await db
+    .update(subnetAccounts)
+    .set({ lastLoginAt: new Date(), lastDevice: ua.slice(0, 400), ...(inApp && !account.appInstalledAt ? { appInstalledAt: new Date() } : {}) })
+    .where(eq(subnetAccounts.customerId, account.customerId));
   await createSubnetSession(account.customerId, account.passwordHash);
   redirect("/subnet");
 }
