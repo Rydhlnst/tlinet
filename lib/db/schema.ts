@@ -14,8 +14,30 @@ const ordering = {
 /** Dokumen konten per halaman (settings, home, coverage, help, about, news, register). */
 export const siteContent = pgTable("site_content", {
   key: text("key").primaryKey(),
+  /** Konten yang tampil ke pengunjung (sudah dipublikasikan). */
   data: jsonb("data").notNull(),
+  /** Perubahan yang belum dipublikasikan. `null` berarti tidak ada draft; situs live tetap membaca `data`. */
+  draft: jsonb("draft"),
+  /** Siapa penyunting draft terakhir — "admin" atau "ai" — untuk ditandai di layar tinjauan. */
+  draftBy: text("draft_by"),
+  draftAt: timestamp("draft_at"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/** Jejak audit tindakan tulis yang dijalankan asisten AI (buat/ubah/hapus), untuk ditinjau admin. */
+export const aiAuditLog = pgTable("ai_audit_log", {
+  id: text("id").primaryKey(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  actorEmail: text("actor_email").notNull().default(""),
+  actorName: text("actor_name").notNull().default(""),
+  /** Nama tool yang dijalankan, mis. "data_update". */
+  tool: text("tool").notNull(),
+  /** Jenis data yang disentuh, mis. "faqs" atau "content:home". */
+  entity: text("entity").notNull().default(""),
+  recordId: text("record_id").notNull().default(""),
+  summary: text("summary").notNull().default(""),
+  /** Rincian perubahan (nilai sebelum/sesudah) bila ada. */
+  detail: jsonb("detail"),
 });
 
 export const packageCategories = pgTable("package_categories", {

@@ -11,7 +11,9 @@ import { eq as equals } from "drizzle-orm";
 import { createSession, credentialsConfigured, credentialsMatch, destroySession, findStaffLogin, getAdmin, getAdminWith } from "@/lib/auth";
 import { getEntityDef } from "@/lib/cms/entities";
 import { getPageDef } from "@/lib/cms/pages";
-import { deleteRecord, generateNextMonth, saveContent, saveCustomerPhotos, saveRecord, setCustomerProfilePhoto, setDataCenterPhoto, type SaveResult } from "@/lib/cms/store";
+import { deleteRecord, discardContentDraft, generateNextMonth, publishContent, saveContent, saveCustomerPhotos, saveRecord, setCustomerProfilePhoto, setDataCenterPhoto, type SaveResult } from "@/lib/cms/store";
+import { previewCookie } from "@/lib/data";
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { customerPayments, customerPurchases, customers, dataCenterPayments, invoices, mediaAssets, salaryPayments, staffUsers } from "@/lib/db/schema";
 import { mrtgSourceOptions } from "@/lib/data-centers";
@@ -58,13 +60,45 @@ export async function logoutAction() {
   redirect("/admin/login");
 }
 
+/** Menyimpan suntingan sebagai draf (belum tampil ke pengunjung). Tinjau di pratinjau lalu publikasikan. */
 export async function saveContentAction(key: string, data: unknown): Promise<SaveResult> {
   if (!(await getAdminWith(pagePermission(key)))) return expired;
   const page = getPageDef(key);
   if (!page) return { ok: false, message: "Halaman tidak dikenal." };
   const result = await saveContent(page, data);
+  // Draf belum mengubah situs live; cukup segarkan halaman admin & pratinjau.
+  if (result.ok) revalidatePath("/", "layout");
+  return result;
+}
+
+/** Mempublikasikan draf halaman sehingga tampil ke pengunjung. */
+export async function publishContentAction(key: string): Promise<SaveResult> {
+  if (!(await getAdminWith(pagePermission(key)))) return expired;
+  const page = getPageDef(key);
+  if (!page) return { ok: false, message: "Halaman tidak dikenal." };
+  const result = await publishContent(page);
   if (result.ok) refreshSite();
   return result;
+}
+
+/** Membuang draf halaman tanpa menyentuh konten yang sedang tampil. */
+export async function discardContentDraftAction(key: string): Promise<SaveResult> {
+  if (!(await getAdminWith(pagePermission(key)))) return expired;
+  const page = getPageDef(key);
+  if (!page) return { ok: false, message: "Halaman tidak dikenal." };
+  const result = await discardContentDraft(page);
+  if (result.ok) revalidatePath("/", "layout");
+  return result;
+}
+
+/** Menyalakan/mematikan mode pratinjau draf untuk admin ini (cookie; hanya berlaku dengan sesi admin). */
+export async function setPreviewAction(on: boolean): Promise<SaveResult> {
+  if (!(await getAdmin())) return expired;
+  const jar = await cookies();
+  if (on) jar.set(previewCookie, "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
+  else jar.delete(previewCookie);
+  revalidatePath("/", "layout");
+  return { ok: true, message: on ? "Mode pratinjau aktif. Anda melihat draf." : "Mode pratinjau dimatikan." };
 }
 
 export async function saveRecordAction(entityKey: string, data: unknown): Promise<SaveResult> {

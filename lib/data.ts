@@ -1,10 +1,15 @@
 import { and, asc, desc, eq } from "drizzle-orm";
+import { cookies } from "next/headers";
 import { cache } from "react";
+import { getAdmin } from "./auth";
 import { defaultContent } from "./content/defaults";
 import { seedArticles, seedClients, seedCoverageAreas, seedFaqs, seedPackageCategories, seedPackages } from "./content/seed-data";
 import type { ContentKey, ContentMap } from "./content/types";
 import { db } from "./db";
 import { articles, clients, coverageAreas, faqs, packageCategories, packages, siteContent } from "./db/schema";
+
+/** Cookie penanda mode pratinjau draf (hanya berlaku bila disertai sesi admin yang sah). */
+export const previewCookie = "tl_preview";
 
 type Row<T extends { $inferSelect: unknown }> = Omit<T["$inferSelect"], "createdAt" | "updatedAt">;
 
@@ -29,14 +34,47 @@ function mergeContent<T>(fallback: T, stored: unknown): T {
 }
 
 const getStoredContent = cache(async () => {
-  if (!db) return {} as Record<string, unknown>;
+  if (!db) return {} as Record<string, { data: unknown; draft: unknown }>;
   const rows = await db.select().from(siteContent);
-  return Object.fromEntries(rows.map((row) => [row.key, row.data]));
+  return Object.fromEntries(rows.map((row) => [row.key, { data: row.data, draft: row.draft }]));
 });
 
+/**
+ * Apakah permintaan ini sedang dalam mode pratinjau (melihat draf, bukan konten live). Dua pagar: cookie pratinjau harus
+ * ada DAN pengunjung harus admin yang masuk. Pengunjung biasa tak pernah melihat draf meski cookienya entah bagaimana ada.
+ */
+const inPreview = cache(async () => {
+  try {
+    if ((await cookies()).get(previewCookie)?.value !== "1") return false;
+    return Boolean(await getAdmin());
+  } catch {
+    return false;
+  }
+});
+
+/** Konten satu halaman. Live membaca `data`; dalam mode pratinjau admin, membaca draf bila ada. */
 export async function getContent<K extends ContentKey>(key: K): Promise<ContentMap[K]> {
   const stored = await getStoredContent();
-  return mergeContent(defaultContent[key], stored[key]);
+  const row = stored[key];
+  const value = (await inPreview()) && row?.draft !== null && row?.draft !== undefined ? row.draft : row?.data;
+  return mergeContent(defaultContent[key], value);
+}
+
+/** Daftar kunci halaman yang punya draf belum dipublikasikan, untuk ditandai di admin. */
+export async function getContentDraftKeys(): Promise<ContentKey[]> {
+  const stored = await getStoredContent();
+  return (Object.keys(stored) as ContentKey[]).filter((key) => {
+    const draft = stored[key]?.draft;
+    return draft !== null && draft !== undefined;
+  });
+}
+
+/** Konten draf satu halaman untuk disunting di editor admin (meneruskan draf yang ada, bukan mulai dari live). */
+export async function getDraftContent<K extends ContentKey>(key: K): Promise<{ content: ContentMap[K]; hasDraft: boolean }> {
+  const stored = await getStoredContent();
+  const row = stored[key];
+  const hasDraft = row?.draft !== null && row?.draft !== undefined;
+  return { content: mergeContent(defaultContent[key], hasDraft ? row?.draft : row?.data), hasDraft };
 }
 
 export async function getPackageCategories(): Promise<PackageCategory[]> {

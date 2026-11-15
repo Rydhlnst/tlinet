@@ -334,14 +334,43 @@ export async function saveCustomerPhotos(id: string, input: unknown): Promise<Sa
   return { ok: true, message: "Foto pelanggan tersimpan." };
 }
 
-export async function saveContent(page: PageDef, input: unknown): Promise<SaveResult> {
+/**
+ * Menyimpan perubahan konten sebagai DRAFT, bukan langsung ke live. Situs yang dilihat pengunjung tetap membaca kolom
+ * `data`; perubahan baru tampil setelah {@link publishContent}. Dipakai oleh editor admin maupun AI, jadi kesalahan
+ * bisa ditinjau di preview dulu dan dibuang tanpa menyentuh situs live.
+ */
+export async function saveContent(page: PageDef, input: unknown, by: "admin" | "ai" = "admin"): Promise<SaveResult> {
   const errors: string[] = [];
-  const data = sanitizeDocument(page.sections, input, errors);
+  const draft = sanitizeDocument(page.sections, input, errors);
   if (errors.length) return { ok: false, message: errors[0] };
   const key: ContentKey = page.key;
+  // Baris mungkin belum ada (konten masih memakai bawaan). Saat insert pertama, `data` DIKOSONGKAN ({}), bukan diisi draf:
+  // getContent menggabungkan {} dengan bawaan sehingga pengunjung tetap melihat konten lama sampai Publikasikan ditekan.
+  // `data` tidak pernah ditimpa di jalur konflik agar situs live tak berubah oleh penyimpanan draf.
   await requireDb()
     .insert(siteContent)
-    .values({ key, data })
-    .onConflictDoUpdate({ target: siteContent.key, set: { data, updatedAt: new Date() } });
-  return { ok: true, message: `${page.label} tersimpan.` };
+    .values({ key, data: {}, draft, draftBy: by, draftAt: new Date() })
+    .onConflictDoUpdate({ target: siteContent.key, set: { draft, draftBy: by, draftAt: new Date(), updatedAt: new Date() } });
+  return { ok: true, message: `Draf ${page.label} tersimpan. Tinjau lalu publikasikan agar tampil ke pengunjung.` };
+}
+
+/** Mempublikasikan draf: menyalin `draft` ke `data` lalu mengosongkan draf. Setelah ini perubahan tampil ke pengunjung. */
+export async function publishContent(page: PageDef): Promise<SaveResult> {
+  const db = requireDb();
+  const [row] = await db.select({ draft: siteContent.draft }).from(siteContent).where(eq(siteContent.key, page.key)).limit(1);
+  if (!row || row.draft === null || row.draft === undefined) return { ok: false, message: "Tidak ada draf untuk dipublikasikan." };
+  await db
+    .update(siteContent)
+    .set({ data: row.draft, draft: null, draftBy: null, draftAt: null, updatedAt: new Date() })
+    .where(eq(siteContent.key, page.key));
+  return { ok: true, message: `${page.label} dipublikasikan.` };
+}
+
+/** Membuang draf tanpa menyentuh konten live. */
+export async function discardContentDraft(page: PageDef): Promise<SaveResult> {
+  await requireDb()
+    .update(siteContent)
+    .set({ draft: null, draftBy: null, draftAt: null, updatedAt: new Date() })
+    .where(eq(siteContent.key, page.key));
+  return { ok: true, message: `Draf ${page.label} dibuang.` };
 }

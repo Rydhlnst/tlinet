@@ -2,6 +2,7 @@ import { count, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { ChatPanel } from "@/components/admin/ai/chat-panel";
 import { adminAppUserAgent } from "@/lib/admin-app";
 import { requireAdmin } from "@/lib/auth";
 import { getContent } from "@/lib/data";
@@ -21,8 +22,11 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
   const inAdminApp = (requestHeaders.get("user-agent") ?? "").includes(adminAppUserAgent);
 
   return (
-    <AdminShell admin={admin} brandName={settings.brandName} newLeads={newLeads} appMode={inAdminApp}>
-      {children}
-    </AdminShell>
+    <>
+      <AdminShell admin={admin} brandName={settings.brandName} newLeads={newLeads} appMode={inAdminApp}>
+        {children}
+      </AdminShell>
+      <ChatPanel />
+    </>
   );
 }
