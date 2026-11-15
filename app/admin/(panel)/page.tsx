@@ -368,7 +368,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         description={
           <>
             <p className="font-medium text-white">Selamat datang, {admin.name}.</p>
-            <p>Pantau aktivitas, transaksi, pelanggan, dan performa jaringan TLINET dalam satu dashboard.</p>
+            <p>Pantau aktivitas, transaksi, pelanggan, dan performa jaringan PT Trans Link Internasional dalam satu dashboard.</p>
           </>
         }
         meta={
