@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { MonthSelect } from "@/components/admin/month-select";
 import { PageHero, StatCard, StatGrid } from "@/components/admin/page-hero";
 import { Button } from "@/components/ui/button";
 import { accurateMode } from "@/lib/accurate";
@@ -234,7 +235,7 @@ const activityStyle = {
   package: { icon: Package, className: "bg-orange-500" },
 } as const;
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ bulan?: string }> }) {
   const admin = await requireAdmin("dashboard");
   const billing = can(admin, "billing");
   // Pembelian dan gaji termasuk data Keuangan; uang masuk (pembayaran pelanggan) termasuk Invoice & History Pembayaran.
@@ -284,26 +285,40 @@ export default async function DashboardPage() {
   };
 
   const months = lastMonths(6);
-  const series = months.map((month) => {
+  const invoiceStat = (month: string) => {
     const list = invoiceRows.filter((invoice) => invoice.issueDate.startsWith(month));
     return { month, total: list.reduce((sum, item) => sum + item.total, 0), paid: list.filter((item) => item.status === "paid").reduce((sum, item) => sum + item.total, 0), count: list.length };
-  });
-  const [previous, current] = series.slice(-2);
+  };
+  const series = months.map(invoiceStat);
 
   // Arus kas dihitung di bulan uangnya berpindah: tanggal bayar, atau bulan tagihannya bila tanggal bayar kosong.
   const cashMonth = (row: MoneyRow) => (row.paidDate || row.period).slice(0, 7);
   const total = (list: MoneyRow[]) => list.reduce((sum, row) => sum + row.amount, 0);
   const paidIn = (list: MoneyRow[], month: string) => total(list.filter((row) => row.status === "paid" && cashMonth(row) === month));
-  const cash = months.map((month) => {
+  const cashStat = (month: string) => {
     const purchases = paidIn(purchaseRows, month);
     const dataCenters = paidIn(dataCenterRows, month);
     const salaries = paidIn(salaryRows, month);
     return { month, in: paidIn(paymentRows, month), out: purchases + dataCenters + salaries, purchases, dataCenters, salaries };
-  });
-  const [cashBefore, cashNow] = cash.slice(-2);
+  };
+  const cash = months.map(cashStat);
+
+  // Pemilih bulan: semua bulan yang punya data (invoice atau arus kas), terbaru dulu; bulan berjalan selalu ada.
+  const currentMonth = months.at(-1)!;
+  const allMonths = [...new Set([currentMonth, ...invoiceRows.map((invoice) => invoice.issueDate.slice(0, 7)), ...[...paymentRows, ...purchaseRows, ...salaryRows, ...dataCenterRows].map(cashMonth).filter(Boolean)])].sort().reverse();
+  const asked = (await searchParams).bulan;
+  const thisMonth = asked && allMonths.includes(asked) ? asked : currentMonth;
+  const prevMonth = (() => {
+    const date = new Date(`${thisMonth}-01T00:00:00Z`);
+    date.setUTCMonth(date.getUTCMonth() - 1);
+    return date.toISOString().slice(0, 7);
+  })();
+  const current = invoiceStat(thisMonth);
+  const previous = invoiceStat(prevMonth);
+  const cashNow = cashStat(thisMonth);
+  const cashBefore = cashStat(prevMonth);
   const net = cashNow.in - cashNow.out;
   const unpaidOut = [...purchaseRows, ...dataCenterRows, ...salaryRows].filter((row) => row.status !== "paid");
-  const thisMonth = months.at(-1)!;
   const ofMonth = (list: MoneyRow[]) => list.filter((row) => row.period.slice(0, 7) === thisMonth);
   const supplierNow = ofMonth(purchaseRows);
   const dataCentersNow = ofMonth(dataCenterRows);
@@ -363,6 +378,13 @@ export default async function DashboardPage() {
           </div>
         }
       />
+
+      {(billing || finance) && allMonths.length > 1 && (
+        <div className="flex items-center justify-between gap-3">
+          <MonthSelect options={allMonths.map((month) => ({ value: month, label: monthLabel.format(new Date(`${month}-01T00:00:00Z`)) }))} value={thisMonth} />
+          {thisMonth !== currentMonth && <span className="text-xs text-muted-foreground">Bukan bulan berjalan</span>}
+        </div>
+      )}
 
       {billing ? (
         <StatGrid>
