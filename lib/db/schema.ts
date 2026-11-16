@@ -40,6 +40,16 @@ export const aiAuditLog = pgTable("ai_audit_log", {
   detail: jsonb("detail"),
 });
 
+/** Pengumuman/pemberitahuan untuk pelanggan Subnet (portal web & aplikasi Android): poster gambar + judul. */
+export const subnetAnnouncements = pgTable("subnet_announcements", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  imageUrl: text("image_url").notNull().default(""),
+  body: text("body").notNull().default(""),
+  ...ordering,
+  ...timestamps,
+});
+
 export const packageCategories = pgTable("package_categories", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

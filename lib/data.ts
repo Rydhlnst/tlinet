@@ -6,7 +6,7 @@ import { defaultContent } from "./content/defaults";
 import { seedArticles, seedClients, seedCoverageAreas, seedFaqs, seedPackageCategories, seedPackages } from "./content/seed-data";
 import type { ContentKey, ContentMap } from "./content/types";
 import { db } from "./db";
-import { articles, clients, coverageAreas, faqs, packageCategories, packages, siteContent } from "./db/schema";
+import { articles, clients, coverageAreas, faqs, packageCategories, packages, siteContent, subnetAnnouncements } from "./db/schema";
 
 /** Cookie penanda mode pratinjau draf (hanya berlaku bila disertai sesi admin yang sah). */
 export const previewCookie = "tl_preview";
@@ -100,6 +100,18 @@ export async function getCoverageAreas(): Promise<CoverageArea[]> {
 export async function getClients(): Promise<Client[]> {
   if (!db) return seedClients;
   return db.select().from(clients).where(eq(clients.active, true)).orderBy(asc(clients.sortOrder));
+}
+
+export type SubnetAnnouncement = { id: string; title: string; imageUrl: string; body: string; createdAt: Date };
+
+/** Pengumuman Subnet yang aktif, untuk portal & aplikasi pelanggan. Urutan: `sortOrder` lalu terbaru. */
+export async function getSubnetAnnouncements(): Promise<SubnetAnnouncement[]> {
+  if (!db) return [];
+  return db
+    .select({ id: subnetAnnouncements.id, title: subnetAnnouncements.title, imageUrl: subnetAnnouncements.imageUrl, body: subnetAnnouncements.body, createdAt: subnetAnnouncements.createdAt })
+    .from(subnetAnnouncements)
+    .where(eq(subnetAnnouncements.active, true))
+    .orderBy(asc(subnetAnnouncements.sortOrder), desc(subnetAnnouncements.createdAt));
 }
 
 export const getPublishedArticles = cache(async (): Promise<Article[]> => {

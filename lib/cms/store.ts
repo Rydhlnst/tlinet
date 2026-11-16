@@ -21,6 +21,7 @@ import {
   salaryPayments,
   siteContent,
   subnetAccounts,
+  subnetAnnouncements,
 } from "@/lib/db/schema";
 import { entityPermission } from "@/lib/permissions";
 import { moveToTrash, snapshotRows } from "@/lib/trash";
@@ -36,6 +37,7 @@ import type { PageDef } from "./pages";
 type EntityTable = PgTable & { id: PgColumn; updatedAt: PgColumn; createdAt: PgColumn; sortOrder?: PgColumn };
 
 const tables: Record<string, EntityTable> = {
+  "subnet-announcements": subnetAnnouncements,
   packages,
   "package-categories": packageCategories,
   "coverage-areas": coverageAreas,

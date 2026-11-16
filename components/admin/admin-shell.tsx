@@ -22,6 +22,7 @@ import {
   MapPinned,
   MessagesSquare,
   Moon,
+  Megaphone,
   Network,
   ShieldCheck,
   LayoutGrid,
@@ -129,6 +130,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/data/customers", label: "Data Pelanggan", icon: Users, keywords: "customer site id cid foto detail" },
       { href: "/admin/subnet", label: "Subnet", icon: Network, keywords: "portal login akses pelanggan username password" },
+      { href: "/admin/data/subnet-announcements", label: "Pengumuman Subnet", icon: Megaphone, keywords: "pemberitahuan pengumuman maintenance poster broadcast notifikasi apk aplikasi" },
       { href: "/admin/forum", label: "Forum Subnet", icon: MessagesSquare, keywords: "komunitas chat grup obrolan pesan gambar moderasi bisukan" },
       { href: "/admin/metro", label: "Progres Metro", icon: Route, keywords: "pemasangan baru upgrade kapasitas instalasi tahapan status" },
       { href: "/admin/data/customer-payments", label: "History Pembayaran Subnet", icon: ReceiptText, keywords: "tagihan bayar lunas riwayat" },

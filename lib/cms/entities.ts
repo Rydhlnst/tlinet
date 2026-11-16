@@ -89,6 +89,25 @@ const toOptions = (labels: Record<string, string>) => Object.entries(labels).map
 
 export const entityDefs: EntityDef[] = [
   {
+    key: "subnet-announcements",
+    label: "Pengumuman Subnet",
+    singular: "pengumuman",
+    description: "Pemberitahuan (poster/gambar) yang tampil di portal dan aplikasi Subnet pelanggan.",
+    searchKeys: ["title"],
+    defaults: { active: true, sortOrder: 0 },
+    columns: [
+      { key: "imageUrl", label: "", type: "image" },
+      { key: "title", label: "Judul", className: "max-w-96 truncate" },
+      activeColumn,
+    ],
+    fields: [
+      { name: "title", label: "Judul", type: "text", required: true, placeholder: "Pengumuman Maintenance" },
+      { name: "imageUrl", label: "Poster / gambar", type: "image", required: true, help: "Gambar pengumuman yang tampil ke pelanggan Subnet (portal web & aplikasi Android)." },
+      { name: "body", label: "Keterangan (opsional)", type: "textarea", rows: 3, help: "Teks tambahan yang muncul di bawah gambar." },
+      ...ordering,
+    ],
+  },
+  {
     key: "packages",
     label: "Paket Internet",
     singular: "paket",

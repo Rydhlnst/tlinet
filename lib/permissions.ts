@@ -33,6 +33,7 @@ export const can = (user: Pick<AdminUser, "role" | "permissions">, permission: P
 
 /** Data CMS per jenis data (lib/cms/entities). Entitas yang tidak dikenal hanya untuk owner. */
 const entityPermissions: Record<string, StaffPermission> = {
+  "subnet-announcements": "subnet",
   leads: "dashboard",
   packages: "content",
   "package-categories": "content",

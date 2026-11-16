@@ -1,14 +1,15 @@
 import { and, desc, eq } from "drizzle-orm";
-import { ArrowUpCircle, ChartLine, ChevronRight, FileText, Gauge, Headset, History, MapPin, MessagesSquare, Package, RadioTower, Route, Siren, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowUpCircle, ChartLine, ChevronRight, FileText, Gauge, Headset, History, MapPin, Megaphone, MessagesSquare, Package, RadioTower, Route, Siren, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { customerTones } from "@/components/admin/detail-panels";
 import { MetroSummary } from "@/components/site/metro-timeline";
+import { AnnouncementHighlight } from "@/components/site/subnet-announcements";
 import { ConnectionSummaryCard } from "@/components/site/subnet-connection";
 import { CardLink, greeting, ListRow, SectionCard, StatusDot } from "@/components/site/subnet-ui";
 import { customerStatusLabels, paymentStatusLabels } from "@/lib/cms/entities";
-import { getContent } from "@/lib/data";
+import { getContent, getSubnetAnnouncements } from "@/lib/data";
 import { requireDb } from "@/lib/db";
 import { customerPayments, customers, invoices, metroOrders } from "@/lib/db/schema";
 import { formatDate, formatMonth, formatRupiah, parseCapacityBps, trafficStopped, whatsappUrl } from "@/lib/format";
@@ -53,7 +54,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
 
   const user = await requireSubnetUser();
   const db = requireDb();
-  const [settings, [customer], invoiceList, payments, traffic, metroRows] = await Promise.all([
+  const [settings, [customer], invoiceList, payments, traffic, metroRows, announcements] = await Promise.all([
     getContent("settings"),
     db.select().from(customers).where(eq(customers.id, user.customerId)).limit(1),
     db
@@ -68,6 +69,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
       .from(metroOrders)
       .where(and(eq(metroOrders.customerId, user.customerId), eq(metroOrders.status, "active")))
       .orderBy(desc(metroOrders.createdAt)),
+    getSubnetAnnouncements(),
   ]);
   if (!customer) notFound();
 
@@ -137,6 +139,8 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
         </span>
       </div>
 
+      {announcements.length > 0 && <AnnouncementHighlight items={announcements} />}
+
       <div className="flex flex-col gap-3 sm:gap-4 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
         {/* Di HP semua kartu satu kolom dengan urutan sendiri (order-*); di layar lebar dua kolom. */}
         <div className="contents lg:flex lg:flex-col lg:gap-4">
@@ -182,6 +186,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
 
           <SectionCard title="Layanan lainnya" className="order-5 lg:order-none">
             <div className="divide-y">
+              <ListRow href="/subnet/pengumuman" icon={Megaphone} title="Pemberitahuan" subtitle={announcements.length ? `${announcements.length} pengumuman aktif` : "Info & pengumuman dari TLINET"} />
               <ListRow href="/subnet/forum" icon={MessagesSquare} title="Forum Subnet" subtitle="Chat dengan sesama pelanggan Subnet" />
               <ListRow href="/subnet/tagihan#riwayat" icon={History} title="Riwayat pembayaran" />
               <ListRow href="/subnet/trafik/grafik" icon={ChartLine} title="Grafik MRTG" subtitle="Trafik 1 hari, 1 minggu, 1 bulan" />
