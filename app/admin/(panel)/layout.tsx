@@ -27,7 +27,7 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
 
   return (
     <>
-      <AdminShell admin={admin} brandName={settings.brandName} newLeads={newLeads} pendingProofs={proofs.count} appMode={inAdminApp}>
+      <AdminShell admin={admin} brandName={settings.brandName} newLeads={newLeads} pendingProofs={proofs} appMode={inAdminApp}>
         {children}
       </AdminShell>
       <ChatPanel />

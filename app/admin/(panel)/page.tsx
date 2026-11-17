@@ -338,11 +338,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const trend = (value: ReturnType<typeof change>) =>
     value ? <span className={cn("font-semibold", value.up ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500")}>{` · ${value.text} ${value.up ? "↑" : "↓"}`}</span> : null;
 
+  // Tiap aktivitas membawa tujuannya sendiri; diklik → langsung ke halaman terkait (invoice/paket/prospek/artikel).
   const activities = [
-    ...paidRows.slice(0, 4).map((invoice) => ({ kind: "paid" as const, text: `Invoice ${invoice.number} dibayar`, at: invoice.updatedAt })),
-    ...recentArticles.map((article) => ({ kind: "article" as const, text: `Artikel diterbitkan: ${article.title}`, at: article.updatedAt })),
-    ...recentLeads.map((lead) => ({ kind: "lead" as const, text: `Prospek baru masuk: ${lead.name}`, at: lead.createdAt })),
-    ...recentPackages.map((item) => ({ kind: "package" as const, text: `Paket internet diperbarui: ${item.name}`, at: item.updatedAt })),
+    ...paidRows.slice(0, 4).map((invoice) => ({ kind: "paid" as const, text: `Invoice ${invoice.number} dibayar`, at: invoice.updatedAt, href: `/admin/invoice/${invoice.id}` })),
+    ...recentArticles.map((article) => ({ kind: "article" as const, text: `Artikel diterbitkan: ${article.title}`, at: article.updatedAt, href: "/admin/data/articles" })),
+    ...recentLeads.map((lead) => ({ kind: "lead" as const, text: `Prospek baru masuk: ${lead.name}`, at: lead.createdAt, href: "/admin/data/leads" })),
+    ...recentPackages.map((item) => ({ kind: "package" as const, text: `Paket internet diperbarui: ${item.name}`, at: item.updatedAt, href: "/admin/data/packages" })),
   ]
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 5);
@@ -618,12 +619,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 {activities.map((activity, index) => {
                   const style = activityStyle[activity.kind];
                   return (
-                    <li key={index} className="flex items-center gap-3">
-                      <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg text-white", style.className)}>
-                        <style.icon className="size-4" />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{activity.text}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(activity.at)}</span>
+                    <li key={index}>
+                      <Link
+                        href={activity.href}
+                        className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none"
+                      >
+                        <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg text-white", style.className)}>
+                          <style.icon className="size-4" />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{activity.text}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(activity.at)}</span>
+                      </Link>
                     </li>
                   );
                 })}

@@ -50,6 +50,7 @@ import { ThemeProvider, useTheme } from "next-themes";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { logoutAction } from "@/app/admin/actions";
+import type { PendingProof } from "@/lib/payments";
 import { TowerScene } from "./admin-art";
 import { NavPending } from "./nav-pending";
 import { RouteFade } from "@/components/route-fade";
@@ -183,7 +184,7 @@ const activeClass =
   "h-9 rounded-lg font-medium data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:shadow-[0_6px_16px_-6px_rgba(37,99,235,0.7)] data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground";
 
 /** Memunculkan toast untuk bukti transfer baru (yang belum pernah dilihat di perangkat ini). */
-function notifyNewProofs(items: { id: string; customer: string }[]) {
+function notifyNewProofs(items: PendingProof[]) {
   const key = "tlinet:proofs-seen";
   try {
     const raw = localStorage.getItem(key);
@@ -196,10 +197,13 @@ function notifyNewProofs(items: { id: string; customer: string }[]) {
     const seen: string[] = JSON.parse(raw);
     const fresh = items.filter((item) => !seen.includes(item.id));
     if (fresh.length) {
-      const message = fresh.length === 1 ? `Bukti transfer baru dari ${fresh[0].customer}` : `${fresh.length} bukti transfer baru menunggu verifikasi`;
+      const single = fresh.length === 1;
+      const message = single ? `Bukti transfer baru dari ${fresh[0].customer}` : `${fresh.length} bukti transfer baru menunggu verifikasi`;
+      // Klik notifikasi membuka pelanggan yang mengunggah (agar admin tahu siapa); bila banyak, buka daftarnya.
+      const href = single ? `/admin/data/customers/${fresh[0].customerId}` : "/admin/data/customer-payments";
       toast.info(message, {
-        description: "Buka History Pembayaran Subnet untuk menandai lunas.",
-        action: { label: "Buka", onClick: () => (window.location.href = "/admin/data/customer-payments") },
+        description: single ? "Buka pelanggannya, periksa buktinya, lalu tandai lunas." : "Buka History Pembayaran Subnet untuk menandai lunas.",
+        action: { label: single ? "Lihat pelanggan" : "Buka", onClick: () => (window.location.href = href) },
       });
     }
     localStorage.setItem(key, JSON.stringify(ids));
@@ -209,8 +213,8 @@ function notifyNewProofs(items: { id: string; customer: string }[]) {
 }
 
 /** Jumlah bukti transfer yang menunggu verifikasi, diperbarui berkala (tiap 45 dtk terlihat, 3 mnt di latar). */
-function usePendingProofs(initial: number) {
-  const [count, setCount] = useState(initial);
+function usePendingProofs(initial: { count: number; items: PendingProof[] }) {
+  const [state, setState] = useState(initial);
   useEffect(() => {
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
@@ -218,8 +222,8 @@ function usePendingProofs(initial: number) {
       try {
         const response = await fetch("/api/admin/payments-pending", { cache: "no-store" });
         if (response.ok && !stopped) {
-          const data = (await response.json()) as { count: number; items: { id: string; customer: string }[] };
-          setCount(data.count);
+          const data = (await response.json()) as { count: number; items: PendingProof[] };
+          setState({ count: data.count, items: data.items });
           notifyNewProofs(data.items);
         }
       } catch {
@@ -233,7 +237,7 @@ function usePendingProofs(initial: number) {
       clearTimeout(timer);
     };
   }, []);
-  return count;
+  return state;
 }
 
 function AdminSidebar({ admin, brandName, newLeads, pendingProofs, appMode }: { admin: AdminUser; brandName: string; newLeads: number; pendingProofs: number; appMode: boolean }) {
@@ -527,26 +531,67 @@ function ThemeToggle() {
   );
 }
 
-/** Lonceng: jumlah bukti transfer pelanggan yang menunggu diverifikasi (ditandai lunas). */
-function ProofBell({ count }: { count: number }) {
+/** "3 menit lalu" dari waktu unggah bukti; agar admin tahu seberapa baru notifikasinya. */
+function sinceLabel(iso: string) {
+  const at = new Date(iso).getTime();
+  if (!iso || Number.isNaN(at)) return "";
+  const mins = Math.max(0, Math.round((Date.now() - at) / 60000));
+  if (mins < 1) return "baru saja";
+  if (mins < 60) return `${mins} menit lalu`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  return new Date(at).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
+
+/** Lonceng bukti transfer: daftar siapa yang mengunggah; tiap nama membuka detail pelanggannya (History Pembayaran Subnet). */
+function ProofBell({ count, items }: { count: number; items: PendingProof[] }) {
   return (
-    <Button
-      asChild
-      variant="ghost"
-      size="icon-lg"
-      className="relative rounded-full"
-      aria-label={count ? `${count} bukti transfer menunggu verifikasi` : "Bukti transfer"}
-      title="Bukti transfer menunggu verifikasi"
-    >
-      <Link href="/admin/data/customer-payments">
-        <ReceiptText />
-        {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] leading-none font-semibold text-white ring-2 ring-background">
-            {count > 9 ? "9+" : count}
-          </span>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          className="relative rounded-full"
+          aria-label={count ? `${count} bukti transfer menunggu verifikasi` : "Bukti transfer"}
+          title="Bukti transfer menunggu verifikasi"
+        >
+          <ReceiptText />
+          {count > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] leading-none font-semibold text-white ring-2 ring-background">
+              {count > 9 ? "9+" : count}
+            </span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel>Bukti transfer menunggu{count > 0 ? ` (${count})` : ""}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {items.length === 0 ? (
+          <DropdownMenuItem disabled className="text-muted-foreground">
+            Tidak ada bukti yang menunggu
+          </DropdownMenuItem>
+        ) : (
+          items.map((item) => (
+            <DropdownMenuItem key={item.id} asChild>
+              <Link href={`/admin/data/customers/${item.customerId}`} className="flex flex-col items-start gap-0.5">
+                <span className="w-full truncate font-medium">{item.customer}</span>
+                <span className="text-xs text-muted-foreground">{sinceLabel(item.at)}</span>
+              </Link>
+            </DropdownMenuItem>
+          ))
         )}
-      </Link>
-    </Button>
+        {items.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin/data/customer-payments" className="text-muted-foreground">
+                Lihat semua pembayaran
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -562,7 +607,7 @@ function LeadsBell({ count }: { count: number }) {
   );
 }
 
-type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; pendingProofs: number; appMode: boolean; children: ReactNode };
+type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; pendingProofs: { count: number; items: PendingProof[] }; appMode: boolean; children: ReactNode };
 
 export function AdminShell({ admin, brandName, newLeads, pendingProofs, appMode, children }: ShellProps) {
   const title = useCurrentTitle(admin, appMode);
@@ -571,7 +616,7 @@ export function AdminShell({ admin, brandName, newLeads, pendingProofs, appMode,
     <ThemeProvider attribute="class" storageKey="tlinet-admin-theme" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <TooltipProvider delayDuration={200}>
         <SidebarProvider>
-          <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} pendingProofs={proofs} appMode={appMode} />
+          <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} pendingProofs={proofs.count} appMode={appMode} />
           <SidebarInset className="min-w-0 border bg-[#f5f8fe] md:shadow-none dark:bg-background">
             <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur md:h-16 md:rounded-t-xl md:border-b-0 md:bg-[#f5f8fe]/90 md:px-8 dark:md:bg-background/90">
               {/* HP: logo dan judul halaman; menu lewat tab bawah. Layar lebar: sidebar dan pencarian menu. */}
@@ -586,7 +631,7 @@ export function AdminShell({ admin, brandName, newLeads, pendingProofs, appMode,
               </div>
               <div className="ml-auto flex items-center gap-1">
                 <div className="hidden items-center gap-1 md:flex">
-                  {can(admin, "billing") && <ProofBell count={proofs} />}
+                  {can(admin, "billing") && <ProofBell count={proofs.count} items={proofs.items} />}
                   <LeadsBell count={newLeads} />
                   <ThemeToggle />
                 </div>
