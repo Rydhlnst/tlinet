@@ -186,7 +186,7 @@ export default async function SubnetHomePage({ searchParams }: PageProps<"/subne
 
           <SectionCard title="Layanan lainnya" className="order-5 lg:order-none">
             <div className="divide-y">
-              <ListRow href="/subnet/pengumuman" icon={Megaphone} title="Pemberitahuan" subtitle={announcements.length ? `${announcements.length} pengumuman aktif` : "Info & pengumuman dari TLINET"} />
+              <ListRow href="/subnet/pengumuman" icon={Megaphone} title="Pemberitahuan" subtitle={announcements.length ? `${announcements.length} pengumuman aktif` : "Info & pengumuman dari PT. Trans Link Internasional"} />
               <ListRow href="/subnet/forum" icon={MessagesSquare} title="Forum Subnet" subtitle="Chat dengan sesama pelanggan Subnet" />
               <ListRow href="/subnet/tagihan#riwayat" icon={History} title="Riwayat pembayaran" />
               <ListRow href="/subnet/trafik/grafik" icon={ChartLine} title="Grafik MRTG" subtitle="Trafik 1 hari, 1 minggu, 1 bulan" />

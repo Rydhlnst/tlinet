@@ -268,6 +268,8 @@ export const customerPayments = pgTable(
     pic: text("pic").notNull().default(""),
     /** Invoice asal pembayaran ini; kosong untuk pembayaran yang dicatat langsung. */
     invoiceId: text("invoice_id").notNull().default(""),
+    /** Diisi saat PELANGGAN mengunggah bukti transfer dari portal; menandai pembayaran yang menunggu verifikasi admin. */
+    proofAt: timestamp("proof_at"),
     ...billingColumns(),
   },
   (table) => [index("customer_payments_customer_idx").on(table.customerId, table.period)],

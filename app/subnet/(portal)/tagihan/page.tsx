@@ -3,6 +3,7 @@ import { ChevronRight, CircleCheck, Clock, Landmark } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CopyButton } from "@/components/site/copy-button";
+import { PaymentProofUpload } from "@/components/site/payment-proof-upload";
 import { PageHeading, SectionCard, StatusDot } from "@/components/site/subnet-ui";
 import { paymentStatusLabels } from "@/lib/cms/entities";
 import { getContent } from "@/lib/data";
@@ -26,6 +27,8 @@ export default async function SubnetBillingPage() {
   ]);
 
   const today = todayWita();
+  // Bukti transfer per invoice: dipakai untuk menampilkan status unggahan di tiap invoice yang belum lunas.
+  const proofByInvoice = new Map(payments.filter((payment) => payment.invoiceId && payment.proofUrl).map((payment) => [payment.invoiceId, payment.proofUrl]));
   const unpaid = invoiceList.filter((invoice) => invoice.status !== "paid");
   const unpaidTotal = unpaid.reduce((sum, invoice) => sum + invoice.total, 0);
   const nextDue = unpaid.map((invoice) => invoice.dueDate).sort()[0];
@@ -103,6 +106,7 @@ export default async function SubnetBillingPage() {
                             </div>
                             <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" />
                           </Link>
+                          {!paid && <PaymentProofUpload invoiceId={invoice.id} uploaded={proofByInvoice.get(invoice.id) ? { proofUrl: proofByInvoice.get(invoice.id)! } : null} />}
                         </li>
                       );
                     })}

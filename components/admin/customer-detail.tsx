@@ -35,7 +35,7 @@ import { DeleteRecordDialog, RecordDetailDialog, RecordSheet, type Row } from ".
 type Customer = typeof customers.$inferSelect;
 /** Baris History Pembayaran Subnet; baris History Pembelian Perusahaan menambah pemasok dan layanannya. */
 // Kolom bersama pembayaran dan pembelian; PIC dan invoice asal hanya ada di pembayaran.
-type HistoryRow = Omit<typeof customerPayments.$inferSelect, "pic" | "invoiceId">;
+type HistoryRow = Omit<typeof customerPayments.$inferSelect, "pic" | "invoiceId" | "proofAt">;
 type PurchaseRow = typeof customerPurchases.$inferSelect;
 type InvoiceRow = typeof invoiceTable.$inferSelect;
 /** Data Accurate pelanggan ini: null bila tidak tertaut, `error` bila Accurate gagal dijangkau. */

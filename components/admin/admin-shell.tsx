@@ -48,6 +48,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeProvider, useTheme } from "next-themes";
 import { useEffect, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { logoutAction } from "@/app/admin/actions";
 import { TowerScene } from "./admin-art";
 import { NavPending } from "./nav-pending";
@@ -181,7 +182,61 @@ const isActive = (pathname: string, href: string, exact?: boolean) => pathname =
 const activeClass =
   "h-9 rounded-lg font-medium data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:shadow-[0_6px_16px_-6px_rgba(37,99,235,0.7)] data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground";
 
-function AdminSidebar({ admin, brandName, newLeads, appMode }: { admin: AdminUser; brandName: string; newLeads: number; appMode: boolean }) {
+/** Memunculkan toast untuk bukti transfer baru (yang belum pernah dilihat di perangkat ini). */
+function notifyNewProofs(items: { id: string; customer: string }[]) {
+  const key = "tlinet:proofs-seen";
+  try {
+    const raw = localStorage.getItem(key);
+    const ids = items.map((item) => item.id);
+    if (raw === null) {
+      // Perangkat baru: catat yang ada tanpa notifikasi (badge sudah menunjukkannya).
+      localStorage.setItem(key, JSON.stringify(ids));
+      return;
+    }
+    const seen: string[] = JSON.parse(raw);
+    const fresh = items.filter((item) => !seen.includes(item.id));
+    if (fresh.length) {
+      const message = fresh.length === 1 ? `Bukti transfer baru dari ${fresh[0].customer}` : `${fresh.length} bukti transfer baru menunggu verifikasi`;
+      toast.info(message, {
+        description: "Buka History Pembayaran Subnet untuk menandai lunas.",
+        action: { label: "Buka", onClick: () => (window.location.href = "/admin/data/customer-payments") },
+      });
+    }
+    localStorage.setItem(key, JSON.stringify(ids));
+  } catch {
+    /* localStorage tak tersedia */
+  }
+}
+
+/** Jumlah bukti transfer yang menunggu verifikasi, diperbarui berkala (tiap 45 dtk terlihat, 3 mnt di latar). */
+function usePendingProofs(initial: number) {
+  const [count, setCount] = useState(initial);
+  useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/admin/payments-pending", { cache: "no-store" });
+        if (response.ok && !stopped) {
+          const data = (await response.json()) as { count: number; items: { id: string; customer: string }[] };
+          setCount(data.count);
+          notifyNewProofs(data.items);
+        }
+      } catch {
+        /* jaringan putus sesaat; dicoba lagi */
+      }
+      if (!stopped) timer = setTimeout(load, document.hidden ? 180_000 : 45_000);
+    };
+    timer = setTimeout(load, 45_000);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, []);
+  return count;
+}
+
+function AdminSidebar({ admin, brandName, newLeads, pendingProofs, appMode }: { admin: AdminUser; brandName: string; newLeads: number; pendingProofs: number; appMode: boolean }) {
   const pathname = usePathname();
   const groups = visibleNav(admin, appMode);
   const showAppDownload = !appMode;
@@ -220,6 +275,11 @@ function AdminSidebar({ admin, brandName, newLeads, appMode }: { admin: AdminUse
                       {href === "/admin/data/leads" && newLeads > 0 && (
                         <SidebarMenuBadge className="rounded-full bg-brand px-1.5 text-brand-foreground peer-hover/menu-button:text-brand-foreground peer-data-active/menu-button:text-brand-foreground">
                           {newLeads}
+                        </SidebarMenuBadge>
+                      )}
+                      {href === "/admin/data/customer-payments" && pendingProofs > 0 && (
+                        <SidebarMenuBadge className="rounded-full bg-rose-500 px-1.5 text-white peer-hover/menu-button:text-white peer-data-active/menu-button:text-white">
+                          {pendingProofs}
                         </SidebarMenuBadge>
                       )}
                       {children && (
@@ -467,6 +527,29 @@ function ThemeToggle() {
   );
 }
 
+/** Lonceng: jumlah bukti transfer pelanggan yang menunggu diverifikasi (ditandai lunas). */
+function ProofBell({ count }: { count: number }) {
+  return (
+    <Button
+      asChild
+      variant="ghost"
+      size="icon-lg"
+      className="relative rounded-full"
+      aria-label={count ? `${count} bukti transfer menunggu verifikasi` : "Bukti transfer"}
+      title="Bukti transfer menunggu verifikasi"
+    >
+      <Link href="/admin/data/customer-payments">
+        <ReceiptText />
+        {count > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] leading-none font-semibold text-white ring-2 ring-background">
+            {count > 9 ? "9+" : count}
+          </span>
+        )}
+      </Link>
+    </Button>
+  );
+}
+
 /** Lonceng: jumlah prospek baru dari formulir situs. */
 function LeadsBell({ count }: { count: number }) {
   return (
@@ -479,15 +562,16 @@ function LeadsBell({ count }: { count: number }) {
   );
 }
 
-type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; appMode: boolean; children: ReactNode };
+type ShellProps = { admin: AdminUser; brandName: string; newLeads: number; pendingProofs: number; appMode: boolean; children: ReactNode };
 
-export function AdminShell({ admin, brandName, newLeads, appMode, children }: ShellProps) {
+export function AdminShell({ admin, brandName, newLeads, pendingProofs, appMode, children }: ShellProps) {
   const title = useCurrentTitle(admin, appMode);
+  const proofs = usePendingProofs(pendingProofs);
   return (
     <ThemeProvider attribute="class" storageKey="tlinet-admin-theme" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <TooltipProvider delayDuration={200}>
         <SidebarProvider>
-          <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} appMode={appMode} />
+          <AdminSidebar admin={admin} brandName={brandName} newLeads={newLeads} pendingProofs={proofs} appMode={appMode} />
           <SidebarInset className="min-w-0 border bg-[#f5f8fe] md:shadow-none dark:bg-background">
             <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur md:h-16 md:rounded-t-xl md:border-b-0 md:bg-[#f5f8fe]/90 md:px-8 dark:md:bg-background/90">
               {/* HP: logo dan judul halaman; menu lewat tab bawah. Layar lebar: sidebar dan pencarian menu. */}
@@ -502,6 +586,7 @@ export function AdminShell({ admin, brandName, newLeads, appMode, children }: Sh
               </div>
               <div className="ml-auto flex items-center gap-1">
                 <div className="hidden items-center gap-1 md:flex">
+                  {can(admin, "billing") && <ProofBell count={proofs} />}
                   <LeadsBell count={newLeads} />
                   <ThemeToggle />
                 </div>
