@@ -27,6 +27,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { MonthSelect } from "@/components/admin/month-select";
@@ -234,6 +235,9 @@ const activityStyle = {
   lead: { icon: Inbox, className: "bg-blue-500" },
   package: { icon: Package, className: "bg-orange-500" },
 } as const;
+
+// Judul tab peramban: nama lengkap perusahaan, bukan singkatan merek (TLINET). `absolute` agar tak diimbuhi template root.
+export const metadata: Metadata = { title: { absolute: "Dashboard | PT Trans Link Internasional" } };
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ bulan?: string }> }) {
   const admin = await requireAdmin("dashboard");
