@@ -101,7 +101,7 @@ export function SubnetAccessButton({ customer, account, portalUrl }: { customer:
     ? [
         `Halo Bapak/Ibu ${customer.title},`,
         "",
-        "Berikut akses portal Subnet TLINET untuk melihat data layanan dan invoice Anda:",
+        "Berikut akses portal Subnet PT Trans Link Internasional untuk melihat data layanan dan invoice Anda:",
         "",
         `Alamat: ${portalUrl}`,
         `Email: ${saved.email}`,
