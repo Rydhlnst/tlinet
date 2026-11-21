@@ -13,6 +13,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CoveragePage() {
   const [settings, coverage, areas] = await Promise.all([getContent("settings"), getContent("coverage"), getCoverageAreas()]);
+  // Dropdown kota di formulir mengikuti kota/kabupaten yang ada di Titik Jangkauan (satu sumber dengan peta).
+  const formCities = [...new Set(areas.map((area) => area.city).filter(Boolean))].sort((a, b) => a.localeCompare(b, "id"));
 
   return (
     <>
@@ -31,7 +33,7 @@ export default async function CoveragePage() {
               brandName={settings.brandName}
               whatsappNumber={settings.whatsappNumber}
               submitLabel={coverage.form.submitLabel}
-              cities={coverage.form.cities}
+              cities={formCities}
               needs={coverage.form.needs}
             />
           </div>

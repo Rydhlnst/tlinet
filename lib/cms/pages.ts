@@ -244,7 +244,8 @@ export const pageDefs: PageDef[] = [
         fields: [
           ...head,
           { name: "submitLabel", label: "Teks tombol kirim", type: "text" },
-          { name: "cities", label: "Pilihan kota / kabupaten", type: "strings", itemLabel: "Kota" },
+          // Pilihan kota/kabupaten pada dropdown formulir kini otomatis mengikuti daftar Titik Jangkauan (yang berkoordinat),
+          // jadi cukup dikelola di satu tempat. Field manual "cities" sengaja tidak ditampilkan lagi di sini.
           { name: "needs", label: "Pilihan kebutuhan internet", type: "strings", itemLabel: "Kebutuhan" },
         ],
       },

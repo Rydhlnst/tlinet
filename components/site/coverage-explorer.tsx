@@ -54,6 +54,15 @@ function evaluate(point: Point, areas: CoverageArea[]): Check | null {
   return { point, areaId: best.area.id, distance: best.distance, status };
 }
 
+/** Menilai satu titik HANYA terhadap satu area tertentu — untuk tombol "cek lokasi saya" per kabupaten. */
+function evaluateArea(point: Point, area: CoverageArea): Check {
+  const distance = distanceKm(point, area);
+  const inside = distance <= area.radiusKm;
+  const areaStatus = statusOf(area);
+  const status = !inside ? "outside" : areaStatus === "active" ? "covered" : areaStatus;
+  return { point, areaId: area.id, distance, status };
+}
+
 const verdictStyles = {
   covered: { icon: CircleCheck, className: "bg-brand-soft text-brand-ink" },
   installing: { icon: Cable, className: "bg-warning/15 text-amber-800" },
@@ -67,14 +76,15 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
   const mapRef = useRef<LeafletMap | null>(null);
   const dots = useRef(new Map<string, CircleMarker>());
   const userDot = useRef<CircleMarker | null>(null);
-  // Diisi saat peta siap: menaruh pin di satu titik lalu menilai jangkauannya.
-  const checkAt = useRef<(point: Point, fly: boolean) => void>(() => {});
+  // Diisi saat peta siap: menaruh pin di satu titik lalu menilai jangkauannya. `forceArea` memaksa penilaian hanya ke satu kabupaten.
+  const checkAt = useRef<(point: Point, fly: boolean, forceArea?: CoverageArea) => void>(() => {});
 
   const [ready, setReady] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(areas[0]?.id ?? "");
   const [check, setCheck] = useState<Check | null>(null);
   const [locating, setLocating] = useState(false);
+  const [checkingHere, setCheckingHere] = useState(false);
 
   const selected = areas.find((area) => area.id === selectedId);
   const cities = useMemo(() => [...new Set(areas.map((area) => area.city))], [areas]);
@@ -119,12 +129,12 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
           .on("click", () => setSelectedId(area.id));
         markers.set(area.id, dot);
       }
-      checkAt.current = (point, fly) => {
+      checkAt.current = (point, fly, forceArea) => {
         userDot.current?.remove();
         userDot.current = L.circleMarker([point.lat, point.lng], { radius: 8, weight: 3, fillOpacity: 1, interactive: false, className: "area-dot is-user" })
           .addTo(map)
           .bindTooltip(content.myLocationLabel, { direction: "top", offset: [0, -8] });
-        const result = evaluate(point, areas);
+        const result = forceArea ? evaluateArea(point, forceArea) : evaluate(point, areas);
         setCheck(result);
         if (!result) return;
         setSelectedId(result.areaId);
@@ -184,6 +194,26 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
       },
       () => {
         setLocating(false);
+        toast.error("Lokasi tidak dapat dideteksi. Izinkan akses lokasi atau pilih area secara manual.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  // Cek lokasi pengunjung khusus terhadap satu kabupaten terpilih (bukan area terdekat mana pun).
+  function checkHere(area: CoverageArea) {
+    if (!navigator.geolocation) {
+      toast.error("Peramban Anda tidak mendukung deteksi lokasi.");
+      return;
+    }
+    setCheckingHere(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setCheckingHere(false);
+        checkAt.current({ lat: coords.latitude, lng: coords.longitude }, true, area);
+      },
+      () => {
+        setCheckingHere(false);
         toast.error("Lokasi tidak dapat dideteksi. Izinkan akses lokasi atau pilih area secara manual.");
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -343,7 +373,17 @@ export function CoverageExplorer({ areas, content }: { areas: CoverageArea[]; co
 
             {selected.note && <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{selected.note}</p>}
 
-            <Link href="/formulir-registrasi" className={linkButtonClass("primary", "mt-7 w-full")}>
+            <button
+              type="button"
+              onClick={() => checkHere(selected)}
+              disabled={checkingHere}
+              className="mt-7 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border text-sm font-medium transition-colors hover:border-brand hover:text-foreground disabled:opacity-70"
+            >
+              {checkingHere ? <LoaderCircle className="animate-spin" /> : <LocateFixed />}
+              Cek lokasi saya di {selected.city}
+            </button>
+
+            <Link href="/formulir-registrasi" className={linkButtonClass("primary", "mt-3 w-full")}>
               {content.signupLabel}
               <ArrowRight />
             </Link>
