@@ -359,6 +359,24 @@
   fill: var(--brand);
   cursor: pointer;
 }
+/* Titik dengan status aktif berkedip pelan sebagai penanda jangkauan hidup. */
+.area-dot:not(.is-installing):not(.is-expansion):not(.is-inactive):not(.is-user) {
+  animation: area-dot-blink 1.6s ease-in-out infinite;
+}
+@keyframes area-dot-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .area-dot {
+    animation: none;
+  }
+}
 .area-dot.is-installing {
   fill: var(--warning);
 }
