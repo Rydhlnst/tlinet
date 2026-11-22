@@ -19,6 +19,8 @@ export type SiteSettings = {
   footerServices: LinkItem[];
   footerLegal: LinkItem[];
   socialLinks: LinkItem[];
+  /** Pintasan WebFig per router MikroTik (dikelola admin): label = nama router, href = alamat WebFig. */
+  routerLinks: LinkItem[];
   address: string;
   phone: string;
   email: string;

@@ -453,6 +453,25 @@ export const pageDefs: PageDef[] = [
       },
       {
         path: "",
+        title: "Router (WebFig)",
+        description: "Pintasan ke WebFig MikroTik yang muncul di menu Winbox pada dashboard. Tambahkan router sebanyak yang dibutuhkan.",
+        fields: [
+          {
+            name: "routerLinks",
+            label: "Daftar router",
+            help: "Alamat WebFig biasanya http://IP-router (mis. http://192.168.88.1). Dibuka di tab baru; tetap perlu login RouterOS, dan umumnya hanya jalan dari jaringan internal/VPN router.",
+            type: "list",
+            itemLabel: "Router",
+            titleField: "label",
+            fields: [
+              { name: "label", label: "Nama router", type: "text", required: true, half: true },
+              { name: "href", label: "Alamat WebFig", type: "url", required: true, half: true },
+            ],
+          },
+        ],
+      },
+      {
+        path: "",
         title: "Footer",
         fields: [
           { name: "footerDescription", label: "Deskripsi singkat", type: "textarea", rows: 3 },

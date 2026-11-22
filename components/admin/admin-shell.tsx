@@ -28,6 +28,7 @@ import {
   LayoutGrid,
   Smartphone,
   Route,
+  Router,
   Newspaper,
   Package,
   ReceiptText,
@@ -90,11 +91,14 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { adminApk } from "@/lib/admin-app";
-import { can, routePermission, type AdminUser } from "@/lib/permissions";
+import { can, routePermission, type AdminUser, type Permission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-/** `children`: submenu yang bisa dibuka-tutup; induknya sendiri tetap tautan ke halamannya. */
-type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string; children?: NavItem[] };
+/**
+ * `children`: submenu yang bisa dibuka-tutup; induknya sendiri tetap tautan ke halamannya.
+ * `permission`: paksa hak akses tertentu; bila kosong, diturunkan dari `href` lewat `routePermission`.
+ */
+type NavItem = { href: string; label: string; icon: LucideIcon; keywords?: string; children?: NavItem[]; permission?: Permission };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
@@ -158,13 +162,15 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/admin/pages/settings", label: "Pengaturan Situs", icon: Settings, keywords: "merek kontak whatsapp footer navigasi seo logo" },
       { href: "/admin/pages/invoice", label: "Pengaturan Invoice", icon: Stamp, keywords: "rekening bank logo catatan ppn kop" },
       { href: "/admin/users", label: "Pengguna", icon: ShieldCheck, keywords: "akun staf akses hak role rbac login" },
+      // Pintasan WebFig MikroTik; daftar routernya dikelola admin di Pengaturan Situs.
+      { href: "/admin/webfig", label: "Winbox", icon: Router, permission: "any", keywords: "mikrotik router webfig winbox kelola jaringan" },
     ],
   },
 ];
 
 /** Menu yang boleh dibuka pengguna ini; grup tanpa menu tersisa ikut disembunyikan. */
 /** Di aplikasi TLINET Admin: Ringkasan dan menu operasional saja. */
-const appHrefs = new Set(["/admin"]);
+const appHrefs = new Set(["/admin", "/admin/webfig"]);
 
 function visibleNav(admin: AdminUser, appMode = false) {
   return navGroups
@@ -172,7 +178,7 @@ function visibleNav(admin: AdminUser, appMode = false) {
       ...group,
       items: group.items
         .filter((item) => !appMode || group.label === "Operasional" || appHrefs.has(item.href))
-        .filter((item) => can(admin, routePermission(item.href)))
+        .filter((item) => can(admin, item.permission ?? routePermission(item.href)))
         .map((item) => ({ ...item, children: item.children?.filter((child) => can(admin, routePermission(child.href))) })),
     }))
     .filter((group) => group.items.length);
