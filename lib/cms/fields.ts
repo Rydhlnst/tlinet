@@ -72,7 +72,7 @@ function sanitizeValue(field: Field, value: unknown, errors: string[], label: st
       const text = String(value ?? "").trim().slice(0, field.type === "textarea" ? limits.textarea : limits.text);
       if (field.required && !text) errors.push(`${label} wajib diisi.`);
       if ((field.type === "url" || field.type === "image") && !isSafeHref(text)) {
-        errors.push(`${label} harus berupa tautan yang valid (diawali /, #, atau https://).`);
+        errors.push(`${label} harus berupa tautan yang valid (diawali /, #, http://, atau https://).`);
         return "";
       }
       if (field.type === "email" && text && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) {
