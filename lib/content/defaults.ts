@@ -38,7 +38,6 @@ export const defaultContent: ContentMap = {
       { label: "Instagram", href: "https://instagram.com" },
       { label: "Facebook", href: "https://facebook.com" },
     ],
-    routerLinks: [],
     address: "BTN Rindra 4, Paenre Lompoe, Kecamatan Gantarang, Kabupaten Bulukumba, Sulawesi Selatan 92561",
     phone: "+62 823-2000-3007",
     email: "noc@translinkinternasional.com",
@@ -433,6 +432,8 @@ export const defaultContent: ContentMap = {
       ],
     },
   },
+
+  routers: { links: [] },
 
   invoice: {
     companyName: "PT Trans Link Internasional (TLINET)",

@@ -19,8 +19,6 @@ export type SiteSettings = {
   footerServices: LinkItem[];
   footerLegal: LinkItem[];
   socialLinks: LinkItem[];
-  /** Pintasan WebFig per router MikroTik (dikelola admin): label = nama router, href = alamat WebFig. */
-  routerLinks: LinkItem[];
   address: string;
   phone: string;
   email: string;
@@ -164,8 +162,15 @@ export type InvoiceSettings = {
   footerTagline: string;
 };
 
+/**
+ * Pintasan WebFig router MikroTik (menu Winbox). Disimpan terpisah dari Pengaturan Situs dan langsung live (tanpa draf),
+ * dikelola dari halaman Winbox — editor Pengaturan Situs menulis ulang dokumennya, jadi daftar ini tidak boleh ikut di sana.
+ */
+export type RouterContent = { links: LinkItem[] };
+
 export type ContentMap = {
   settings: SiteSettings;
+  routers: RouterContent;
   invoice: InvoiceSettings;
   home: HomeContent;
   coverage: CoverageContent;
