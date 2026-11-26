@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getAdminWith } from "@/lib/auth";
 import { entityPermission } from "@/lib/permissions";
 import { db } from "@/lib/db";
-import { customerPayments, customerPurchases, customers, dataCenterPayments, mediaAssets, salaryPayments } from "@/lib/db/schema";
+import { customerPayments, customerPurchases, customers, dataCenterPayments, dataCenters, mediaAssets, salaryPayments } from "@/lib/db/schema";
 import { slugify } from "@/lib/format";
 import { isR2Url } from "@/lib/storage";
 
@@ -41,6 +41,13 @@ async function findProof(entity: string, id: string, field: string): Promise<{ p
     const [row] = await db.select({ aosUrl: customers.aosUrl, pksUrl: customers.pksUrl, siteId: customers.siteId }).from(customers).where(eq(customers.id, id)).limit(1);
     const kind = field === "aosUrl" ? "aos" : "pks";
     return row && { proofUrl: row[field], name: `${kind}-${slugify(row.siteId) || id.slice(0, 8)}` };
+  }
+  // Lampiran Data Center: `document:N` = dokumen ke-N di daftar Dokumen PDF-nya.
+  const documentIndex = field.match(/^document:(\d+)$/)?.[1];
+  if (entity === "data-centers" && documentIndex !== undefined) {
+    const [row] = await db.select({ documents: dataCenters.documents, company: dataCenters.company }).from(dataCenters).where(eq(dataCenters.id, id)).limit(1);
+    const document = row?.documents?.[Number(documentIndex)];
+    return document && { proofUrl: document.url, name: slugify(`${row.company} ${document.name}`) || `dokumen-data-center-${documentIndex}` };
   }
   return undefined;
 }

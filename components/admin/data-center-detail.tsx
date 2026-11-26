@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChartLine, ChevronRight, Ellipsis, Network, Pencil, Plus, ReceiptText, Server, StickyNote, Trash2 } from "lucide-react";
+import { ArrowLeft, ChartLine, ChevronRight, Ellipsis, FileText, Network, Pencil, Plus, ReceiptText, Server, StickyNote, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { mrtgSourceOptionsAction } from "@/app/admin/actions";
@@ -69,6 +69,8 @@ export function DataCenterDetail({
     <StatusPill tone={dataCenter.status === "active" ? "good" : "muted"}>{dataCenterStatusLabels[dataCenter.status] ?? dataCenter.status}</StatusPill>
   );
   const edit = () => setEditing({ ...dataCenter, mrtgSource: dataCenter.mrtgSource || "-" });
+  // Indeks asli dipertahankan: /api/bukti mengambil berkasnya lewat `document:<indeks>`.
+  const documents = (dataCenter.documents ?? []).map((document, index) => ({ ...document, index })).filter((document) => document.url);
 
   return (
     <>
@@ -190,6 +192,37 @@ export function DataCenterDetail({
               Atur Grafik MRTG
             </Button>
           </div>
+        )}
+      </Panel>
+
+      <Panel
+        icon={FileText}
+        title="Dokumen"
+        action={
+          <Button variant="outline" size="sm" onClick={edit}>
+            {documents.length ? <Pencil /> : <Plus />}
+            {documents.length ? "Kelola dokumen" : "Tambah dokumen"}
+          </Button>
+        }
+      >
+        {documents.length ? (
+          <ul className="divide-y">
+            {documents.map((document) => (
+              <li key={`${document.index}-${document.url}`} className="flex items-center gap-3 px-5 py-3">
+                <ProofViewer
+                  entityKey="data-centers"
+                  id={dataCenter.id}
+                  url={document.url}
+                  field={`document:${document.index}`}
+                  name={document.name}
+                  label={dataCenter.company}
+                />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{document.name}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-5 py-8 text-center text-sm text-muted-foreground">Belum ada dokumen. Tambahkan kontrak, penawaran, atau BA dalam bentuk PDF.</p>
         )}
       </Panel>
 

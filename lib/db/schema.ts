@@ -361,8 +361,12 @@ export const dataCenters = pgTable("data_centers", {
   photoUrl: text("photo_url").notNull().default(""),
   status: text("status").notNull().default("active"),
   note: text("note").notNull().default(""),
+  /** Lampiran PDF (kontrak, penawaran, BA, …): nama dokumen dan tautan berkasnya. */
+  documents: jsonb("documents").$type<DataCenterDocument[]>().notNull().default([]),
   ...timestamps,
 });
+
+export type DataCenterDocument = { name: string; url: string };
 
 /** Tagihan Data Center per bulan: nomor dan berkas invoicenya, tanggal bayar, dan bukti transfer. */
 export const dataCenterPayments = pgTable(

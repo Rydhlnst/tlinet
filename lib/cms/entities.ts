@@ -626,6 +626,18 @@ export const entityDefs: EntityDef[] = [
         help: "Port atau antrean QoS di LibreNMS. Grafiknya tampil di halaman detail Data Center.",
       },
       { name: "photoUrl", label: "Foto profil / logo", type: "image", help: "Opsional. Tampil di samping nama PT; bisa juga diganti langsung dari foto di halaman detail." },
+      {
+        name: "documents",
+        label: "Dokumen PDF",
+        type: "list",
+        itemLabel: "Dokumen",
+        titleField: "name",
+        help: "Kontrak, penawaran, BA, dan dokumen lain dari Data Center ini. PDF maks. 4 MB per berkas; bisa dilihat di halaman detail.",
+        fields: [
+          { name: "name", label: "Nama dokumen", type: "text", required: true, placeholder: "mis. Kontrak 2026" },
+          { name: "url", label: "Berkas", type: "image", allowPdf: true, required: true },
+        ],
+      },
       { name: "note", label: "Keterangan", type: "textarea", rows: 3 },
     ],
   },
